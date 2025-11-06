@@ -1,5 +1,9 @@
 <template>
-	<div>
+	<NuxtLayout>
 		<NuxtPage />
-	</div>
+	</NuxtLayout>
 </template>
+
+<style lang="scss">
+@use "styles/global.scss";
+</style>
