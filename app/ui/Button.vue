@@ -1,5 +1,79 @@
+<script setup lang="ts">
+import { NuxtLink } from "#components"
+
+interface ButtonProps {
+	to?: string
+	type?: "button" | "submit" | "link"
+	variant?: "default" | "ghost"
+	full?: boolean
+	iconName?: string
+}
+
+const props = withDefaults(defineProps<ButtonProps>(), {
+	type: "button",
+	variant: "default",
+})
+</script>
+
 <template>
-	<button>
+	<component
+		:is="
+			props.type == 'link' && props.to != undefined ? NuxtLink : 'button'
+		"
+		:to="props.to"
+		:class="[
+			`button type-${props.variant}`,
+			{ full: props.full, icon: $slots.icon || props.iconName },
+		]"
+	>
+		<span class="icon-wrapper">
+			<slot name="icon" v-if="!props.iconName" />
+			<Icon :name="props.iconName" v-else />
+		</span>
 		<slot />
-	</button>
+	</component>
 </template>
+
+<style lang="scss" scoped>
+@use "@/styles/colors" as *;
+
+.button {
+	padding: 0.6rem 1rem;
+	transition: background-color 0.2s ease-in-out;
+	border-radius: 0.3rem;
+
+	font-weight: 600;
+}
+
+.full {
+	width: 100%;
+	text-align: left;
+}
+
+.button,
+.icon,
+.icon-wrapper {
+	display: inline-flex;
+	align-items: center;
+}
+
+.icon {
+	gap: 0.7rem;
+
+	.icon-wrapper {
+		font-size: 24px;
+	}
+}
+
+.type-default {
+	background-color: $color-button;
+}
+
+.type-default:hover,
+.type-ghost:hover {
+	background-color: $color-button-hover;
+}
+
+.type-ghost {
+}
+</style>
