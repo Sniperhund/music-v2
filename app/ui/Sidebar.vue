@@ -27,8 +27,8 @@
 
 	& aside {
 		height: 100%;
-		min-width: 250px;
-		max-width: 300px;
+		min-width: 300px;
+		max-width: 350px;
 
 		border-right: 1px solid $color-border;
 		padding: 1.5rem;
