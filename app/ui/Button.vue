@@ -35,12 +35,12 @@ const props = withDefaults(defineProps<ButtonProps>(), {
 </template>
 
 <style lang="scss" scoped>
-@use "@/styles/colors" as *;
+@use "@/styles/variables" as *;
 
 .button {
 	padding: 0.6rem 1rem;
 	transition: background-color 0.2s ease-in-out;
-	border-radius: 0.3rem;
+	border-radius: $standard-border-radius;
 
 	font-weight: 600;
 }
