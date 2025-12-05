@@ -45,7 +45,7 @@ const props = withDefaults(defineProps<ButtonProps>(), {
 .button {
 	padding: 0.6rem 1rem;
 	transition: background-color 0.2s ease-in-out;
-	border-radius: $standard-border-radius;
+	border-radius: $border-radius-standard;
 
 	font-weight: 600;
 }

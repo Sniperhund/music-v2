@@ -17,7 +17,7 @@ const props = defineProps<CardProps>()
 
 .card {
 	border: 1px solid $color-border;
-	border-radius: $standard-border-radius;
+	border-radius: $border-radius-standard;
 	padding: 1rem;
 }
 </style>

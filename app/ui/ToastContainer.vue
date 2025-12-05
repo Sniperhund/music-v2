@@ -37,7 +37,7 @@ const { toasts, remove } = useToast()
 .toast {
 	background-color: $color-background;
 	border: 1px solid $color-border;
-	border-radius: $standard-border-radius;
+	border-radius: $border-radius-standard;
 
 	padding: 10px 16px;
 	min-width: 200px;

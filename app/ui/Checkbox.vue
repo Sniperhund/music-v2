@@ -77,7 +77,7 @@ const props = defineProps<CheckboxProps>()
 	height: 1rem;
 	width: 1rem;
 	border: 1px solid $color-border;
-	border-radius: $standard-border-radius;
+	border-radius: $border-radius-standard;
 	background-color: transparent;
 	transition: background-color 0.2s, border-color 0.2s;
 }

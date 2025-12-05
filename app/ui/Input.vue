@@ -70,7 +70,7 @@ const props = defineProps<InputProps>()
 }
 
 .input {
-	border-radius: $standard-border-radius;
+	border-radius: $border-radius-standard;
 	border: 1px solid $color-border;
 
 	padding: 0.5rem 1rem;
