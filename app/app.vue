@@ -1,4 +1,5 @@
 <template>
+	<ToastContainer />
 	<NuxtLayout>
 		<NuxtPage />
 	</NuxtLayout>

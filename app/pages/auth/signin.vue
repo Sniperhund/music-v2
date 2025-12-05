@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const auth = useAuth()
+const toast = useToast()
 
 const submit = async (e: any) => {
 	let data: any
@@ -8,7 +9,11 @@ const submit = async (e: any) => {
 		data = Object.fromEntries(new FormData(e?.target as HTMLFormElement))
 	} catch {}
 
-	await auth.signin(data.email, data.password, data.remember)
+	try {
+		await auth.signin(data.email, data.password, data.remember)
+	} catch (e: string | any) {
+		toast.show(e, "error")
+	}
 }
 </script>
 

@@ -28,6 +28,8 @@ export const useAuth = () => {
 			)
 
 			refreshToken.value = res.data.refreshToken
+
+			await navigateTo("/")
 		} catch (e) {
 			if (axios.isAxiosError(e) && e.response?.data?.message) {
 				throw new Error(e.response.data.message)
