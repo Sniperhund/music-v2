@@ -14,8 +14,6 @@ export const useAuth = () => {
 		password: string,
 		remember: boolean = false
 	) => {
-		console.log(email)
-
 		try {
 			const res = await cfetch(
 				"/auth/signin",
