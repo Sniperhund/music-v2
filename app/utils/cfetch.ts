@@ -8,6 +8,8 @@ export const cfetch = async (
 ): Promise<AxiosResponse> => {
 	const baseUrl = import.meta.env.VITE_PUBLIC_BACKEND
 
+	if (!baseUrl) throw new Error("BACKEND URL not set")
+
 	const defaults: AxiosRequestConfig = {
 		baseURL: baseUrl,
 	}
