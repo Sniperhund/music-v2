@@ -1,8 +1,15 @@
 <script setup lang="ts">
+type InputType = HTMLInputElement["type"]
+type AutocompleteType = HTMLInputElement["autocomplete"]
+
 interface InputProps {
 	placeholder?: string
 	full?: boolean
 	iconName?: string
+	type?: InputType
+	name?: string
+	required?: boolean
+	autocomplete?: AutocompleteType
 }
 
 const value = defineModel("value")
@@ -16,25 +23,51 @@ const props = defineProps<InputProps>()
 </script>
 
 <template>
-	<div
-		class="input"
-		:class="{ full: props.full, icon: $slots.icon || props.iconName }"
-	>
-		<span class="icon-wrapper">
-			<slot name="icon" v-if="!props.iconName" />
-			<Icon :name="props.iconName" v-else />
-		</span>
-		<input
-			:placeholder="props.placeholder"
-			v-model="value"
-			@input="(e) => emit('input', e.target?.value)"
-			@focus="emit('focus')"
-		/>
+	<div class="input-wrapper">
+		<label v-if="$slots.label" :for="props.name">
+			<slot name="label" />
+			<span v-if="props.required" class="required">*</span>
+		</label>
+		<div
+			class="input"
+			:class="{ full: props.full, icon: $slots.icon || props.iconName }"
+		>
+			<span class="icon-wrapper">
+				<slot name="icon" v-if="!props.iconName" />
+				<Icon :name="props.iconName" v-else />
+			</span>
+
+			<input
+				:placeholder="props.placeholder"
+				v-model="value"
+				@input="(e) => emit('input', e.target?.value)"
+				@focus="emit('focus')"
+				:type="props.type"
+				:name="props.name"
+				:id="props.name"
+				:required="props.required"
+				:autocomplete="props.autocomplete"
+			/>
+		</div>
 	</div>
 </template>
 
 <style lang="scss" scoped>
 @use "@/styles/variables" as *;
+@use "@/styles/util" as *;
+
+.input-wrapper {
+	& > label {
+		display: block;
+		@include fontSize(14px);
+		margin-bottom: 0.4rem;
+
+		.required {
+			margin-left: 0.3em;
+			color: $color-attention;
+		}
+	}
+}
 
 .input {
 	border-radius: $standard-border-radius;
@@ -52,6 +85,13 @@ const props = defineProps<InputProps>()
 	& input {
 		width: 100%;
 		background: none;
+
+		&:-webkit-autofill,
+		&:-webkit-autofill:hover,
+		&:-webkit-autofill:focus {
+			box-shadow: 0 0 0px 1000px $color-background inset !important;
+			-webkit-text-fill-color: $color-text !important;
+		}
 	}
 
 	& input:focus {

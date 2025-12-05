@@ -7,6 +7,7 @@ interface ButtonProps {
 	variant?: "default" | "ghost"
 	full?: boolean
 	iconName?: string
+	centerText?: boolean
 }
 
 const props = withDefaults(defineProps<ButtonProps>(), {
@@ -23,7 +24,11 @@ const props = withDefaults(defineProps<ButtonProps>(), {
 		:to="props.to"
 		:class="[
 			`button type-${props.variant}`,
-			{ full: props.full, icon: $slots.icon || props.iconName },
+			{
+				full: props.full,
+				icon: $slots.icon || props.iconName,
+				center: props.centerText,
+			},
 		]"
 	>
 		<span class="icon-wrapper">
@@ -48,6 +53,10 @@ const props = withDefaults(defineProps<ButtonProps>(), {
 .full {
 	width: 100%;
 	text-align: left;
+
+	&.center {
+		justify-content: center;
+	}
 }
 
 .button,
