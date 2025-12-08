@@ -10,17 +10,36 @@ export const cfetch = async (
 
 	if (!baseUrl) throw new Error("BACKEND URL not set")
 
+	const { sessionToken, refreshSessionToken } = useAuth()
+
 	const defaults: AxiosRequestConfig = {
 		baseURL: baseUrl,
 	}
 
 	if (authorize) {
-		let token = (await cookieStore.get("sessionToken"))?.value
+		let token = sessionToken.value
 
 		if (token) defaults.headers = { Authorization: `Bearer ${token}` }
+		else
+			defaults.headers = {
+				Authorization: `Bearer ${await refreshSessionToken()}`,
+			}
 	}
 
 	const config: AxiosRequestConfig = defu(options, defaults)
 
-	return await axios(url, config)
+	let response
+	try {
+		response = await axios(url, config)
+	} catch {
+		if (response?.status == 401) {
+			if (!config.headers) config.headers = {}
+			config.headers.Authorization = `Bearer ${await refreshSessionToken()}`
+
+			response = await axios(url, config)
+		}
+	}
+
+	if (!response) throw new Error("Something went wrong. Please try again")
+	return response
 }
