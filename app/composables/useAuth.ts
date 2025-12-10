@@ -1,5 +1,8 @@
 import axios, { AxiosError } from "axios"
 
+let refreshPromise: Promise<any> | null = null
+let waitForPromise: boolean = false
+
 export const useAuth = () => {
 	const refreshToken = useCookie<string | null>("refreshToken", {
 		sameSite: "lax",
@@ -28,6 +31,7 @@ export const useAuth = () => {
 			)
 
 			refreshToken.value = res.data.refreshToken
+			await refreshSessionToken()
 
 			await navigateTo("/")
 		} catch (e) {
@@ -43,7 +47,52 @@ export const useAuth = () => {
 
 	const signout = () => {}
 
-	const refreshSessionToken = async () => {}
+	const refreshSessionToken = async () => {
+		if (waitForPromise) {
+			// Force it to wait up to 50 ms for it to set refreshPromise, hopefully less
+			for (let i = 0; i < 10; i++) {
+				if (refreshPromise != null) {
+					break
+				}
+
+				await new Promise((r) => setTimeout(r, 5))
+			}
+		}
+
+		waitForPromise = true
+
+		if (refreshPromise != null) {
+			waitForPromise = false
+			return refreshPromise
+		}
+
+		refreshPromise = cfetch(
+			"/auth/session",
+			{
+				data: {
+					refreshToken: refreshToken.value,
+				},
+				method: "POST",
+			},
+			false
+		)
+			.then((res) => {
+				const token = res.data.sessionToken
+				sessionToken.value = token
+
+				refreshPromise = null
+
+				return token
+			})
+			.catch((e) => {
+				refreshPromise = null
+				sessionToken.value = null
+
+				return null
+			})
+
+		return refreshPromise
+	}
 
 	return {
 		refreshToken,
