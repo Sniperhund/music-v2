@@ -1,88 +1,63 @@
-<script setup lang="ts">
-const router = useRouter()
-
-let timeout: ReturnType<typeof setTimeout>
-
-const onSearchInput = (v: string) => {
-	clearTimeout(timeout)
-	timeout = setTimeout(() => {
-		if (v && v.trim() !== "")
-			router.replace(`/search?q=${encodeURIComponent(v)}`)
-		else router.replace("/search")
-	}, 300)
-}
-
-const { data: user } = useApiFetch<any>("/user")
-</script>
-
 <template>
 	<Sidebar>
 		<template #sidebar>
-			<p class="title">Music</p>
-
-			<Input
-				class="search-input"
-				icon-name="lucide:search"
-				placeholder="Search..."
-				@input="onSearchInput"
-				@focus="router.replace('/search')"
-			/>
+			<p class="title">Music - Admin</p>
 
 			<div class="category">
-				<Button
-					full
-					variant="ghost"
-					to="/"
-					type="link"
-					icon-name="lucide:house"
-				>
-					Home
-				</Button>
-			</div>
-
-			<div class="category">
-				<p>Library</p>
-
-				<Button
-					full
-					variant="ghost"
-					to="/library/artists"
-					type="link"
-					icon-name="lucide:mic-vocal"
-				>
-					Artists
-				</Button>
-				<Button
-					full
-					variant="ghost"
-					to="/library/albums"
-					type="link"
-					icon-name="lucide:gallery-vertical-end"
-				>
-					Albums
-				</Button>
-				<Button
-					full
-					variant="ghost"
-					to="/library/songs"
-					type="link"
-					icon-name="lucide:music"
-				>
-					Songs
-				</Button>
-			</div>
-
-			<div v-if="user?.role == 'admin'" class="category">
-				<p>Secret stuff</p>
-
 				<Button
 					full
 					variant="ghost"
 					to="/admin"
 					type="link"
+					icon-name="lucide:house"
+				>
+					Dashboard
+				</Button>
+			</div>
+
+			<div class="category">
+				<p>Manage</p>
+
+				<Button
+					full
+					variant="ghost"
+					to="/admin/artists"
+					type="link"
+					icon-name="lucide:mic-vocal"
+				>
+					Manage Artists
+				</Button>
+				<Button
+					full
+					variant="ghost"
+					to="/admin/albums"
+					type="link"
+					icon-name="lucide:gallery-vertical-end"
+				>
+					Manage Albums
+				</Button>
+				<Button
+					full
+					variant="ghost"
+					to="/admin/songs"
+					type="link"
+					icon-name="lucide:music"
+				>
+					Manage Songs
+				</Button>
+			</div>
+
+			<div class="category">
+				<p>Exit</p>
+
+				<Button
+					full
+					variant="ghost"
+					to="/"
+					type="link"
 					icon-name="lucide:settings-2"
 				>
-					Go To Admin Panel
+					Exit Admin Panel
 				</Button>
 			</div>
 		</template>
