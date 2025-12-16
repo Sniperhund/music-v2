@@ -10,22 +10,47 @@ interface InputProps {
 	name?: string
 	required?: boolean
 	autocomplete?: AutocompleteType
+	label?: string
 }
 
-const value = defineModel("value")
+const value = defineModel<string | File | File[] | null>("value")
 
 const emit = defineEmits<{
 	(e: "input", value: string): void
+	(e: "file", value: File | File[] | null | undefined): void
 	(e: "focus"): void
+	(e: "blur"): void
 }>()
 
 const props = defineProps<InputProps>()
+
+const onFileChange = (e: Event) => {
+	const input = e.target as HTMLInputElement
+	const files = input.files
+
+	if (!files || files.length == 0) {
+		value.value = null
+		emit("file", null)
+		return
+	}
+
+	const result = files.length == 1 ? files[0] : Array.from(files)
+
+	value.value = result
+	emit("file", result)
+}
 </script>
 
 <template>
 	<div class="input-wrapper">
-		<label v-if="$slots.label" :for="props.name">
-			<slot name="label" />
+		<label v-if="$slots.label || props.label" :for="props.name">
+			<template v-if="!props.label">
+				<slot name="label" />
+			</template>
+			<template v-else>
+				{{ props.label }}
+			</template>
+
 			<span v-if="props.required" class="required">*</span>
 		</label>
 		<div
@@ -38,15 +63,28 @@ const props = defineProps<InputProps>()
 			</span>
 
 			<input
+				v-if="props.type != 'file'"
 				:placeholder="props.placeholder"
 				v-model="value"
 				@input="(e) => emit('input', e.target?.value)"
 				@focus="emit('focus')"
+				@blur="emit('blur')"
 				:type="props.type"
 				:name="props.name"
 				:id="props.name"
 				:required="props.required"
 				:autocomplete="props.autocomplete"
+			/>
+
+			<input
+				v-else
+				@focus="emit('focus')"
+				@blur="emit('blur')"
+				@change="onFileChange"
+				:type="props.type"
+				:name="props.name"
+				:id="props.name"
+				:required="props.required"
 			/>
 		</div>
 	</div>
