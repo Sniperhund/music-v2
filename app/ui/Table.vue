@@ -16,7 +16,7 @@ const { rows, data } = defineProps<TableProps>()
 </script>
 
 <template>
-	<table>
+	<table class="table">
 		<thead>
 			<tr>
 				<th
@@ -40,3 +40,28 @@ const { rows, data } = defineProps<TableProps>()
 		</tbody>
 	</table>
 </template>
+
+<style lang="scss" scoped>
+@use "@/styles/variables" as *;
+@use "@/styles/util" as *;
+
+.table {
+	width: 100%;
+	text-align: left;
+	border-collapse: collapse;
+	@include fontSize(15px);
+
+	& th,
+	& td {
+		border-bottom: 1px solid $color-border;
+		padding: 0.5rem 0.6rem;
+	}
+
+	& tr:last-child td {
+		border-bottom: none;
+	}
+
+	& thead {
+	}
+}
+</style>

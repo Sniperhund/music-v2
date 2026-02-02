@@ -1,11 +1,13 @@
 <script setup lang="ts">
+const props = defineProps<{ width?: string }>()
+
 const open = defineModel("open")
 </script>
 
 <template>
 	<Transition>
 		<div class="modal-container" v-show="open" @click="open = false">
-			<Card @click.stop>
+			<Card @click.stop :width="props.width">
 				<slot />
 			</Card>
 		</div>

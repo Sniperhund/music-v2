@@ -5,7 +5,9 @@ export interface Option {
 }
 
 interface SearchSelectProps {
+	label?: string
 	fetchOptions: (q: string) => Promise<Option[]>
+	predefined?: Option
 }
 
 const props = defineProps<SearchSelectProps>()
@@ -14,6 +16,16 @@ const value = defineModel<string>("value")
 const query = ref<string>("")
 const options = ref<Option[]>([])
 const show = ref<boolean>(false)
+
+watchEffect(() => {
+	if (!props.predefined) return
+
+	console.log(props.predefined)
+
+	query.value = props.predefined.label
+	value.value = props.predefined.value
+	nextTick(() => (options.value = []))
+})
 
 watch(query, async (q) => {
 	options.value = q ? await props.fetchOptions(q) : []
@@ -29,7 +41,13 @@ const select = (item: Option) => {
 
 <template>
 	<div class="search-select" @blur="show = false">
-		<Input v-model:value="query" @focus="show = true" type="text" full />
+		<Input
+			v-model:value="query"
+			@focus="show = true"
+			:label="props.label"
+			type="text"
+			full
+		/>
 
 		<ul v-if="options.length && show">
 			<li v-for="opt in options" :key="opt.value" @click="select(opt)">
