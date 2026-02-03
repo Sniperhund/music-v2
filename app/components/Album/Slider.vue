@@ -1,0 +1,42 @@
+<script setup lang="ts">
+const { data, pending, refresh } = useAsyncData("random-albums", async () => {
+	const { data: genres } = await cfetch("/genres/random")
+
+	const results = await Promise.allSettled(
+		genres.map(async (genre: Genre) => {
+			const res = await cfetch(`/genres/albums/${genre._id}`)
+
+			return {
+				genre,
+				albums: res.data,
+			}
+		}),
+	)
+
+	return results
+		.filter(
+			(
+				r,
+			): r is PromiseFulfilledResult<{
+				genre: any
+				albums: any[]
+			}> => r.status === "fulfilled",
+		)
+		.map((r) => r.value)
+})
+</script>
+
+<template>
+	<template v-for="item in data" :key="item.genre._id">
+		<Slider v-if="item.albums.length" :title="item.genre.name">
+			<AlbumCard
+				v-for="album in item.albums"
+				:key="album._id"
+				:name="album.name"
+				:file="`${BACKEND_SERVE}${album.file}`"
+				:artists="album.artists"
+				:_id="album._id"
+			/>
+		</Slider>
+	</template>
+</template>

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { Album } from "@/utils/types"
 
-type AlbumProps = Omit<Album, "artists"> & {
+type AlbumProps = Omit<Omit<Album, "genre">, "artists"> & {
 	artists: Array<Omit<Artist, "file">>
+	genre?: Genre
 }
 
 const props = defineProps<AlbumProps>()
