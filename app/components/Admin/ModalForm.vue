@@ -27,16 +27,34 @@ interface ModalFormProps<T> {
 	item?: T
 	fields: Field<T>[]
 	title?: string
+	onSave: (value: any) => Promise<boolean>
 }
 
 const props = defineProps<ModalFormProps<any>>()
 const open = defineModel("open", { required: true })
-const emit = defineEmits<{ (e: "save", value: any): boolean }>()
 
 let localItem = reactive<any>({})
 
-const save = () => {
-	if (emit("save", localItem)) open.value = false
+watch(
+	() => props.item,
+	(item) => {
+		Object.keys(localItem).forEach((k) => delete localItem[k])
+
+		if (!item) return
+
+		for (const [key, value] of Object.entries(item)) {
+			localItem[key] = value
+		}
+
+		for (const field of props.fields) {
+			if (field.type == "file") localItem[field.key as string] = null
+		}
+	},
+	{ immediate: true },
+)
+
+const save = async () => {
+	if (await props.onSave(localItem)) open.value = false
 }
 </script>
 

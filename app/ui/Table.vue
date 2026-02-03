@@ -4,6 +4,7 @@ export type Row = {
 	class?: string
 	width?: string
 	type?: "image"
+	imagePrefix?: string
 	displayName?: string
 }
 
@@ -34,6 +35,10 @@ const { rows, data } = defineProps<TableProps>()
 				<td v-for="(row, j) in rows" :key="j">
 					<slot :name="row.name" :item="item" :index="i">
 						<p v-if="row.type != 'image'">{{ item[row.name] }}</p>
+						<nuxt-img
+							v-else-if="row.type == 'image'"
+							:src="`${row.imagePrefix}${item[row.name]}`"
+						/>
 					</slot>
 				</td>
 			</tr>
@@ -62,6 +67,11 @@ const { rows, data } = defineProps<TableProps>()
 	}
 
 	& thead {
+	}
+
+	& img {
+		height: 60px;
+		border-radius: $border-radius-standard;
 	}
 }
 </style>
