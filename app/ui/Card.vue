@@ -16,6 +16,7 @@ const props = defineProps<CardProps>()
 @use "@/styles/variables" as *;
 
 .card {
+	background-color: $color-background;
 	border: 1px solid $color-border;
 	border-radius: $border-radius-standard;
 	padding: 1rem;

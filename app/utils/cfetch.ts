@@ -48,14 +48,13 @@ export const cfetch = async (
 
 		for (const [key, val] of Object.entries(config.data)) {
 			if (Array.isArray(val)) {
-				val.forEach((v) => form.append(`${key}[]`, v))
+				val.forEach((v) => form.append(key, v)) // key as-is, no []
 			} else if (val !== undefined && val !== null) {
 				form.append(key, val as any)
 			}
 		}
 
 		config.data = form
-
 		if (!config.headers) config.headers = {}
 		delete config.headers["Content-Type"]
 	}
