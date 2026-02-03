@@ -1,10 +1,25 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios"
 import defu from "defu"
 
+const hasFile = (value: any): boolean => {
+	if (!value || typeof value !== "object") return false
+
+	return Object.values(value).some(
+		(v) =>
+			v instanceof File ||
+			v instanceof Blob ||
+			(Array.isArray(v) && v.some((i) => i instanceof File)),
+	)
+}
+
+type RequestConfig = {
+	forceFormData?: boolean
+} & AxiosRequestConfig
+
 export const cfetch = async (
 	url: string,
-	options: AxiosRequestConfig = {},
-	authorize: boolean = true
+	options: RequestConfig = {},
+	authorize: boolean = true,
 ): Promise<AxiosResponse> => {
 	const baseUrl = import.meta.env.VITE_PUBLIC_BACKEND
 
@@ -26,7 +41,23 @@ export const cfetch = async (
 			}
 	}
 
-	const config: AxiosRequestConfig = defu(options, defaults)
+	const config: RequestConfig = defu(options, defaults)
+
+	if (config.data && (hasFile(config.data) || config.forceFormData)) {
+		const form = new FormData()
+
+		for (const [key, val] of Object.entries(config.data)) {
+			if (Array.isArray(val)) {
+				val.forEach((v) => form.append(key, v)) // key as-is, no []
+			} else if (val !== undefined && val !== null) {
+				form.append(key, val as any)
+			}
+		}
+
+		config.data = form
+		if (!config.headers) config.headers = {}
+		delete config.headers["Content-Type"]
+	}
 
 	let response
 	try {

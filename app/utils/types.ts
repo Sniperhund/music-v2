@@ -17,3 +17,14 @@ export interface Artist extends Base {
 export interface Genre extends Base {
 	name: string
 }
+
+export interface Track extends Base {
+	name: string
+	file: string
+	lyrics: {
+		synced: boolean
+		text: string
+	}
+	album: Album
+	artists: Artist[]
+}
