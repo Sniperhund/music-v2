@@ -21,11 +21,20 @@
 				<Button
 					full
 					variant="ghost"
+					to="/admin/genre"
+					type="link"
+					icon-name="lucide:disc-3"
+				>
+					Genres
+				</Button>
+				<Button
+					full
+					variant="ghost"
 					to="/admin/artists"
 					type="link"
 					icon-name="lucide:mic-vocal"
 				>
-					Manage Artists
+					Artists
 				</Button>
 				<Button
 					full
@@ -34,7 +43,7 @@
 					type="link"
 					icon-name="lucide:gallery-vertical-end"
 				>
-					Manage Albums
+					Albums
 				</Button>
 				<Button
 					full
@@ -43,7 +52,7 @@
 					type="link"
 					icon-name="lucide:music"
 				>
-					Manage Songs
+					Songs
 				</Button>
 			</div>
 

@@ -14,7 +14,7 @@ const tableRows: Row[] = [
 		name: "file",
 		displayName: "Cover",
 		type: "image",
-		imagePrefix: `${import.meta.env.VITE_PUBLIC_BACKEND}/static/`,
+		prefix: `${BACKEND_SERVE}/static/`,
 	},
 	{
 		name: "name",
