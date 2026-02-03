@@ -18,10 +18,19 @@ interface FileField<T> extends BaseField<T> {
 
 interface SearchSelectField<T> extends BaseField<T> {
 	type: "search-select"
-	fetchOptions: (q: string) => Promise<Option[]>
+	fetchOptions: (q?: string) => Promise<Option[]>
 }
 
-export type Field<T = any> = TextField<T> | FileField<T> | SearchSelectField<T>
+interface SearchSelectArrayField<T> extends BaseField<T> {
+	type: "search-select-array"
+	fetchOptions: (q?: string) => Promise<Option[]>
+}
+
+export type Field<T = any> =
+	| TextField<T>
+	| FileField<T>
+	| SearchSelectField<T>
+	| SearchSelectArrayField<T>
 
 interface ModalFormProps<T> {
 	item?: T
@@ -65,11 +74,15 @@ const save = async () => {
 		<form class="form" @submit.prevent="save">
 			<template v-for="field in props.fields">
 				<SearchSelect
-					v-if="field.type == 'search-select'"
+					v-if="
+						field.type == 'search-select' ||
+						field.type == 'search-select-array'
+					"
 					v-model:value="localItem[field.key]"
 					:fetch-options="field.fetchOptions"
 					:label="field.label || field.key"
 					:predefined="props.item?.[field.key]"
+					:multiple="field.type == 'search-select-array'"
 				/>
 				<Input
 					v-else
