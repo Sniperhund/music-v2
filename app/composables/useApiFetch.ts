@@ -3,9 +3,9 @@ import defu from "defu"
 
 export function useApiFetch<DataT = any, ErrorT = any>(
 	url: string | Request | Ref<string | Request> | (() => string | Request),
-	options: UseFetchOptions<DataT, ErrorT> = {},
+	options?: UseFetchOptions<DataT, ErrorT>,
 	authorize: boolean = true
-) {
+): ReturnType<typeof useFetch<DataT, ErrorT>> {
 	const baseUrl = import.meta.env.VITE_PUBLIC_BACKEND
 
 	if (!baseUrl) throw new Error("BACKEND URL not set")
@@ -39,10 +39,7 @@ export function useApiFetch<DataT = any, ErrorT = any>(
 		},
 	}
 
-	const config = defu(options || {}, defaults) as UseFetchOptions<
-		DataT,
-		ErrorT
-	>
+	const config: UseFetchOptions<DataT, ErrorT> = defu(options ?? {}, defaults)
 
 	// @ts-ignore
 	return useFetch<DataT, ErrorT>(url, config)
