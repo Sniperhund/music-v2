@@ -12,7 +12,12 @@ const {
 
 <template>
 	<section class="info">
-		<nuxt-img :src="GET_FILE(albumData.file)" />
+		<NuxtImg
+			:src="GET_FILE(albumData.file)"
+			width="300"
+			height="300"
+			placeholder
+		/>
 
 		<div class="details">
 			<h1>{{ albumData.name }}</h1>
@@ -35,8 +40,6 @@ const {
 	gap: 1rem;
 
 	& img {
-		aspect-ratio: 1 / 1;
-		max-width: 300px;
 		border-radius: $border-radius-standard;
 	}
 
