@@ -3,6 +3,30 @@ import axios, { AxiosError } from "axios"
 let refreshPromise: Promise<any> | null = null
 let waitForPromise: boolean = false
 
+const setCookie = (
+	name: string,
+	value: string,
+	options: {
+		maxAge?: number
+		path?: string
+		sameSite?: "lax" | "strict" | "none"
+		secure?: boolean
+	} = {},
+) => {
+	let cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}`
+
+	if (options.maxAge !== undefined) {
+		cookie += `; Max-Age=${options.maxAge}`
+	}
+
+	cookie += `; Path=${options.path ?? "/"}`
+	cookie += `; SameSite=${options.sameSite ?? "Lax"}`
+
+	if (options.secure) cookie += "; Secure"
+
+	document.cookie = cookie
+}
+
 export const useAuth = () => {
 	const refreshToken = useCookie<string | null>("refreshToken", {
 		sameSite: "lax",
@@ -10,12 +34,13 @@ export const useAuth = () => {
 
 	const sessionToken = useCookie<string | null>("sessionToken", {
 		sameSite: "lax",
+		maxAge: 60 * 60, // 60 minutes
 	})
 
 	const signin = async (
 		email: string,
 		password: string,
-		remember: boolean = false
+		remember: boolean = false,
 	) => {
 		try {
 			const res = await cfetch(
@@ -27,10 +52,19 @@ export const useAuth = () => {
 						password,
 					},
 				},
-				false
+				false,
 			)
 
-			refreshToken.value = res.data.refreshToken
+			// NOTE: Quite hacky... this should be changed.
+			// TODO: Add httpOnly and update the backend to support that.
+			if (remember) {
+				setCookie("refreshToken", res.data.refreshToken, {
+					maxAge: 60 * 60 * 24 * 30, // 30 days
+				})
+			} else {
+				setCookie("refreshToken", res.data.refreshToken)
+			}
+			//refreshToken.value = res.data.refreshToken
 			await refreshSessionToken()
 
 			await navigateTo("/")
@@ -74,7 +108,7 @@ export const useAuth = () => {
 				},
 				method: "POST",
 			},
-			false
+			false,
 		)
 			.then((res) => {
 				const token = res.data.sessionToken
