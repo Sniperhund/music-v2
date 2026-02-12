@@ -20,7 +20,7 @@ export interface Genre extends Base {
 
 export interface Track extends Base {
 	name: string
-	file: string
+	fileDir: string
 	lyrics: {
 		synced: boolean
 		text: string
