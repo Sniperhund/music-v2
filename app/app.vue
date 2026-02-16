@@ -2,6 +2,7 @@
 	<ToastContainer />
 	<NuxtLayout>
 		<NuxtPage />
+		<Player />
 	</NuxtLayout>
 </template>
 
