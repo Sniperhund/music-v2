@@ -41,6 +41,7 @@ const suffix = (index: number) => {
 .artist-name {
 	display: inline-flex;
 	flex-wrap: wrap;
+	opacity: 0.6;
 
 	& span {
 		white-space: pre;
