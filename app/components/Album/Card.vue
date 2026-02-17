@@ -48,8 +48,4 @@ const props = defineProps<AlbumProps>()
 		}
 	}
 }
-
-.artist {
-	opacity: 0.6;
-}
 </style>
