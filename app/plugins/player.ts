@@ -11,6 +11,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 	// Helpers
 	const updateMediaSession = async () => {
+		if (!import.meta.client) return
 		if (!navigator.mediaSession) {
 			console.warn("Media Session API is not supported")
 			return
@@ -37,6 +38,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	}
 
 	const createHowl = async (song: Track) => {
+		if (!import.meta.client) return
 		if (!song) throw new Error("Song not provided")
 
 		const newSound = new Howl({
@@ -177,6 +179,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				setSecondsPlayed,
 				setVolume,
 				getVolume,
+				queue,
 			},
 		},
 	}
