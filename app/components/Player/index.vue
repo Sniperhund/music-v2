@@ -28,6 +28,14 @@ const {
 	secondsPlayed,
 	duration,
 } = usePlayer()
+
+const secondsPlayedFormatted = computed(() =>
+	new Date(secondsPlayed.value * 1000).toISOString().slice(14, 19),
+)
+
+const durationFormatted = computed(() =>
+	new Date(duration.value * 1000).toISOString().slice(14, 19),
+)
 </script>
 
 <template>
@@ -65,12 +73,14 @@ const {
 					/>
 				</div>
 				<div class="slider">
+					<p>{{ secondsPlayedFormatted }}</p>
 					<RangeSlider
 						:model-value="secondsPlayed"
 						@update:model-value="(v) => (secondsPlayed = v ?? 0)"
 						:max="duration"
 						dont-update-immediately
 					/>
+					<p>{{ durationFormatted }}</p>
 				</div>
 			</div>
 			<div class="misc-btns"></div>
@@ -80,6 +90,7 @@ const {
 
 <style lang="scss" scoped>
 @use "@/styles/variables" as *;
+@use "@/styles/util" as *;
 
 #width-fixer {
 	width: 100%;
@@ -137,8 +148,8 @@ const {
 
 .controls {
 	flex-direction: column;
-	gap: 0.8rem;
 	justify-content: center;
+
 	align-items: flex-start;
 
 	.btns,
@@ -150,6 +161,15 @@ const {
 
 	.btns {
 		gap: 1rem;
+	}
+
+	.slider {
+		gap: 12px;
+
+		& p {
+			@include fontSize(15px);
+			opacity: 0.8;
+		}
 	}
 
 	span {
