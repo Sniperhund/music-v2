@@ -17,7 +17,7 @@ onMounted(() => {
 })
 
 const song = useSong()
-const { isPlaying, play, pause, next, prev } = usePlayer()
+const { isPlaying, play, pause, next, prev, shuffle, repeat } = usePlayer()
 </script>
 
 <template>
@@ -38,12 +38,16 @@ const { isPlaying, play, pause, next, prev } = usePlayer()
 				</div>
 			</div>
 			<div class="controls">
-				<Icon name="lucide:shuffle" />
+				<Icon name="lucide:shuffle" @click="shuffle()" />
 				<Icon name="lucide:skip-back" @click="prev()" />
 				<Icon name="lucide:pause" v-if="isPlaying" @click="pause()" />
 				<Icon name="lucide:play" v-else @click="play()" />
 				<Icon name="lucide:skip-forward" @click="next()" />
-				<Icon name="lucide:repeat" />
+				<Icon
+					name="lucide:repeat"
+					:class="{ repeating: repeat }"
+					@click="repeat = !repeat"
+				/>
 			</div>
 			<div class="misc-btns"></div>
 		</template>
@@ -113,6 +117,11 @@ const { isPlaying, play, pause, next, prev } = usePlayer()
 	span {
 		font-size: 24px;
 		cursor: pointer;
+		transition: color 0.2s ease;
+	}
+
+	.repeating {
+		color: $color-accent;
 	}
 }
 </style>

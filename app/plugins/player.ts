@@ -146,6 +146,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 		sound.value = null
 	}
 
+	const shuffle = () => {
+		queue.value.sort(() => Math.random() - 0.5)
+	}
+
 	// Info
 	const getDuration = () =>
 		new Promise<number>((resolve) => {
@@ -174,6 +178,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				prev,
 				addToQueue,
 				clear,
+				shuffle,
 				getDuration,
 				getSecondsPlayed,
 				setSecondsPlayed,
