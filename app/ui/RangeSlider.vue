@@ -3,20 +3,30 @@ interface SliderProps {
 	min?: number
 	max?: number
 	step?: number
+	dontUpdateImmediately?: boolean
 }
 
 const props = withDefaults(defineProps<SliderProps>(), {
 	min: 0,
 	max: 100,
 	step: 1,
+	dontUpdateImmediately: false,
 })
 
 const value = defineModel<number>()
 
 const sliderRef = useTemplateRef("slider-ref")
+
+const isDragging = ref(false)
+const localValue = ref<number | null>(null)
+
 const percentage = computed(() => {
+	const currentValue =
+		isDragging.value && props.dontUpdateImmediately
+			? (localValue.value ?? value.value ?? 0)
+			: (value.value ?? 0)
 	const range = props.max - props.min
-	return (((value.value ?? 0) - props.min) / range) * 100
+	return (((currentValue ?? 0) - props.min) / range) * 100
 })
 
 const updateFromEvent = (event: MouseEvent) => {
@@ -26,16 +36,27 @@ const updateFromEvent = (event: MouseEvent) => {
 	const x = event.clientX - rect.left
 	const ratio = Math.min(Math.max(x / rect.width, 0), 1)
 
-	value.value = props.min + ratio * (props.max - props.min)
+	const newValue = props.min + ratio * (props.max - props.min)
+
+	if (props.dontUpdateImmediately) localValue.value = newValue
+	else value.value = newValue
 }
 
 const onMouseDown = (event: MouseEvent) => {
+	isDragging.value = true
 	updateFromEvent(event)
 
 	const move = (e: MouseEvent) => updateFromEvent(e)
 	const up = () => {
 		window.removeEventListener("mousemove", move)
 		window.removeEventListener("mouseup", up)
+
+		isDragging.value = false
+
+		if (localValue.value != null && props.dontUpdateImmediately)
+			value.value = localValue.value
+
+		localValue.value = null
 	}
 
 	window.addEventListener("mousemove", move)
@@ -76,6 +97,5 @@ const onMouseDown = (event: MouseEvent) => {
 	height: 100%;
 	background: $color-accent;
 	border-radius: 999px;
-	transition: width 0.08s linear;
 }
 </style>
