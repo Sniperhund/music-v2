@@ -17,7 +17,17 @@ onMounted(() => {
 })
 
 const song = useSong()
-const { isPlaying, play, pause, next, prev, shuffle, repeat } = usePlayer()
+const {
+	isPlaying,
+	play,
+	pause,
+	next,
+	prev,
+	shuffle,
+	repeat,
+	secondsPlayed,
+	duration,
+} = usePlayer()
 </script>
 
 <template>
@@ -38,16 +48,30 @@ const { isPlaying, play, pause, next, prev, shuffle, repeat } = usePlayer()
 				</div>
 			</div>
 			<div class="controls">
-				<Icon name="lucide:shuffle" @click="shuffle()" />
-				<Icon name="lucide:skip-back" @click="prev()" />
-				<Icon name="lucide:pause" v-if="isPlaying" @click="pause()" />
-				<Icon name="lucide:play" v-else @click="play()" />
-				<Icon name="lucide:skip-forward" @click="next()" />
-				<Icon
-					name="lucide:repeat"
-					:class="{ repeating: repeat }"
-					@click="repeat = !repeat"
-				/>
+				<div class="btns">
+					<Icon name="lucide:shuffle" @click="shuffle()" />
+					<Icon name="lucide:skip-back" @click="prev()" />
+					<Icon
+						name="lucide:pause"
+						v-if="isPlaying"
+						@click="pause()"
+					/>
+					<Icon name="lucide:play" v-else @click="play()" />
+					<Icon name="lucide:skip-forward" @click="next()" />
+					<Icon
+						name="lucide:repeat"
+						:class="{ repeating: repeat }"
+						@click="repeat = !repeat"
+					/>
+				</div>
+				<div class="slider">
+					<RangeSlider
+						:model-value="secondsPlayed"
+						@update:model-value="(v) => (secondsPlayed = v ?? 0)"
+						:max="duration"
+						dont-update-immediately
+					/>
+				</div>
 			</div>
 			<div class="misc-btns"></div>
 		</template>
@@ -86,7 +110,8 @@ const { isPlaying, play, pause, next, prev, shuffle, repeat } = usePlayer()
 
 .track,
 .controls,
-.misc-btns {
+.misc-btns,
+.controls {
 	display: flex;
 	width: 100%;
 	gap: 0.5rem;
@@ -111,8 +136,21 @@ const { isPlaying, play, pause, next, prev, shuffle, repeat } = usePlayer()
 }
 
 .controls {
+	flex-direction: column;
+	gap: 0.8rem;
 	justify-content: center;
-	gap: 1rem;
+	align-items: flex-start;
+
+	.btns,
+	.slider {
+		display: flex;
+		justify-content: center;
+		width: 100%;
+	}
+
+	.btns {
+		gap: 1rem;
+	}
 
 	span {
 		font-size: 24px;
