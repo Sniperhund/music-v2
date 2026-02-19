@@ -1,11 +1,11 @@
 <script setup lang="tsx">
-const widthFixerRef = useTemplateRef("width-fixer")
-const playerRef = useTemplateRef("player")
+const widthFixerRef = useTemplateRef("width-fixer-ref")
+const playerRef = useTemplateRef("player-ref")
 
 onMounted(() => {
 	const resizePlayer = () => {
 		if (playerRef.value && widthFixerRef.value)
-			playerRef.value.style.width = `calc(${widthFixerRef.value.clientWidth}px + 2rem)`
+			playerRef.value.style.width = `calc(${widthFixerRef.value.clientWidth}px)`
 	}
 
 	const resizeObserver = new ResizeObserver(() => {
@@ -17,11 +17,12 @@ onMounted(() => {
 })
 
 const song = useSong()
+const { isPlaying, play, pause, next, prev } = usePlayer()
 </script>
 
 <template>
-	<div id="width-fixer" ref="width-fixer"></div>
-	<article class="player" ref="player" :class="{ active: song }">
+	<div id="width-fixer" ref="width-fixer-ref"></div>
+	<article class="player" ref="player-ref" :class="{ active: song }">
 		<template v-if="song">
 			<div class="track">
 				<NuxtImg
@@ -36,7 +37,14 @@ const song = useSong()
 					<ArtistName :artists="song.artists" class="artists" />
 				</div>
 			</div>
-			<div class="controls"></div>
+			<div class="controls">
+				<Icon name="lucide:shuffle" />
+				<Icon name="lucide:skip-back" @click="prev()" />
+				<Icon name="lucide:pause" v-if="isPlaying" @click="pause()" />
+				<Icon name="lucide:play" v-else @click="play()" />
+				<Icon name="lucide:skip-forward" @click="next()" />
+				<Icon name="lucide:repeat" />
+			</div>
 			<div class="misc-btns"></div>
 		</template>
 	</article>
@@ -52,11 +60,10 @@ const song = useSong()
 .player {
 	position: fixed;
 	bottom: 1rem;
-	margin: 0 -1rem;
 
 	height: 72px;
 
-	border-radius: $border-radius-standard;
+	border-radius: $border-radius-lg;
 	border: 1px solid $color-border;
 
 	display: grid;
@@ -82,18 +89,30 @@ const song = useSong()
 	align-items: center;
 }
 
-.details {
-	display: flex;
-	flex-direction: column;
-	width: 100%;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	line-height: 1.375;
+.track {
+	.details {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		line-height: 1.375;
+	}
+
+	img {
+		height: 100%;
+		border-radius: $border-radius-standard;
+	}
 }
 
-img {
-	height: 100%;
-	border-radius: $border-radius-standard;
+.controls {
+	justify-content: center;
+	gap: 1rem;
+
+	span {
+		font-size: 24px;
+		cursor: pointer;
+	}
 }
 </style>
