@@ -9,6 +9,30 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const repeat = ref(false)
 	const isPlaying = ref(false)
 
+	const tick = ref(0)
+
+	const secondsPlayed = computed<number>({
+		get() {
+			tick.value
+			return (sound.value?.seek() as number) || 0
+		},
+		set(value: number) {
+			sound.value?.seek(value)
+		},
+	})
+	const volume = computed<number>({
+		get() {
+			tick.value
+			return sound.value?.volume() ?? 1
+		},
+		set(value) {
+			sound.value?.volume(value)
+		},
+	})
+	const duration = ref(0)
+
+	const aniFrame = ref<number | null>(null)
+
 	// Helpers
 	const updateMediaSession = async () => {
 		if (!import.meta.client) return
@@ -32,9 +56,23 @@ export default defineNuxtPlugin((nuxtApp) => {
 		})
 
 		navigator.mediaSession.setPositionState({
-			duration: await getDuration(),
-			position: getSecondsPlayed(),
+			duration: duration.value,
+			position: secondsPlayed.value,
 		})
+	}
+
+	const startTracking = () => {
+		const update = () => {
+			tick.value++
+			aniFrame.value = requestAnimationFrame(update)
+		}
+
+		update()
+	}
+
+	const stopTracking = () => {
+		if (aniFrame.value) cancelAnimationFrame(aniFrame.value)
+		aniFrame.value = null
 	}
 
 	const createHowl = async (song: Track) => {
@@ -46,21 +84,29 @@ export default defineNuxtPlugin((nuxtApp) => {
 			html5: false,
 			autoplay: false,
 			volume: 0.5,
+			onload: () => {
+				duration.value = sound.value?.duration() || 0
+				volume.value = sound.value?.volume() || 1
+			},
 			onend: () => {
 				next()
+				stopTracking()
 			},
 			onstop: () => {
 				isPlaying.value = false
+				stopTracking()
 				if (navigator.mediaSession)
 					navigator.mediaSession.playbackState = "none"
 			},
 			onplay: () => {
 				isPlaying.value = true
+				startTracking()
 				if (navigator.mediaSession)
 					navigator.mediaSession.playbackState = "playing"
 			},
 			onpause: () => {
 				isPlaying.value = false
+				stopTracking()
 				if (navigator.mediaSession)
 					navigator.mediaSession.playbackState = "paused"
 			},
@@ -161,11 +207,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 			}
 		})
 
-	const getSecondsPlayed = () => sound.value?.seek() || 0
-	const setSecondsPlayed = (s: number) => sound.value?.seek(s)
-	const setVolume = (v: number) => sound.value?.volume(v)
-	const getVolume = () => sound.value?.volume() || 0
-
 	return {
 		provide: {
 			player: {
@@ -180,10 +221,9 @@ export default defineNuxtPlugin((nuxtApp) => {
 				clear,
 				shuffle,
 				getDuration,
-				getSecondsPlayed,
-				setSecondsPlayed,
-				setVolume,
-				getVolume,
+				secondsPlayed,
+				duration,
+				volume,
 				queue,
 			},
 		},
