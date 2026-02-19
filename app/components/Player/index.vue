@@ -27,6 +27,7 @@ const {
 	repeat,
 	secondsPlayed,
 	duration,
+	volume,
 } = usePlayer()
 
 const secondsPlayedFormatted = computed(() =>
@@ -36,6 +37,8 @@ const secondsPlayedFormatted = computed(() =>
 const durationFormatted = computed(() =>
 	new Date(duration.value * 1000).toISOString().slice(14, 19),
 )
+
+const toast = useToast()
 </script>
 
 <template>
@@ -83,7 +86,31 @@ const durationFormatted = computed(() =>
 					<p>{{ durationFormatted }}</p>
 				</div>
 			</div>
-			<div class="misc-btns"></div>
+			<div class="misc-btns">
+				<div class="volume">
+					<Icon name="lucide:volume-2" />
+					<RangeSlider
+						class="slider"
+						:model-value="volume"
+						@update:model-value="
+							(v) => {
+								if (v !== undefined) volume = v
+							}
+						"
+						:max="1"
+						:min="0"
+						:step="0.01"
+					/>
+				</div>
+				<Icon
+					name="lucide:list"
+					@click="toast.show('Not yet implemented')"
+				/>
+				<Icon
+					name="lucide:expand"
+					@click="toast.show('Not yet implemented')"
+				/>
+			</div>
 		</template>
 	</article>
 </template>
@@ -116,6 +143,12 @@ const durationFormatted = computed(() =>
 
 	&.active {
 		transform: translateY(0);
+	}
+
+	span {
+		font-size: 24px;
+		cursor: pointer;
+		transition: color 0.2s ease;
 	}
 }
 
@@ -165,6 +198,7 @@ const durationFormatted = computed(() =>
 
 	.slider {
 		gap: 12px;
+		align-items: center;
 
 		& p {
 			@include fontSize(15px);
@@ -172,14 +206,28 @@ const durationFormatted = computed(() =>
 		}
 	}
 
-	span {
-		font-size: 24px;
-		cursor: pointer;
-		transition: color 0.2s ease;
-	}
-
 	.repeating {
 		color: $color-accent;
+	}
+}
+
+.misc-btns {
+	justify-content: end;
+
+	.volume {
+		min-width: 100px;
+		max-width: 150px;
+
+		display: flex;
+		gap: 0.5rem;
+
+		span {
+			font-size: 18px;
+		}
+
+		.slider {
+			flex: 1;
+		}
 	}
 }
 </style>
