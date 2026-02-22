@@ -2,12 +2,11 @@
 const route = useRoute()
 const id = computed(() => route.params.id)
 
-const {
-	data: albumData,
-	pending,
-	error,
-	refresh,
-} = await useApiFetch(`/albums/${id.value}`)
+const { data: albumData } = await useApiFetch<Album>(`/albums/${id.value}`)
+
+const { data: tracksData } = await useApiFetch<Track[]>(
+	`/albums/${id.value}/tracks`,
+)
 </script>
 
 <template>
@@ -29,6 +28,15 @@ const {
 			</div>
 		</div>
 	</section>
+
+	<section class="tracks">
+		<TrackRow
+			v-for="(track, i) in tracksData"
+			:key="track._id"
+			:track="track"
+			:index="i"
+		/>
+	</section>
 </template>
 
 <style lang="scss" scoped>
@@ -38,6 +46,7 @@ const {
 .info {
 	display: flex;
 	gap: 1rem;
+	margin-bottom: 2rem;
 
 	& img {
 		border-radius: $border-radius-standard;
@@ -66,5 +75,11 @@ const {
 			gap: 1rem;
 		}
 	}
+}
+
+.tracks {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
 }
 </style>
