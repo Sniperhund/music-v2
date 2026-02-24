@@ -39,7 +39,6 @@
 		height: 100%;
 		overflow-y: auto;
 		padding: 2rem 3rem;
-		position: relative;
 	}
 }
 </style>
