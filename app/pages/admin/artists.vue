@@ -2,7 +2,7 @@
 import type { Field } from "~/components/Admin/ModalForm.vue"
 import type { Row } from "~/ui/Table.vue"
 
-const { data, refresh } = useApiFetch<Track[]>("/all/artists")
+const { data, refresh } = useApiFetch<Artist[]>("/all/artists")
 const toast = useToast()
 
 const tableRows: Row[] = [
@@ -31,7 +31,7 @@ const modalFields: Field[] = [
 ]
 
 const showModal = ref<boolean>(false)
-const item = ref<Track | undefined>(undefined)
+const item = ref<Artist | undefined>(undefined)
 
 const save = async (value: any) => {
 	if (value._id) {

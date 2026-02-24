@@ -31,7 +31,7 @@ const tableRows: Row[] = [
 
 import { type Option } from "~/ui/SearchSelect.vue"
 
-const { data: artistData } = useApiFetch<Genre[]>("/all/artists")
+const { data: artistData } = useApiFetch<Artist[]>("/all/artists")
 const artistFetchOptions = async (q?: string): Promise<Option[]> => {
 	return artistData.value.map<Option>((g) => ({
 		label: g.name,
@@ -65,7 +65,7 @@ const modalFields: Field[] = [
 ]
 
 const showModal = ref<boolean>(false)
-const item = ref<Track | undefined>(undefined)
+const item = ref<Album | undefined>(undefined)
 
 const save = async (value: any) => {
 	if (value._id) {

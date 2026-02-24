@@ -29,7 +29,7 @@ const computeIfScroll = () => {
 onMounted(() => {
 	computeIfScroll()
 
-	window.addEventListener("reisze", computeIfScroll)
+	window.addEventListener("resize", computeIfScroll)
 
 	onUnmounted(() => {
 		window.removeEventListener("resize", computeIfScroll)

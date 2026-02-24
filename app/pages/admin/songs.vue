@@ -2,7 +2,7 @@
 import type { Field } from "~/components/Admin/ModalForm.vue"
 import type { Row } from "~/ui/Table.vue"
 
-const { data, refresh } = useApiFetch<Album[]>("/all/tracks")
+const { data, refresh } = useApiFetch<Track[]>("/all/tracks")
 const toast = useToast()
 
 const tableRows: Row[] = [
@@ -32,7 +32,7 @@ const tableRows: Row[] = [
 
 import { type Option } from "~/ui/SearchSelect.vue"
 
-const { data: artistData } = useApiFetch<Genre[]>("/all/artists")
+const { data: artistData } = useApiFetch<Artist[]>("/all/artists")
 const artistFetchOptions = async (q?: string): Promise<Option[]> => {
 	return artistData.value.map<Option>((g) => ({
 		label: g.name,
@@ -40,7 +40,7 @@ const artistFetchOptions = async (q?: string): Promise<Option[]> => {
 	}))
 }
 
-const { data: albumData } = useApiFetch<Genre[]>("/all/albums")
+const { data: albumData } = useApiFetch<Album[]>("/all/albums")
 const albumFetchOptions = async (q?: string): Promise<Option[]> => {
 	return albumData.value.map<Option>((g) => ({
 		label: g.name,
