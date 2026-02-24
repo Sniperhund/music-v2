@@ -127,7 +127,7 @@ const toast = useToast()
 	position: fixed;
 	bottom: 1rem;
 
-	height: 72px;
+	height: $player-height;
 
 	border-radius: $border-radius-lg;
 	border: 1px solid $color-border;
