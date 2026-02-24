@@ -8,6 +8,7 @@ interface TrackRowProps {
 }
 
 const { track, index, extendedInfo } = defineProps<TrackRowProps>()
+const emit = defineEmits<{ (e: "playAlbumAtIndex"): void }>()
 
 const hovering = ref(false)
 
@@ -38,8 +39,6 @@ const dropdownMenuItems: DropdownMenuItem[] = [
 const durationFormatted = computed(() =>
 	new Date(track.durationInSeconds * 1000).toISOString().slice(14, 19),
 )
-
-const play = () => {}
 </script>
 
 <template>
@@ -50,7 +49,11 @@ const play = () => {}
 		@mouseleave="hovering = false"
 	>
 		<div class="index">
-			<Icon name="lucide:play" @click="play" v-if="hovering" />
+			<Icon
+				name="lucide:play"
+				@click="emit('playAlbumAtIndex')"
+				v-if="hovering"
+			/>
 			<p v-else>{{ index + 1 }}</p>
 		</div>
 
