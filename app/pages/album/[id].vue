@@ -7,6 +7,8 @@ const { data: albumData } = await useApiFetch<Album>(`/albums/${id.value}`)
 const { data: tracksData } = await useApiFetch<Track[]>(
 	`/albums/${id.value}/tracks`,
 )
+
+const { playAlbum, playShuffledAlbum, playAlbumAtIndex } = usePlayer()
 </script>
 
 <template>
@@ -23,8 +25,16 @@ const { data: tracksData } = await useApiFetch<Track[]>(
 			<ArtistName :artists="albumData.artists" class="artist" />
 
 			<div class="buttons">
-				<Button icon-name="lucide:play">Play</Button>
-				<Button icon-name="lucide:shuffle">Shuffle</Button>
+				<Button
+					icon-name="lucide:play"
+					@click="() => playAlbum(tracksData)"
+					>Play</Button
+				>
+				<Button
+					icon-name="lucide:shuffle"
+					@click="() => playShuffledAlbum(tracksData)"
+					>Shuffle</Button
+				>
 			</div>
 		</div>
 	</section>
@@ -35,6 +45,7 @@ const { data: tracksData } = await useApiFetch<Track[]>(
 			:key="track._id"
 			:track="track"
 			:index="i"
+			@play-album-at-index="() => playAlbumAtIndex(tracksData, i)"
 		/>
 	</section>
 </template>

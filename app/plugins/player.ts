@@ -138,7 +138,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 		updateMediaSession()
 	}
 
-	const next = async () => {
+	const next = async (autoplay: boolean = true) => {
 		if (currentSong.value) {
 			prevQueue.value.unshift(currentSong.value)
 		}
@@ -153,7 +153,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 			currentSong.value = queue.value.shift() || null
 		}
 
-		if (currentSong.value) await play()
+		if (currentSong.value && autoplay) await play()
 
 		updateMediaSession()
 	}
@@ -184,6 +184,11 @@ export default defineNuxtPlugin((nuxtApp) => {
 		currentQueue.value.push(song)
 	}
 
+	const addToFrontOfQueue = (song: Track) => {
+		queue.value.unshift(song)
+		currentQueue.value.unshift(song)
+	}
+
 	const clear = () => {
 		queue.value = []
 		currentQueue.value = []
@@ -194,6 +199,35 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 	const shuffle = () => {
 		queue.value.sort(() => Math.random() - 0.5)
+	}
+
+	// Album
+	const playAlbum = async (songs: Track[]) => {
+		clear()
+
+		songs.forEach((song) => addToQueue(song))
+
+		await next()
+	}
+
+	const playShuffledAlbum = async (songs: Track[]) => {
+		clear()
+
+		songs.forEach((song) => addToQueue(song))
+		shuffle()
+
+		await next()
+	}
+
+	const playAlbumAtIndex = async (songs: Track[], index: number) => {
+		clear()
+		songs.forEach((song) => addToQueue(song))
+
+		for (let i = 0; i < index + 1; i++) {
+			await next(false)
+		}
+
+		await play()
 	}
 
 	// Info
@@ -218,8 +252,12 @@ export default defineNuxtPlugin((nuxtApp) => {
 				next,
 				prev,
 				addToQueue,
+				addToFrontOfQueue,
 				clear,
 				shuffle,
+				playAlbum,
+				playShuffledAlbum,
+				playAlbumAtIndex,
 				getDuration,
 				secondsPlayed,
 				duration,
