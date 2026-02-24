@@ -1,9 +1,10 @@
 <script setup lang="ts">
 const { toasts, remove } = useToast()
+const song = useSong()
 </script>
 
 <template>
-	<div class="toast-container">
+	<div class="toast-container" :class="{ playerShown: song != undefined }">
 		<TransitionGroup name="toast">
 			<div
 				v-for="toast in toasts"
@@ -27,11 +28,17 @@ const { toasts, remove } = useToast()
 	right: 0;
 	z-index: 100;
 
-	padding: 20px;
+	padding: 2rem;
 
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
+
+	transition: trasnform 0.2s ease-out;
+}
+
+.playerShown {
+	transform: translateY(-$player-height);
 }
 
 .toast {
@@ -44,7 +51,9 @@ const { toasts, remove } = useToast()
 
 	cursor: pointer;
 
-	transition: transform 0.2s ease, opacity 0.2s ease;
+	transition:
+		transform 0.2s ease,
+		opacity 0.2s ease;
 }
 
 .toast-enter-from {
