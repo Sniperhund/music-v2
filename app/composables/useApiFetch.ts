@@ -4,7 +4,7 @@ import defu from "defu"
 export function useApiFetch<DataT = any, ErrorT = any>(
 	url: string | Request | Ref<string | Request> | (() => string | Request),
 	options?: UseFetchOptions<DataT, ErrorT>,
-	authorize: boolean = true
+	authorize: boolean = true,
 ): ReturnType<typeof useFetch<DataT, ErrorT>> {
 	const baseUrl = import.meta.env.VITE_PUBLIC_BACKEND
 
@@ -15,26 +15,25 @@ export function useApiFetch<DataT = any, ErrorT = any>(
 	const defaults: UseFetchOptions<DataT, ErrorT> = {
 		baseURL: baseUrl,
 
+		retry: 1,
+		retryDelay: 0,
+		retryStatusCodes: [401],
+
 		headers:
 			authorize && sessionToken.value
 				? { Authorization: `Bearer ${sessionToken.value}` }
 				: {},
-		onResponseError: async ({ response, options }) => {
+		onResponseError: async ({ request, response, options }) => {
 			if (response.status == 401 && authorize) {
 				const newToken = await refreshSessionToken()
 
 				if (!newToken) return
 
-				const newOptions = {
-					...options,
-					headers: {
-						...(options.headers || {}),
-						Authorization: `Bearer ${newToken}`,
-					},
+				options.headers = {
+					...(options.headers as unknown as Record<string, string>),
+					// @ts-ignore
+					Authorization: `Bearer ${newToken}`,
 				}
-
-				// @ts-ignore
-				return await $fetch<DataT, ErrorT>(url, newOptions)
 			}
 		},
 	}

@@ -62,13 +62,13 @@ export const cfetch = async (
 	let response
 	try {
 		response = await axios(url, config)
-	} catch {
-		if (response?.status == 401) {
+	} catch (error: any) {
+		if (error.response?.status == 401) {
 			if (!config.headers) config.headers = {}
 			config.headers.Authorization = `Bearer ${await refreshSessionToken()}`
 
 			response = await axios(url, config)
-		}
+		} else throw error
 	}
 
 	if (!response) throw new Error("Something went wrong. Please try again")

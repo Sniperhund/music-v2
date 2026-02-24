@@ -12,7 +12,7 @@ const { playAlbum, playShuffledAlbum, playAlbumAtIndex } = usePlayer()
 </script>
 
 <template>
-	<section class="info">
+	<section class="info" v-if="albumData">
 		<NuxtImg
 			:src="GET_FILE(albumData.file)"
 			width="300"
