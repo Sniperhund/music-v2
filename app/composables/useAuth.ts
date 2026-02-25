@@ -79,7 +79,10 @@ export const useAuth = () => {
 
 	const signup = async (name: string, email: string, password: string) => {}
 
-	const signout = () => {}
+	const signout = () => {
+		refreshToken.value = null
+		sessionToken.value = null
+	}
 
 	const refreshSessionToken = async () => {
 		if (waitForPromise) {
