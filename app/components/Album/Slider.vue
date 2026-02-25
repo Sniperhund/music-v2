@@ -27,16 +27,26 @@ const { data, pending, refresh } = useAsyncData("random-albums", async () => {
 </script>
 
 <template>
-	<template v-for="item in data" :key="item.genre._id">
-		<Slider v-if="item.albums.length" :title="item.genre.name">
-			<AlbumCard
-				v-for="album in item.albums"
-				:key="album._id"
-				:name="album.name"
-				:file="`${BACKEND_SERVE}${album.file}`"
-				:artists="album.artists"
-				:_id="album._id"
-			/>
-		</Slider>
-	</template>
+	<section class="slider">
+		<template v-for="item in data" :key="item.genre._id">
+			<Slider v-if="item.albums.length" :title="item.genre.name">
+				<AlbumCard
+					v-for="album in item.albums"
+					:key="album._id"
+					:name="album.name"
+					:file="`${BACKEND_SERVE}${album.file}`"
+					:artists="album.artists"
+					:_id="album._id"
+				/>
+			</Slider>
+		</template>
+	</section>
 </template>
+
+<style lang="scss" scoped>
+.slider {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+</style>
