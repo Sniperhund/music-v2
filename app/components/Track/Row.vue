@@ -110,6 +110,8 @@ const durationFormatted = computed(() =>
 	align-items: center;
 	font-size: 20px;
 	height: 20px;
+
+	cursor: pointer;
 }
 
 .artists {
