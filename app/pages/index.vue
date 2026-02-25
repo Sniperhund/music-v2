@@ -10,9 +10,7 @@ const play = () => {
 </script>
 
 <template>
-	<Button @click="play">Test play</Button>
+	<h1>Home</h1>
 
 	<AlbumSlider />
-
-	<div :style="{ height: '100vh' }"></div>
 </template>

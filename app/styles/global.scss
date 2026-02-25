@@ -1,7 +1,16 @@
 @use "reset" as *;
+@use "util" as *;
 
 html {
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+	font-family:
+		-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
 		sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 	color: white;
+}
+
+main > h1 {
+	@include fontSize(32px);
+	font-weight: 700;
+
+	margin-bottom: 1.5rem;
 }
