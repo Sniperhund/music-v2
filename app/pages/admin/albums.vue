@@ -14,7 +14,7 @@ const tableRows: Row[] = [
 		name: "file",
 		displayName: "Cover",
 		type: "image",
-		prefix: `${BACKEND_SERVE}/static/`,
+		prefix: `${BACKEND_SERVE}`,
 	},
 	{
 		name: "name",
