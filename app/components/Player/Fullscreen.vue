@@ -43,13 +43,14 @@ onMounted(() => {
 		<section class="screen-container">
 			<Icon
 				name="lucide:x"
-				class="close-btn show"
+				class="close-btn"
+				:class="{ show: mouseMovedRecently }"
 				@click="fullscreen = false"
 			/>
 
 			<div class="content-container">
 				<PlayerFullscreenTrackDisplay
-					:show-buttons="!mouseMovedRecently"
+					:show-buttons="mouseMovedRecently"
 				/>
 			</div>
 		</section>

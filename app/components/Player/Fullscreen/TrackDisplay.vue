@@ -54,7 +54,7 @@ const durationFormatted = computed(() =>
 			</div>
 		</div>
 
-		<div class="btns" :class="{ hidden: showButtons }">
+		<div class="btns" :class="{ hidden: !showButtons }">
 			<Icon name="lucide:shuffle" @click="shuffle()" />
 			<Icon name="lucide:skip-back" @click="prev()" />
 			<Icon name="lucide:pause" v-if="isPlaying" @click="pause()" />
