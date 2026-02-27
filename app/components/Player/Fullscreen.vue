@@ -25,7 +25,11 @@ onMounted(() => {
 </script>
 
 <template>
-	<section class="fullscreen" v-show="fullscreen">
+	<section
+		class="fullscreen"
+		:class="{ showCursor: mouseMovedRecently }"
+		v-show="fullscreen"
+	>
 		<template v-if="song">
 			<NuxtImg
 				:src="GET_FILE(song.album.file)"
@@ -61,6 +65,12 @@ onMounted(() => {
 	width: 200vw;
 	height: 200vh;
 	z-index: 150;
+
+	cursor: none;
+
+	&.showCursor {
+		cursor: auto;
+	}
 }
 
 .background {
