@@ -1,6 +1,27 @@
 <script setup lang="ts">
 const fullscreen = useFullscreen()
 const song = useSong()
+
+const mouseMovedRecently = ref(true)
+
+onMounted(() => {
+	let timeoutId: NodeJS.Timeout
+
+	const handleMouseMove = () => {
+		mouseMovedRecently.value = true
+
+		clearTimeout(timeoutId)
+		timeoutId = setTimeout(() => {
+			mouseMovedRecently.value = false
+		}, 2000)
+	}
+
+	window.addEventListener("mousemove", handleMouseMove)
+
+	onUnmounted(() => {
+		window.removeEventListener("mousemove", handleMouseMove)
+	})
+})
 </script>
 
 <template>
@@ -15,12 +36,18 @@ const song = useSong()
 			/>
 		</template>
 
-		<section class="container">
+		<section class="screen-container">
 			<Icon
 				name="lucide:x"
 				class="close-btn show"
 				@click="fullscreen = false"
 			/>
+
+			<div class="content-container">
+				<PlayerFullscreenTrackDisplay
+					:show-buttons="!mouseMovedRecently"
+				/>
+			</div>
 		</section>
 	</section>
 </template>
@@ -47,7 +74,7 @@ const song = useSong()
 	filter: blur(40px);
 }
 
-.container {
+.screen-container {
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -70,6 +97,24 @@ const song = useSong()
 
 	&.show {
 		opacity: 1;
+	}
+}
+
+.content-container {
+	/* TODO: A lot of magic numbers... should be variables */
+	max-width: 1280px;
+	width: 100%;
+	height: 100%;
+	margin: 0 auto;
+
+	display: grid;
+	grid-template-columns: 500px 1fr;
+	gap: 110px;
+
+	align-items: center;
+
+	& > * {
+		max-height: 675px;
 	}
 }
 </style>
