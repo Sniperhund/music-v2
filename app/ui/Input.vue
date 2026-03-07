@@ -11,6 +11,8 @@ interface InputProps {
 	required?: boolean
 	autocomplete?: AutocompleteType
 	label?: string
+	textarea?: boolean
+	rows?: number
 }
 
 const value = defineModel<string | File | File[] | null>("value")
@@ -63,7 +65,7 @@ const onFileChange = (e: Event) => {
 			</span>
 
 			<input
-				v-if="props.type != 'file'"
+				v-if="props.type != 'file' && props.type != 'textarea'"
 				:placeholder="props.placeholder"
 				v-model="value"
 				@input="(e) => emit('input', e.target?.value)"
@@ -74,6 +76,20 @@ const onFileChange = (e: Event) => {
 				:id="props.name"
 				:required="props.required"
 				:autocomplete="props.autocomplete"
+			/>
+
+			<textarea
+				v-else-if="props.textarea"
+				:placeholder="props.placeholder"
+				v-model="value"
+				@input="(e) => emit('input', e.target?.value)"
+				@focus="emit('focus')"
+				@blur="emit('blur')"
+				:name="props.name"
+				:id="props.name"
+				:required="props.required"
+				:autocomplete="props.autocomplete"
+				:rows="props.rows"
 			/>
 
 			<input
@@ -120,7 +136,8 @@ const onFileChange = (e: Event) => {
 		outline: 2px solid $color-accent;
 	}
 
-	& input {
+	& input,
+	& textarea {
 		width: 100%;
 		background: none;
 
@@ -130,6 +147,10 @@ const onFileChange = (e: Event) => {
 			box-shadow: 0 0 0px 1000px $color-background inset !important;
 			-webkit-text-fill-color: $color-text !important;
 		}
+	}
+
+	& textarea:focus {
+		outline: none;
 	}
 
 	& input:focus {

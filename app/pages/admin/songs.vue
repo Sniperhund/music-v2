@@ -63,6 +63,8 @@ const modalFields: Field[] = [
 		type: "search-select",
 		fetchOptions: albumFetchOptions,
 	},
+	{ key: "lyrics.text", label: "Lyrics", type: "textarea", rows: 6 },
+	{ key: "lyrics.synced", label: "Synced lyrics", type: "checkbox" },
 ]
 
 const showModal = ref<boolean>(false)
@@ -73,7 +75,10 @@ const save = async (value: any) => {
 		try {
 			await cfetch("/admin/track", {
 				method: "PATCH",
-				data: value,
+				data: {
+					...value,
+					lyrics: JSON.stringify(value.lyrics),
+				},
 				params: { id: value._id },
 				forceFormData: true,
 			})
@@ -88,7 +93,10 @@ const save = async (value: any) => {
 		try {
 			await cfetch("/admin/track", {
 				method: "POST",
-				data: value,
+				data: {
+					...value,
+					lyrics: JSON.stringify(value.lyrics),
+				},
 			})
 
 			toast.show("Song added successfully", "success")
@@ -137,8 +145,6 @@ const show = (id?: string) => {
 
 	showModal.value = true
 }
-
-watch(data, () => console.log(data))
 </script>
 
 <template>
