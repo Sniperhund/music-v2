@@ -15,7 +15,7 @@ const lyricsRefs = useTemplateRef("lyrics")
 const activeIndex = computed(() => {
 	if (!parsedLyrics.value) return -1
 
-	const time = secondsPlayed.value + animationDuration
+	const time = secondsPlayed.value
 
 	return parsedLyrics.value.findIndex(
 		(lyric, i) =>
@@ -23,6 +23,22 @@ const activeIndex = computed(() => {
 			(!parsedLyrics.value![i + 1] ||
 				parsedLyrics.value![i + 1]!.time > time),
 	)
+})
+const scrollActiveIndex = computed(() => {
+	if (!parsedLyrics.value) return -1
+
+	const time = secondsPlayed.value + animationDuration
+
+	let index = parsedLyrics.value.findIndex(
+		(lyric, i) =>
+			lyric.time <= time &&
+			(!parsedLyrics.value![i + 1] ||
+				parsedLyrics.value![i + 1]!.time > time),
+	)
+
+	if (index >= parsedLyrics.value.length - 1)
+		index = parsedLyrics.value.length - 2
+	return index
 })
 
 const height = ref(0)
@@ -48,7 +64,7 @@ const transformY = computed(() => {
 
 	if (!lyricsRefs.value) return 0
 
-	for (let i = 0; i < activeIndex.value; i++) {
+	for (let i = 0; i < scrollActiveIndex.value; i++) {
 		const el = lyricsRefs.value[i]
 		if (el) accumulatedHeight += el.getBoundingClientRect().height
 	}
@@ -77,12 +93,15 @@ const transformY = computed(() => {
 				:key="lyric.time"
 				:class="{ active: i == activeIndex }"
 				ref="lyrics"
+				@click="() => (secondsPlayed = lyric.time)"
 			>
 				{{ lyric.text }}
 			</p>
 		</div>
 	</div>
-	<template v-else-if="song"> </template>
+	<template v-else-if="song">
+		<p>{{ song.lyrics.text }}</p>
+	</template>
 </template>
 
 <style lang="scss" scoped>
@@ -91,14 +110,6 @@ const transformY = computed(() => {
 .synced-lyrics-container {
 	position: relative;
 	overflow: hidden;
-}
-
-.synced-lyrics {
-	position: absolute;
-	scrollbar-width: none;
-	will-change: transform;
-
-	top: 0;
 
 	mask-image: linear-gradient(
 		transparent 0%,
@@ -108,6 +119,14 @@ const transformY = computed(() => {
 		95%,
 		transparent 100%
 	);
+}
+
+.synced-lyrics {
+	position: absolute;
+	scrollbar-width: none;
+	will-change: transform;
+
+	top: 0;
 
 	& > p {
 		@include fontSize(40px);
@@ -122,7 +141,13 @@ const transformY = computed(() => {
 
 		&.active {
 			opacity: 1;
-			filter: blur(0);
+			filter: initial;
+		}
+
+		&:hover {
+			cursor: pointer;
+			opacity: 1;
+			filter: initial;
 		}
 	}
 }
