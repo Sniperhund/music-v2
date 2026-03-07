@@ -54,7 +54,11 @@ onMounted(() => {
 				<PlayerFullscreenTrackDisplay
 					:show-buttons="mouseMovedRecently"
 				/>
-				<LyricsDisplay :animation-duration="0.2" :offset="150" />
+				<LyricsDisplay
+					:animation-duration="0.2"
+					:offset="150"
+					:show-scroll-bar="mouseMovedRecently"
+				/>
 			</div>
 		</section>
 	</section>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-const { animationDuration, offset } = defineProps<{
+const { animationDuration, offset, showScrollBar } = defineProps<{
 	animationDuration: number
 	offset: number
+	showScrollBar: boolean
 }>()
 
 const song = useSong()
@@ -46,7 +47,7 @@ const scrollActiveIndex = computed(() => {
 
 const height = ref(0)
 
-watch(parsedLyrics, () => {
+watch(song, () => {
 	const trackDisplay = document.querySelector(".track-display")
 
 	if (!trackDisplay) return
@@ -139,13 +140,21 @@ const finalTransform = computed(() => {
 			</p>
 		</div>
 	</div>
-	<template v-else-if="song">
+	<div
+		v-else-if="song"
+		class="lyrics"
+		:style="{
+			height: `${height}px`,
+		}"
+		:class="{ show: showScrollBar }"
+	>
 		<p>{{ song.lyrics.text }}</p>
-	</template>
+	</div>
 </template>
 
 <style lang="scss" scoped>
 @use "@/styles/util" as *;
+@use "@/styles/variables" as *;
 
 .synced-lyrics-container {
 	position: relative;
@@ -189,6 +198,29 @@ const finalTransform = computed(() => {
 			opacity: 1;
 			filter: initial;
 		}
+	}
+}
+
+.lyrics {
+	overflow: hidden;
+
+	& > p {
+		height: 100%;
+		overflow-y: scroll;
+		white-space: pre-wrap;
+
+		&::-webkit-scrollbar {
+			width: 10px;
+		}
+
+		&::-webkit-scrollbar-thumb {
+			background-color: transparent;
+			border-radius: 5px;
+		}
+	}
+
+	&.show > p::-webkit-scrollbar-thumb {
+		background-color: $color-secondary-background;
 	}
 }
 </style>
