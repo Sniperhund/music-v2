@@ -131,6 +131,10 @@ export const useAuth = () => {
 		return refreshPromise
 	}
 
+	onMounted(() => {
+		if (refreshToken.value && !sessionToken.value) refreshSessionToken()
+	})
+
 	return {
 		refreshToken,
 		sessionToken,
