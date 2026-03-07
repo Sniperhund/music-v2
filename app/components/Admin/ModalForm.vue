@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { type Option } from "~/ui/SearchSelect.vue"
 
-type InputType = "text" | "file" | "search-select"
-
 interface BaseField<T> {
 	key: keyof T
 	label?: string
@@ -10,6 +8,11 @@ interface BaseField<T> {
 
 interface TextField<T> extends BaseField<T> {
 	type?: "text"
+}
+
+interface TextAreaField<T> extends BaseField<T> {
+	type?: "textarea"
+	rows: number
 }
 
 interface FileField<T> extends BaseField<T> {
@@ -26,11 +29,17 @@ interface SearchSelectArrayField<T> extends BaseField<T> {
 	fetchOptions: (q?: string) => Promise<Option[]>
 }
 
+interface CheckboxField<T> extends BaseField<T> {
+	type?: "checkbox"
+}
+
 export type Field<T = any> =
 	| TextField<T>
+	| TextAreaField<T>
 	| FileField<T>
 	| SearchSelectField<T>
 	| SearchSelectArrayField<T>
+	| CheckboxField<T>
 
 interface ModalFormProps<T> {
 	item?: T
@@ -44,27 +53,60 @@ const open = defineModel("open", { required: true })
 
 let localItem = reactive<any>({})
 
+const getNestedValue = (obj: any, path: string) =>
+	path.split(".").reduce((acc, key) => acc?.[key], obj)
+
+const setNestedValue = (obj: any, path: string, value: any) => {
+	const keys = path.split(".")
+	keys.reduce((acc, key, i) => {
+		if (i === keys.length - 1) acc[key] = value
+		else acc[key] ??= {}
+		return acc[key]
+	}, obj)
+}
+
+const expandDotKeys = (flat: Record<string, any>) => {
+	const result: any = {}
+	for (const [key, value] of Object.entries(flat)) {
+		setNestedValue(result, key, toRaw(value))
+	}
+	return result
+}
+
+const save = async () => {
+	const expanded = expandDotKeys(localItem)
+
+	Object.keys(expanded).forEach((k) => {
+		if (expanded[k] == undefined || expanded[k] == null) delete expanded[k]
+	})
+
+	if (await props.onSave(expanded)) open.value = false
+}
+
 watch(
 	() => props.item,
 	(item) => {
 		Object.keys(localItem).forEach((k) => delete localItem[k])
 
-		if (!item) return
-
-		for (const [key, value] of Object.entries(item)) {
-			localItem[key] = value
-		}
+		if (item)
+			for (const [key, value] of Object.entries(item))
+				localItem[key] = value
 
 		for (const field of props.fields) {
-			if (field.type == "file") localItem[field.key as string] = null
+			const key = field.key as string
+			if (field.type === "file") {
+				localItem[key] = null
+			} else if (field.type === "checkbox") {
+				localItem[key] = item
+					? (getNestedValue(item, key) ?? false)
+					: false
+			} else {
+				localItem[key] = item ? getNestedValue(item, key) : undefined
+			}
 		}
 	},
 	{ immediate: true },
 )
-
-const save = async () => {
-	if (await props.onSave(localItem)) open.value = false
-}
 </script>
 
 <template>
@@ -84,12 +126,19 @@ const save = async () => {
 					:predefined="props.item?.[field.key]"
 					:multiple="field.type == 'search-select-array'"
 				/>
+				<Checkbox
+					v-else-if="field.type == 'checkbox'"
+					:label="field.label || field.key"
+					@change="(v) => (localItem[field.key] = v)"
+				/>
 				<Input
 					v-else
 					:type="field.type"
 					:key="field.key"
 					:label="field.label || field.key"
 					v-model:value="localItem[field.key]"
+					:textarea="field.type == 'textarea'"
+					:rows="field.type == 'textarea' ? field.rows : 0"
 					full
 				/>
 			</template>
