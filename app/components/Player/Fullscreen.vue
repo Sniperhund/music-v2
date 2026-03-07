@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import LyricsDisplay from "./Fullscreen/LyricsDisplay.vue"
+
 const fullscreen = useFullscreen()
 const song = useSong()
 
@@ -52,6 +54,7 @@ onMounted(() => {
 				<PlayerFullscreenTrackDisplay
 					:show-buttons="mouseMovedRecently"
 				/>
+				<LyricsDisplay :animation-duration="0.2" />
 			</div>
 		</section>
 	</section>
