@@ -129,6 +129,7 @@ watch(
 				<Checkbox
 					v-else-if="field.type == 'checkbox'"
 					:label="field.label || field.key"
+					:model-value="localItem[field.key]"
 					@change="(v) => (localItem[field.key] = v)"
 				/>
 				<Input
