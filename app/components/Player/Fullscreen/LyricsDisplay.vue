@@ -1,5 +1,8 @@
 <script setup lang="ts">
-const { animationDuration } = defineProps<{ animationDuration: number }>()
+const { animationDuration, offset } = defineProps<{
+	animationDuration: number
+	offset: number
+}>()
 
 const song = useSong()
 const { secondsPlayed } = usePlayer()
@@ -55,8 +58,6 @@ watch(parsedLyrics, () => {
 	resizeObserver.observe(trackDisplay)
 })
 
-onMounted(() => {})
-
 const transformY = computed(() => {
 	if (activeIndex.value < 0) return 0
 
@@ -71,20 +72,59 @@ const transformY = computed(() => {
 
 	return -accumulatedHeight
 })
+
+const containerRef = useTemplateRef("container-ref")
+const outerRef = useTemplateRef("outer-ref")
+
+const manualOffset = ref(0)
+const isScrolling = ref(false)
+
+let scrollingTimeout: any = null
+
+const onWheel = (event: WheelEvent) => {
+	if (!containerRef.value || !outerRef.value) return
+
+	isScrolling.value = true
+	clearTimeout(scrollingTimeout)
+
+	const delta = event.deltaY
+
+	manualOffset.value -= delta
+
+	const maxTranslate = offset
+	const minTranslate =
+		-containerRef.value.scrollHeight + outerRef.value.offsetHeight
+
+	manualOffset.value = Math.min(
+		maxTranslate,
+		Math.max(minTranslate, manualOffset.value),
+	)
+
+	scrollingTimeout = setTimeout(() => (isScrolling.value = false), 3000)
+}
+
+const finalTransform = computed(() => {
+	if (isScrolling.value) return manualOffset.value
+
+	return transformY.value + offset
+})
 </script>
 
 <template>
 	<div
+		ref="outer-ref"
 		v-if="song && song.lyrics.synced"
 		class="synced-lyrics-container"
 		:style="{
 			height: `${height}px`,
 		}"
+		@wheel.prevent="onWheel"
 	>
 		<div
+			ref="container-ref"
 			class="synced-lyrics"
 			:style="{
-				transform: `translateY(${transformY + 150}px)`,
+				transform: `translateY(${finalTransform}px)`,
 				transition: `transform ${animationDuration}s ease`,
 			}"
 		>
