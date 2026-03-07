@@ -4,6 +4,7 @@ interface SliderProps {
 	max?: number
 	step?: number
 	dontUpdateImmediately?: boolean
+	monochrome?: boolean
 }
 
 const props = withDefaults(defineProps<SliderProps>(), {
@@ -11,6 +12,7 @@ const props = withDefaults(defineProps<SliderProps>(), {
 	max: 100,
 	step: 1,
 	dontUpdateImmediately: false,
+	monochrome: false,
 })
 
 const value = defineModel<number>()
@@ -67,7 +69,11 @@ const onMouseDown = (event: MouseEvent) => {
 <template>
 	<div ref="slider-ref" class="slider" @mousedown="onMouseDown">
 		<div class="track">
-			<div class="fill" :style="{ width: percentage + '%' }" />
+			<div
+				class="fill"
+				:class="{ monochrome }"
+				:style="{ width: percentage + '%' }"
+			/>
 		</div>
 	</div>
 </template>
@@ -97,5 +103,9 @@ const onMouseDown = (event: MouseEvent) => {
 	height: 100%;
 	background: $color-accent;
 	border-radius: 999px;
+}
+
+.slider .monochrome {
+	background-color: $color-slider-monochrome;
 }
 </style>
