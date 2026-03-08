@@ -114,7 +114,7 @@ const finalTransform = computed(() => {
 <template>
 	<div
 		ref="outer-ref"
-		v-if="song && song.lyrics.synced"
+		v-if="song && song.lyrics && song.lyrics.synced"
 		class="synced-lyrics-container"
 		:style="{
 			height: `${height}px`,
@@ -141,7 +141,7 @@ const finalTransform = computed(() => {
 		</div>
 	</div>
 	<div
-		v-else-if="song"
+		v-else-if="song && song.lyrics && song.lyrics.text"
 		class="lyrics"
 		:style="{
 			height: `${height}px`,
