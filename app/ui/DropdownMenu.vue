@@ -6,7 +6,7 @@ export interface DropdownMenuItem {
 }
 
 interface DropdownMenuProps {
-	items: DropdownMenuItem[]
+	items: DropdownMenuItem[][]
 }
 
 const props = defineProps<DropdownMenuProps>()
@@ -85,20 +85,26 @@ onBeforeMount(() => {
 
 		<Transition name="dropdown">
 			<div v-show="open" class="menu" :class="placement">
-				<button
-					v-for="(item, i) in items"
-					:key="i"
-					class="item"
-					@click="
-						() => {
-							item.onSelect?.()
-							close()
-						}
-					"
+				<div
+					v-for="(group, i) in items"
+					:key="`group-${i}`"
+					class="group"
 				>
-					<Icon :name="item.icon" class="icon" />
-					<span>{{ item.label }}</span>
-				</button>
+					<button
+						v-for="(item, i) in group"
+						:key="`item-${i}`"
+						class="item"
+						@click="
+							() => {
+								item.onSelect?.()
+								close()
+							}
+						"
+					>
+						<Icon :name="item.icon" class="icon" />
+						<span>{{ item.label }}</span>
+					</button>
+				</div>
 			</div>
 		</Transition>
 	</div>
@@ -113,11 +119,10 @@ onBeforeMount(() => {
 
 	.menu {
 		position: absolute;
-
 		right: 0;
 
-		min-width: 180px;
 		padding: 0.5rem;
+		min-width: 180px;
 
 		background-color: $color-secondary-background;
 		border-radius: $border-radius-standard;
@@ -125,7 +130,6 @@ onBeforeMount(() => {
 
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
 
 		z-index: 1000;
 
@@ -137,6 +141,26 @@ onBeforeMount(() => {
 		&.top {
 			bottom: calc(100% + 0.5rem);
 			transform-origin: bottom right;
+		}
+	}
+
+	.group {
+		width: 100%;
+
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+
+		padding: 0.4rem 0;
+		border-bottom: 1px solid $color-border;
+
+		&:first-child {
+			padding-top: 0;
+		}
+
+		&:last-child {
+			border-bottom: none;
+			padding-bottom: 0;
 		}
 	}
 

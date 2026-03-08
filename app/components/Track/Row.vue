@@ -14,26 +14,28 @@ const hovering = ref(false)
 
 const toast = useToast()
 
-const dropdownMenuItems: DropdownMenuItem[] = [
-	{
-		label: "Play only this",
-		icon: "lucide:play",
-		onSelect() {},
-	},
-	{
-		label: "Play next",
-		icon: "lucide:list-start",
-		onSelect() {
-			toast.show("Playing next")
+const dropdownMenuItems: DropdownMenuItem[][] = [
+	[
+		{
+			label: "Play only this",
+			icon: "lucide:play",
+			onSelect() {},
 		},
-	},
-	{
-		label: "Add to queue",
-		icon: "lucide:list-end",
-		onSelect() {
-			toast.show("Added to queue")
+		{
+			label: "Play next",
+			icon: "lucide:list-start",
+			onSelect() {
+				toast.show("Playing next")
+			},
 		},
-	},
+		{
+			label: "Add to queue",
+			icon: "lucide:list-end",
+			onSelect() {
+				toast.show("Added to queue")
+			},
+		},
+	],
 ]
 
 const durationFormatted = computed(() =>
