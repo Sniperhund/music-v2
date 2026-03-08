@@ -131,6 +131,8 @@ const fullscreen = useFullscreen()
 	border-radius: $border-radius-lg;
 	border: 1px solid $color-border;
 
+	background-color: $color-background;
+
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 	gap: 1rem;

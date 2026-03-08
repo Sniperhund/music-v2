@@ -38,7 +38,7 @@
 		width: 100%;
 		height: 100%;
 		overflow-y: auto;
-		padding: 2rem 3rem;
+		padding: 2rem 3rem calc(2rem + $player-height);
 	}
 }
 </style>
