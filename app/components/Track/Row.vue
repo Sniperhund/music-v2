@@ -120,5 +120,6 @@ const durationFormatted = computed(() =>
 
 .dropdown-icon {
 	font-size: 20px;
+	cursor: pointer;
 }
 </style>
