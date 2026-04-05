@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import LyricsDisplay from "./Fullscreen/LyricsDisplay.vue"
-
 const fullscreen = useFullscreen()
 const song = useSong()
 
@@ -23,6 +21,12 @@ onMounted(() => {
 	onUnmounted(() => {
 		window.removeEventListener("mousemove", handleMouseMove)
 	})
+})
+
+const nuxtApp = useNuxtApp()
+
+nuxtApp.hook("page:finish", () => {
+	fullscreen.value = false
 })
 </script>
 
@@ -54,7 +58,7 @@ onMounted(() => {
 				<PlayerFullscreenTrackDisplay
 					:show-buttons="mouseMovedRecently"
 				/>
-				<LyricsDisplay
+				<PlayerFullscreenLyricsDisplay
 					:animation-duration="0.2"
 					:offset="150"
 					:show-scroll-bar="mouseMovedRecently"

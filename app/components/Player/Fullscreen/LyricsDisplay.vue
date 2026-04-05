@@ -132,7 +132,7 @@ const finalTransform = computed(() => {
 			<p
 				v-for="(lyric, i) in parsedLyrics"
 				:key="lyric.time"
-				:class="{ active: i == activeIndex }"
+				:class="{ active: i == scrollActiveIndex }"
 				ref="lyrics"
 				@click="() => (secondsPlayed = lyric.time)"
 			>
