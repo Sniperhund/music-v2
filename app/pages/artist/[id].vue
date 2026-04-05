@@ -83,6 +83,17 @@ const { playAlbum, playShuffledAlbum, playAlbumAtIndex } = usePlayer()
 			/>
 		</section>
 	</Slider>
+
+	<Slider title="Albums">
+		<AlbumCard
+			v-for="album in albumsData"
+			:key="album._id"
+			:name="album.name"
+			:file="`${BACKEND_SERVE}${album.file}`"
+			:artists="album.artists"
+			:_id="album._id"
+		/>
+	</Slider>
 </template>
 
 <style lang="scss" scoped>
