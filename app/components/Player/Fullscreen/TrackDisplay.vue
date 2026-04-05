@@ -78,6 +78,8 @@ const durationFormatted = computed(() =>
 	flex-direction: column;
 	align-items: center;
 	gap: 1rem;
+
+	max-width: 500px;
 }
 
 .cover {

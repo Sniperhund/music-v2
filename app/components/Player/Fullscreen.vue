@@ -46,7 +46,7 @@ nuxtApp.hook("page:finish", () => {
 			/>
 		</template>
 
-		<section class="screen-container">
+		<section class="screen-container" v-if="song">
 			<Icon
 				name="lucide:x"
 				class="close-btn"
@@ -54,7 +54,7 @@ nuxtApp.hook("page:finish", () => {
 				@click="fullscreen = false"
 			/>
 
-			<div class="content-container">
+			<div class="content-container" :class="{ lyrics: song.lyrics }">
 				<PlayerFullscreenTrackDisplay
 					:show-buttons="mouseMovedRecently"
 				/>
@@ -130,13 +130,22 @@ nuxtApp.hook("page:finish", () => {
 	margin: 0 auto;
 
 	display: grid;
-	grid-template-columns: 500px 1fr;
+	grid-template-columns: 1fr;
 	gap: 110px;
 
 	align-items: center;
 
 	& > * {
 		max-height: 675px;
+		margin: 0 auto;
+	}
+
+	&.lyrics {
+		grid-template-columns: 500px 1fr;
+
+		& > * {
+			margin: initial;
+		}
 	}
 }
 </style>
