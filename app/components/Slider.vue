@@ -1,22 +1,39 @@
 <script setup lang="ts">
 interface SliderProps {
 	title?: string
+	scrollWidth?: () => number
+	sliderClass?: string
 }
 
 const props = defineProps<SliderProps>()
 
-const slider = ref<HTMLDivElement>()
+const slider = useTemplateRef<HTMLDivElement>("slider")
 
 const scrollLeft = (num: number) => {
-	if (slider.value) slider.value.scrollLeft += num
+	if (!slider.value) return
+
+	const maxScroll = slider.value.scrollWidth - slider.value.clientWidth
+
+	slider.value.scrollLeft = Math.max(
+		0,
+		Math.min(slider.value?.scrollLeft + num, maxScroll),
+	)
 }
 
 const left = () => {
-	if (slider.value) scrollLeft(-slider.value.offsetWidth)
+	if (slider.value)
+		scrollLeft(
+			props.scrollWidth
+				? -props.scrollWidth()
+				: -slider.value.offsetWidth,
+		)
 }
 
 const right = () => {
-	if (slider.value) scrollLeft(slider.value.offsetWidth)
+	if (slider.value)
+		scrollLeft(
+			props.scrollWidth ? props.scrollWidth() : slider.value.offsetWidth,
+		)
 }
 
 const doesScroll = ref<boolean>(false)
@@ -48,7 +65,9 @@ onMounted(() => {
 				class="left"
 				name="material-symbols:chevron-left-rounded"
 			/>
-			<section class="slider" ref="slider"><slot /></section>
+			<section class="slider" :class="[props.sliderClass]" ref="slider">
+				<slot />
+			</section>
 			<Icon
 				v-if="doesScroll"
 				@click="right"
@@ -85,7 +104,7 @@ onMounted(() => {
 
 	& > * {
 		flex: 0 0 auto;
-		scroll-snap-align: center;
+		scroll-snap-align: start;
 	}
 }
 
