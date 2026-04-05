@@ -25,13 +25,13 @@ export const cfetch = async (
 
 	if (!baseUrl) throw new Error("BACKEND URL not set")
 
-	const { sessionToken, refreshSessionToken } = useAuth()
-
 	const defaults: AxiosRequestConfig = {
 		baseURL: baseUrl,
 	}
 
 	if (authorize) {
+		const { sessionToken, refreshSessionToken } = useAuth()
+
 		let token = sessionToken.value
 
 		if (token) defaults.headers = { Authorization: `Bearer ${token}` }
@@ -64,6 +64,8 @@ export const cfetch = async (
 		response = await axios(url, config)
 	} catch (error: any) {
 		if (error.response?.status == 401) {
+			const { sessionToken, refreshSessionToken } = useAuth()
+
 			if (!config.headers) config.headers = {}
 			config.headers.Authorization = `Bearer ${await refreshSessionToken()}`
 
