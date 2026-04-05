@@ -16,16 +16,8 @@ const chunkedTracks = computed(() => {
 	const SIZE = 3
 	const chunks = []
 
-	let data = []
-
-	for (let i = 0; i < 10; i++) {
-		for (let j = 0; j < tracksData.value.length; j++) {
-			data.push(tracksData.value[j])
-		}
-	}
-
-	for (let i = 0; i < data.length; i += SIZE) {
-		chunks.push(data.slice(i, i + SIZE))
+	for (let i = 0; i < tracksData.value.length; i += SIZE) {
+		chunks.push(tracksData.value.slice(i, i + SIZE))
 	}
 
 	return chunks
