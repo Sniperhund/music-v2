@@ -73,7 +73,7 @@ const { playAlbum, playShuffledAlbum, playAlbumAtIndex } = usePlayer()
 		</div>
 	</section>
 
-	<Slider slider-class="slider" :scroll-width="scrollWidth">
+	<Slider slider-class="slider" :scroll-width="scrollWidth" title="Tracks">
 		<section
 			class="tracks"
 			v-for="(chunk, pI) in chunkedTracks"
