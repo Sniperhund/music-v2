@@ -2,12 +2,40 @@
 const route = useRoute()
 const id = computed(() => route.params.id)
 
-const { data: artistData } = await useApiFetch<Artist>(`/artists/${id.value}`)
+const { data: artistData } = await useApiFetch<Album>(`/artists/${id.value}`)
+
+const { data: albumsData } = await useApiFetch<Album[]>(
+	`/artists/${id.value}/albums`,
+)
+
 const { data: tracksData } = await useApiFetch<Track[]>(
 	`/artists/${id.value}/tracks`,
 )
 
-const { playAlbum, playAlbumAtIndex } = usePlayer()
+const chunkedTracks = computed(() => {
+	const SIZE = 3
+	const chunks = []
+
+	for (let i = 0; i < tracksData.value.length; i += SIZE) {
+		chunks.push(tracksData.value.slice(i, i + SIZE))
+	}
+
+	return chunks
+})
+
+const slider = useTemplateRef("slider")
+
+const scrollWidth = () => {
+	if (!slider.value) return 0
+
+	const el = Array.isArray(slider.value) ? slider.value[0] : slider.value
+
+	if (!el) return 0
+
+	return el.offsetWidth
+}
+
+const { playAlbum, playShuffledAlbum, playAlbumAtIndex } = usePlayer()
 </script>
 
 <template>
@@ -28,34 +56,45 @@ const { playAlbum, playAlbumAtIndex } = usePlayer()
 					@click="() => playAlbum(tracksData)"
 					>Play</Button
 				>
+				<Button
+					icon-name="lucide:shuffle"
+					@click="() => playShuffledAlbum(tracksData)"
+					>Shuffle</Button
+				>
 			</div>
 		</div>
 	</section>
 
-	<section class="tracks-container">
-		<NuxtLink :to="`/artist/${id}/tracks`">
-			Tracks
-			<Icon name="lucide:chevron-right" />
-		</NuxtLink>
+	<Slider slider-class="slider" :scroll-width="scrollWidth" title="Tracks">
+		<section
+			class="tracks"
+			:class="[`tracks-${chunkedTracks[0]?.length ?? 1}`]"
+			v-for="(chunk, pI) in chunkedTracks"
+			:key="`chunk-${pI}`"
+			ref="slider"
+		>
+			<TrackRow
+				v-for="(track, i) in chunk"
+				:key="`track-${track._id}`"
+				:track="track"
+				:index="i + pI * 3"
+				@play-album-at-index="
+					() => playAlbumAtIndex(tracksData, i + pI * 3)
+				"
+			/>
+		</section>
+	</Slider>
 
-		<Slider>
-			<div class="tracks">
-				<template v-for="j in 25">
-					<TrackImageRow
-						v-for="(track, i) in tracksData"
-						:key="track._id"
-						:track="track"
-						:index="i"
-						@play-album-at-index="
-							() => playAlbumAtIndex(tracksData, i)
-						"
-					/>
-				</template>
-			</div>
-		</Slider>
-	</section>
-
-	<section class="albums"></section>
+	<Slider title="Albums">
+		<AlbumCard
+			v-for="album in albumsData"
+			:key="album._id"
+			:name="album.name"
+			:file="`${BACKEND_SERVE}${album.file}`"
+			:artists="album.artists"
+			:_id="album._id"
+		/>
+	</Slider>
 </template>
 
 <style lang="scss" scoped>
@@ -67,7 +106,7 @@ const { playAlbum, playAlbumAtIndex } = usePlayer()
 	gap: 1rem;
 	margin-bottom: 2rem;
 
-	img {
+	& img {
 		border-radius: $border-radius-standard;
 	}
 
@@ -76,6 +115,7 @@ const { playAlbum, playAlbumAtIndex } = usePlayer()
 
 		display: flex;
 		flex-direction: column;
+		gap: 0.2rem;
 
 		& h1 {
 			@include util.fontSize(32px);
@@ -83,26 +123,35 @@ const { playAlbum, playAlbumAtIndex } = usePlayer()
 			line-height: 2.4rem;
 		}
 
+		.artist {
+			@include util.fontSize(18px);
+		}
+
 		.buttons {
 			margin-top: auto;
+			display: flex;
+			gap: 1rem;
 		}
 	}
 }
 
-.tracks-container {
-	a {
-		display: inline-flex;
-		align-items: center;
+$gap: 12px;
 
-		@include util.fontSize(24px);
-		font-weight: 600;
-	}
+:deep(.slider) {
+	gap: $gap;
+	margin-bottom: 1rem;
+}
 
-	.tracks {
-		display: grid;
-		grid-template-rows: repeat(3, 1fr);
-		grid-template-columns: repeat(auto-fit, minmax(300px, 350px));
-		grid-auto-flow: column;
+.tracks {
+	display: grid;
+	gap: 0.4rem;
+
+	flex: 0 0 calc((100% - 3 * $gap) / 4);
+
+	@for $i from 1 through 3 {
+		&-#{$i} {
+			grid-template-rows: repeat(#{$i}, 1fr);
+		}
 	}
 }
 </style>
