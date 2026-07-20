@@ -6,6 +6,7 @@ const { animationDuration, offset, showScrollBar } = defineProps<{
 }>()
 
 const song = useSong()
+const fullscreen = useFullscreen()
 const { secondsPlayed } = usePlayer()
 
 const parsedLyrics = computed(() => {
@@ -45,19 +46,21 @@ const scrollActiveIndex = computed(() => {
 	return index
 })
 
-const height = ref(0)
+const height = ref<number>()
 
-watch(song, () => {
-	const trackDisplay = document.querySelector(".track-display")
+watch(
+	fullscreen,
+	async () => {
+		await nextTick()
 
-	if (!trackDisplay) return
+		const trackDisplay = document.querySelector(".track-display")
 
-	const resizeObserver = new ResizeObserver((entries) => {
-		height.value = entries[0]!.target.clientHeight
-	})
+		if (!trackDisplay) return
 
-	resizeObserver.observe(trackDisplay)
-})
+		height.value = trackDisplay.clientHeight
+	},
+	{ immediate: true },
+)
 
 const transformY = computed(() => {
 	if (activeIndex.value < 0) return 0
