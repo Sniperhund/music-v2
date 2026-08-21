@@ -34,6 +34,8 @@ Prettier is configured with tabs, `tabWidth = 4`, and no semicolons. Follow the 
 
 Prefer the current patterns in the codebase over introducing new abstractions.
 
+When making changes that force an element's width or height, always ask the user for confirmation before doing so. This applies to any element, not just images. Do not force a width or height without explicit user approval.
+
 ## Testing Guidelines
 
 No test framework is currently configured. For changes that affect rendering, routing, or API access, validate the affected pages manually and check browser console output. If you add tests later, colocate them near the feature or under a dedicated `tests/` directory.
