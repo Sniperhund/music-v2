@@ -127,6 +127,9 @@ export const useAuth = () => {
 
 				return null
 			})
+			.finally(() => {
+				waitForPromise = false
+			})
 
 		return refreshPromise
 	}
