@@ -111,6 +111,10 @@ const artworkSrc = computed(() => GET_FILE(track.album.file))
 	line-height: 1;
 
 	&.odd {
+		background-color: color.adjust($color-background, $lightness: 3%);
+	}
+
+	&:hover {
 		background-color: color.adjust($color-background, $lightness: 5%);
 	}
 
