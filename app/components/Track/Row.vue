@@ -5,9 +5,10 @@ interface TrackRowProps {
 	track: Track
 	index: number
 	extendedInfo?: boolean
+	showImage?: boolean
 }
 
-const { track, index, extendedInfo } = defineProps<TrackRowProps>()
+const { track, index, extendedInfo, showImage } = defineProps<TrackRowProps>()
 const emit = defineEmits<{ (e: "playAlbumAtIndex"): void }>()
 
 const hovering = ref(false)
@@ -41,22 +42,40 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 const durationFormatted = computed(() =>
 	new Date(track.durationInSeconds * 1000).toISOString().slice(14, 19),
 )
+
+const artworkSrc = computed(() => GET_FILE(track.album.file))
 </script>
 
 <template>
 	<article
 		class="track"
-		:class="{ extended: extendedInfo, odd: index % 2 == 1 }"
-		@mouseover="hovering = true"
+		:class="{
+			extended: extendedInfo,
+			odd: index % 2 == 1,
+			image: showImage,
+		}"
+		@mouseenter="hovering = true"
 		@mouseleave="hovering = false"
 	>
-		<div class="index">
-			<Icon
-				name="lucide:play"
-				@click="emit('playAlbumAtIndex')"
-				v-if="hovering"
-			/>
-			<p v-else>{{ index + 1 }}</p>
+		<div class="index" :class="{ hovering }">
+			<template v-if="showImage">
+				<Icon
+					name="lucide:play"
+					class="play-icon"
+					@click="emit('playAlbumAtIndex')"
+				/>
+				<!-- Confirm before changing forced image dimensions. -->
+				<NuxtImg :src="artworkSrc" width="40" height="40" placeholder />
+			</template>
+			<template v-else>
+				<Icon
+					v-if="hovering"
+					name="lucide:play"
+					class="play-icon inline"
+					@click="emit('playAlbumAtIndex')"
+				/>
+				<p v-else>{{ index + 1 }}</p>
+			</template>
 		</div>
 
 		<p>{{ track.name }}</p>
@@ -83,7 +102,7 @@ const durationFormatted = computed(() =>
 
 .track {
 	display: grid;
-	grid-template-columns: 30px 1fr 50px 30px;
+	grid-template-columns: 40px 1fr 50px 30px;
 	gap: 0.5rem;
 	align-items: center;
 	padding: 0.6rem 1rem;
@@ -96,7 +115,16 @@ const durationFormatted = computed(() =>
 	}
 
 	&.extended {
-		grid-template-columns: 30px 2fr 1fr 1fr 50px 30px;
+		grid-template-columns: 40px 2fr 1fr 1fr 50px 30px;
+	}
+
+	&.image {
+		grid-template-columns: 40px 1fr 50px 30px;
+		padding: 0.45rem 1rem;
+
+		.index {
+			height: 40px;
+		}
 	}
 
 	p {
@@ -113,7 +141,43 @@ const durationFormatted = computed(() =>
 	font-size: 20px;
 	height: 20px;
 
+	position: relative;
 	cursor: pointer;
+
+	img {
+		border-radius: $border-radius-standard;
+	}
+
+	.play-icon {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		opacity: 0;
+		z-index: 1;
+		font-size: 24px;
+	}
+
+	.play-icon.inline {
+		position: static;
+		transform: none;
+		opacity: 1;
+	}
+
+	img,
+	.play-icon {
+		transition: opacity 0.15s ease;
+	}
+
+	&.hovering {
+		img {
+			opacity: 0.4;
+		}
+
+		.play-icon {
+			opacity: 1;
+		}
+	}
 }
 
 .artists {
