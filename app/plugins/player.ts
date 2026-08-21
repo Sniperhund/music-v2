@@ -1,6 +1,9 @@
 import { Howl } from "howler"
 
 export default defineNuxtPlugin((nuxtApp) => {
+	const VOLUME_STORAGE_KEY = "music-v2-player-volume"
+	const DEFAULT_VOLUME = 0.5
+
 	const sound = ref<Howl | null>(null)
 	const queue = ref<Track[]>([])
 	const prevQueue = ref<Track[]>([])
@@ -8,6 +11,29 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const currentSong = ref<Track | null>(null)
 	const repeat = ref(false)
 	const isPlaying = ref(false)
+	const storedVolume = ref(DEFAULT_VOLUME)
+
+	const clampVolume = (value: number) => Math.min(1, Math.max(0, value))
+
+	const readStoredVolume = () => {
+		if (!import.meta.client) return DEFAULT_VOLUME
+
+		const rawVolume = window.localStorage.getItem(VOLUME_STORAGE_KEY)
+		if (rawVolume === null) return DEFAULT_VOLUME
+
+		const parsedVolume = Number(rawVolume)
+		if (Number.isNaN(parsedVolume)) return DEFAULT_VOLUME
+
+		return clampVolume(parsedVolume)
+	}
+
+	if (import.meta.client) {
+		storedVolume.value = readStoredVolume()
+
+		watch(storedVolume, (value) => {
+			window.localStorage.setItem(VOLUME_STORAGE_KEY, String(value))
+		})
+	}
 
 	const tick = ref(0)
 
@@ -23,10 +49,12 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const volume = computed<number>({
 		get() {
 			tick.value
-			return sound.value?.volume() ?? 1
+			return storedVolume.value
 		},
 		set(value) {
-			sound.value?.volume(value)
+			const nextVolume = clampVolume(value)
+			storedVolume.value = nextVolume
+			sound.value?.volume(nextVolume)
 		},
 	})
 	const duration = ref(0)
@@ -83,10 +111,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 			src: [GET_AUDIO_FILE(song.fileDir)],
 			html5: false,
 			autoplay: false,
-			volume: 0.5,
+			volume: storedVolume.value,
 			onload: () => {
 				duration.value = sound.value?.duration() || 0
-				volume.value = sound.value?.volume() || 1
+				sound.value?.volume(storedVolume.value)
 			},
 			onend: () => {
 				next()
