@@ -1,19 +1,17 @@
 <script setup lang="ts">
-const { data, pending, refresh } = useAsyncData("random-albums", async () => {
-	const { data: genres } = await cfetch("/genres/random")
+const { data: genresData } = await useApiFetch<Genre[]>("/genres/random")
 
-	const results = await Promise.allSettled(
-		genres.map(async (genre: Genre) => {
-			const res = await cfetch(`/genres/albums/${genre._id}`)
+const data = await Promise.allSettled(
+	(genresData.value ?? []).map(async (genre: Genre) => {
+		const res = await cfetch(`/genres/albums/${genre._id}`)
 
-			return {
-				genre,
-				albums: res.data,
-			}
-		}),
-	)
-
-	return results
+		return {
+			genre,
+			albums: res.data,
+		}
+	}),
+).then((results) =>
+	results
 		.filter(
 			(
 				r,
@@ -22,8 +20,8 @@ const { data, pending, refresh } = useAsyncData("random-albums", async () => {
 				albums: any[]
 			}> => r.status === "fulfilled",
 		)
-		.map((r) => r.value)
-})
+		.map((r) => r.value),
+)
 </script>
 
 <template>
