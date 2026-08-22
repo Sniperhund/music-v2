@@ -6,7 +6,7 @@ const { animationDuration, offset, showScrollBar } = defineProps<{
 }>()
 
 const song = useSong()
-const fullscreen = useFullscreen()
+const { fullscreen } = useFullscreen()
 const { secondsPlayed } = usePlayer()
 
 const parsedLyrics = computed(() => {

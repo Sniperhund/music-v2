@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const fullscreen = useFullscreen()
+const { fullscreen, close: closeFullscreen } = useFullscreen()
 const song = useSong()
 
 const mouseMovedRecently = ref(true)
@@ -26,7 +26,7 @@ onMounted(() => {
 const nuxtApp = useNuxtApp()
 
 nuxtApp.hook("page:finish", () => {
-	fullscreen.value = false
+	closeFullscreen()
 })
 </script>
 
@@ -51,7 +51,7 @@ nuxtApp.hook("page:finish", () => {
 				name="lucide:x"
 				class="close-btn"
 				:class="{ show: mouseMovedRecently }"
-				@click="fullscreen = false"
+				@click="closeFullscreen()"
 			/>
 
 			<div class="content-container" :class="{ lyrics: song.lyrics }">

@@ -39,7 +39,7 @@ const durationFormatted = computed(() =>
 )
 
 const toast = useToast()
-const fullscreen = useFullscreen()
+const { open: openFullscreen } = useFullscreen()
 </script>
 
 <template>
@@ -107,7 +107,7 @@ const fullscreen = useFullscreen()
 					name="lucide:list"
 					@click="toast.show('Not yet implemented')"
 				/>
-				<Icon name="lucide:expand" @click="fullscreen = true" />
+				<Icon name="lucide:expand" @click="openFullscreen()" />
 			</div>
 		</template>
 	</article>
