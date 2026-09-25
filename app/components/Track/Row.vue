@@ -14,7 +14,7 @@ const { track, index, extendedInfo, showImage, queueMode } =
 const emit = defineEmits<{ (e: "playAlbumAtIndex"): void }>()
 
 const hovering = ref(false)
-const { playAlbum } = usePlayer()
+const { playAlbum, addToFrontOfQueue, addToQueue } = usePlayer()
 
 const toast = useToast()
 
@@ -31,6 +31,7 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 			label: "Play next",
 			icon: "lucide:list-start",
 			onSelect() {
+				addToFrontOfQueue(track)
 				toast.show("Playing next")
 			},
 		},
@@ -38,6 +39,7 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 			label: "Add to queue",
 			icon: "lucide:list-end",
 			onSelect() {
+				addToQueue(track)
 				toast.show("Added to queue")
 			},
 		},
