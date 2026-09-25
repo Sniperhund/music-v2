@@ -12,6 +12,7 @@ const {
 	repeat,
 	secondsPlayed,
 	duration,
+	volume,
 } = usePlayer()
 
 const secondsPlayedFormatted = computed(() =>
@@ -64,6 +65,22 @@ const durationFormatted = computed(() =>
 				name="lucide:repeat"
 				:class="{ repeating: repeat }"
 				@click="repeat = !repeat"
+			/>
+		</div>
+
+		<div class="volume-slider" :class="{ hidden: !showButtons }">
+			<Icon name="lucide:volume-2" />
+			<RangeSlider
+				:model-value="volume"
+				@update:model-value="
+					(v) => {
+						if (v !== undefined) volume = v
+					}
+				"
+				:max="1"
+				:min="0"
+				:step="0.01"
+				monochrome
 			/>
 		</div>
 	</article>
@@ -127,12 +144,11 @@ const durationFormatted = computed(() =>
 	width: 100%;
 	gap: 1rem;
 
-	overflow: hidden;
-	max-height: 30px;
-	transition: max-height 0.2s ease-in-out;
+	transition: opacity 0.2s ease-in-out;
 
 	&.hidden {
-		max-height: 0;
+		opacity: 0;
+		pointer-events: none;
 	}
 
 	& > * {
@@ -141,6 +157,25 @@ const durationFormatted = computed(() =>
 
 	.repeating {
 		color: $color-accent;
+	}
+}
+
+.volume-slider {
+	align-self: stretch;
+	margin: 0.5rem 1rem 0;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	opacity: 1;
+	transition: opacity 0.2s ease-in-out;
+
+	:deep(.slider) {
+		flex: 1;
+	}
+
+	&.hidden {
+		opacity: 0;
+		pointer-events: none;
 	}
 }
 </style>
