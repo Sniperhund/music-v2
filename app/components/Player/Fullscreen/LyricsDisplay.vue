@@ -10,7 +10,7 @@ const { fullscreen } = useFullscreen()
 const { secondsPlayed } = usePlayer()
 
 const parsedLyrics = computed(() => {
-	if (!song.value || !song.value.lyrics.synced) return
+	if (!song.value?.lyrics?.synced) return
 
 	if (song.value.lyrics.synced) return parseLyrics(song.value.lyrics.text)
 })
@@ -169,7 +169,7 @@ const finalTransform = computed(() => {
 		</div>
 	</div>
 	<div
-		v-else-if="song && song.lyrics && song.lyrics.text"
+		v-else-if="song?.lyrics?.text"
 		class="lyrics"
 		:style="{
 			height: `${height}px`,
