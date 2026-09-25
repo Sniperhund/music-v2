@@ -47,20 +47,30 @@ const scrollActiveIndex = computed(() => {
 })
 
 const height = ref<number>()
+const top = ref(0)
+const syncedHeight = ref<number>()
+
+const updateLyricsLayout = () => {
+	const trackDisplay = document.querySelector(".track-display")
+
+	if (!trackDisplay) return
+
+	height.value = trackDisplay.clientHeight
+	top.value = trackDisplay.getBoundingClientRect().top
+	syncedHeight.value = window.innerHeight - top.value - 100
+}
 
 watch(
 	fullscreen,
 	async () => {
 		await nextTick()
-
-		const trackDisplay = document.querySelector(".track-display")
-
-		if (!trackDisplay) return
-
-		height.value = trackDisplay.clientHeight
+		updateLyricsLayout()
 	},
 	{ immediate: true },
 )
+
+onMounted(() => window.addEventListener("resize", updateLyricsLayout))
+onUnmounted(() => window.removeEventListener("resize", updateLyricsLayout))
 
 const transformY = computed(() => {
 	if (activeIndex.value < 0) return 0
@@ -96,8 +106,12 @@ const onWheel = (event: WheelEvent) => {
 	manualOffset.value -= delta
 
 	const maxTranslate = offset
+	const lowerViewportLimit = Math.max(
+		outerRef.value.offsetHeight,
+		window.innerHeight - 300,
+	)
 	const minTranslate =
-		-containerRef.value.scrollHeight + outerRef.value.offsetHeight
+		-containerRef.value.scrollHeight + lowerViewportLimit
 
 	manualOffset.value = Math.min(
 		maxTranslate,
@@ -120,7 +134,8 @@ const finalTransform = computed(() => {
 		v-if="song && song.lyrics && song.lyrics.synced"
 		class="synced-lyrics-container"
 		:style="{
-			height: `${height}px`,
+			height: `${syncedHeight}px`,
+			marginTop: `${top}px`,
 		}"
 		@wheel.prevent="onWheel"
 	>
@@ -162,13 +177,13 @@ const finalTransform = computed(() => {
 .synced-lyrics-container {
 	position: relative;
 	overflow: hidden;
+	align-self: start;
 
 	mask-image: linear-gradient(
+		to bottom,
 		transparent 0%,
 		#000 15%,
-		#000,
-		#000,
-		95%,
+		#000 calc(100% - 200px),
 		transparent 100%
 	);
 }

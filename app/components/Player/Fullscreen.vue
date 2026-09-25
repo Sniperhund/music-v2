@@ -144,6 +144,10 @@ nuxtApp.hook("page:finish", () => {
 		& > * {
 			margin: initial;
 		}
+
+		& > :deep(.synced-lyrics-container) {
+			max-height: none;
+		}
 	}
 }
 </style>
