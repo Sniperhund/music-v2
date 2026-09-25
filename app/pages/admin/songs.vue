@@ -67,6 +67,11 @@ const modalFields: Field[] = [
 	{ key: "lyrics.synced", label: "Synced lyrics", type: "checkbox" },
 ]
 
+const serializeLyrics = (lyrics: Track["lyrics"] | undefined) => {
+	if (!lyrics?.text?.trim()) return JSON.stringify(null)
+	return JSON.stringify(lyrics)
+}
+
 const showModal = ref<boolean>(false)
 const item = ref<Track | undefined>(undefined)
 
@@ -77,7 +82,7 @@ const save = async (value: any) => {
 				method: "PATCH",
 				data: {
 					...value,
-					lyrics: JSON.stringify(value.lyrics),
+					lyrics: serializeLyrics(value.lyrics),
 				},
 				params: { id: value._id },
 				forceFormData: true,
@@ -95,7 +100,7 @@ const save = async (value: any) => {
 				method: "POST",
 				data: {
 					...value,
-					lyrics: JSON.stringify(value.lyrics),
+					lyrics: serializeLyrics(value.lyrics),
 				},
 			})
 

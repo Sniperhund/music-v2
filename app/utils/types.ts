@@ -24,7 +24,7 @@ export interface Track extends Base {
 	lyrics: {
 		synced: boolean
 		text: string
-	}
+	} | null
 	album: Album
 	artists: Artist[]
 	durationInSeconds: number
