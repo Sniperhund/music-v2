@@ -2,20 +2,26 @@
 import type { DropdownMenuItem } from "~/ui/DropdownMenu.vue"
 
 interface TrackRowProps {
-	track: Track
+	track?: Track
+	entity?: {
+		type: "album" | "artist"
+		_id: string
+		name: string
+		file?: string
+		cover?: string
+		artists?: Artist[]
+	}
 	index: number
 	extendedInfo?: boolean
 	showImage?: boolean
 	queueMode?: boolean
 }
 
-const { track, index, extendedInfo, showImage, queueMode } =
-	defineProps<TrackRowProps>()
+const props = defineProps<TrackRowProps>()
 const emit = defineEmits<{ (e: "playAlbumAtIndex"): void }>()
 
 const hovering = ref(false)
 const { playAlbum, addToFrontOfQueue, addToQueue } = usePlayer()
-
 const toast = useToast()
 
 const dropdownMenuItems: DropdownMenuItem[][] = [
@@ -24,14 +30,15 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 			label: "Play only this",
 			icon: "lucide:play",
 			onSelect() {
-				playAlbum([track])
+				if (props.track) playAlbum([props.track])
 			},
 		},
 		{
 			label: "Play next",
 			icon: "lucide:list-start",
 			onSelect() {
-				addToFrontOfQueue(track)
+				if (!props.track) return
+				addToFrontOfQueue(props.track)
 				toast.show("Playing next")
 			},
 		},
@@ -39,41 +46,56 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 			label: "Add to queue",
 			icon: "lucide:list-end",
 			onSelect() {
-				addToQueue(track)
+				if (!props.track) return
+				addToQueue(props.track)
 				toast.show("Added to queue")
 			},
 		},
 	],
 ]
 
-const durationFormatted = computed(() =>
-	new Date(track.durationInSeconds * 1000).toISOString().slice(14, 19),
-)
+const durationFormatted = computed(() => {
+	if (!props.track) return ""
+	return new Date(props.track.durationInSeconds * 1000)
+		.toISOString()
+		.slice(14, 19)
+})
 
-const artworkSrc = computed(() => GET_FILE(track.album.file))
+const artworkSrc = computed(() => {
+	if (props.track) return GET_FILE(props.track.album.file)
+	const file = props.entity?.file ?? props.entity?.cover
+	return file ? GET_FILE(file) : undefined
+})
 </script>
 
 <template>
 	<article
 		class="track"
 		:class="{
-			extended: extendedInfo,
-			odd: index % 2 == 1,
-			image: showImage,
-			queue: queueMode,
+			extended: props.extendedInfo,
+			odd: props.index % 2 == 1,
+			image: props.showImage,
+			queue: props.queueMode,
 		}"
 		@mouseenter="hovering = true"
 		@mouseleave="hovering = false"
 	>
 		<div class="index" :class="{ hovering }">
-			<template v-if="showImage">
+			<template v-if="props.showImage">
 				<Icon
+					v-if="props.track"
 					name="lucide:play"
 					class="play-icon"
 					@click="emit('playAlbumAtIndex')"
 				/>
-				<!-- Confirm before changing forced image dimensions. -->
-				<NuxtImg :src="artworkSrc" width="40" height="40" placeholder />
+				<!-- Keep the existing TrackRow artwork dimensions unchanged. -->
+				<NuxtImg
+					v-if="artworkSrc"
+					:src="artworkSrc"
+					width="40"
+					height="40"
+					placeholder
+				/>
 			</template>
 			<template v-else>
 				<Icon
@@ -82,28 +104,43 @@ const artworkSrc = computed(() => GET_FILE(track.album.file))
 					class="play-icon inline"
 					@click="emit('playAlbumAtIndex')"
 				/>
-				<p v-else>{{ index + 1 }}</p>
+				<p v-else>{{ props.index + 1 }}</p>
 			</template>
 		</div>
 
-		<p>{{ track.name }}</p>
+		<p v-if="props.track">{{ props.track.name }}</p>
+		<NuxtLink
+			v-else-if="props.entity"
+			:to="`/${props.entity.type}/${props.entity._id}`"
+		>
+			{{ props.entity.name }}
+		</NuxtLink>
 
-		<template v-if="extendedInfo">
-			<ArtistName :artists="track.artists" class="artists" />
-			<NuxtLink :to="`/album/${track.album._id}`">
-				<p>{{ track.album.name }}</p>
+		<template v-if="props.track && props.extendedInfo">
+			<ArtistName :artists="props.track.artists" class="artists" />
+			<NuxtLink :to="`/album/${props.track.album._id}`">
+				<p>{{ props.track.album.name }}</p>
 			</NuxtLink>
 		</template>
+		<template v-else-if="props.entity">
+			<ArtistName
+				v-if="props.entity.type === 'album' && props.entity.artists?.length"
+				:artists="props.entity.artists"
+				class="artists"
+			/>
+			<span v-else />
+			<p>{{ props.entity.type }}</p>
+		</template>
 
-		<p>{{ durationFormatted }}</p>
+		<p v-if="props.track">{{ durationFormatted }}</p>
 
 		<Icon
-			v-if="queueMode"
+			v-if="props.queueMode"
 			name="lucide:grip-vertical"
 			class="queue-handle"
 			aria-hidden="true"
 		/>
-		<DropdownMenu v-else :items="dropdownMenuItems">
+		<DropdownMenu v-else-if="props.track" :items="dropdownMenuItems">
 			<Icon name="lucide:ellipsis" class="dropdown-icon" />
 		</DropdownMenu>
 	</article>
@@ -149,10 +186,16 @@ const artworkSrc = computed(() => GET_FILE(track.album.file))
 		cursor: grab;
 	}
 
-	p {
+	p,
+	> a {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	> a {
+		color: inherit;
+		text-decoration: none;
 	}
 }
 
@@ -162,7 +205,6 @@ const artworkSrc = computed(() => GET_FILE(track.album.file))
 	align-items: center;
 	font-size: 20px;
 	height: 20px;
-
 	position: relative;
 	cursor: pointer;
 
