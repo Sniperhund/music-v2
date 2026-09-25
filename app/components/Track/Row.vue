@@ -12,6 +12,7 @@ const { track, index, extendedInfo, showImage } = defineProps<TrackRowProps>()
 const emit = defineEmits<{ (e: "playAlbumAtIndex"): void }>()
 
 const hovering = ref(false)
+const { playAlbum } = usePlayer()
 
 const toast = useToast()
 
@@ -20,7 +21,9 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 		{
 			label: "Play only this",
 			icon: "lucide:play",
-			onSelect() {},
+			onSelect() {
+				playAlbum([track])
+			},
 		},
 		{
 			label: "Play next",
