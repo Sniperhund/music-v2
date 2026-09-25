@@ -2,8 +2,29 @@
 const open = defineModel<boolean>("open", { default: false })
 const { queue, playAlbumAtIndex } = usePlayer()
 
-const draggedIndex = ref<number | null>(null)
-const overIndex = ref<number | null>(null)
+interface QueueRow {
+	key: number
+	track: Track
+}
+
+const queueRows = ref<QueueRow[]>([])
+const draggedKey = ref<number | null>(null)
+const overKey = ref<number | null>(null)
+let nextRowKey = 0
+
+const syncRows = (tracks: Track[]) => {
+	const previousRows = [...queueRows.value]
+	queueRows.value = tracks.map((track) => {
+		const previousIndex = previousRows.findIndex((row) => row.track === track)
+		if (previousIndex !== -1) {
+			const [row] = previousRows.splice(previousIndex, 1)
+			return row!
+		}
+		return { key: nextRowKey++, track }
+	})
+}
+
+watch(queue, syncRows, { immediate: true, deep: true })
 
 const close = () => (open.value = false)
 
@@ -19,27 +40,45 @@ watch(open, (isOpen) => {
 onBeforeUnmount(() => document.removeEventListener("keydown", handleKeydown))
 
 const startDrag = (event: DragEvent, index: number) => {
-	draggedIndex.value = index
+	const row = queueRows.value[index]
+	if (!row) return
+	draggedKey.value = row.key
 	if (event.dataTransfer) {
 		event.dataTransfer.effectAllowed = "move"
-		event.dataTransfer.setData("text/plain", String(index))
+		event.dataTransfer.setData("text/plain", String(row.key))
 	}
 }
 
-const dropAt = (event: DragEvent, index: number) => {
+const moveTo = (event: DragEvent, key: number) => {
 	event.preventDefault()
-	const from = draggedIndex.value
-	if (from === null || from === index) return
+	const from = queueRows.value.findIndex((row) => row.key === draggedKey.value)
+	const to = queueRows.value.findIndex((row) => row.key === key)
+	if (from === -1 || to === -1 || from === to) return
 
-	const reordered = [...queue.value]
-	const [track] = reordered.splice(from, 1)
-	reordered.splice(index, 0, track!)
-	queue.value = reordered
-	draggedIndex.value = null
-	overIndex.value = null
+	const [row] = queueRows.value.splice(from, 1)
+	queueRows.value.splice(to, 0, row!)
+	overKey.value = key
 }
 
-const playAt = (index: number) => playAlbumAtIndex(queue.value, index)
+const finishDrag = () => {
+	if (draggedKey.value === null) return
+	queue.value = queueRows.value.map((row) => row.track)
+	draggedKey.value = null
+	overKey.value = null
+}
+
+const cancelDrag = () => {
+	if (draggedKey.value === null) return
+	syncRows(queue.value)
+	draggedKey.value = null
+	overKey.value = null
+}
+
+const playAt = (index: number) =>
+	playAlbumAtIndex(
+		queueRows.value.map((row) => row.track),
+		index,
+	)
 </script>
 
 <template>
@@ -60,23 +99,27 @@ const playAt = (index: number) => playAlbumAtIndex(queue.value, index)
 						</button>
 					</header>
 
-					<div v-if="queue.length === 0" class="empty">
+					<div v-if="queueRows.length === 0" class="empty">
 						<p>No upcoming songs.</p>
 					</div>
 					<ol v-else class="tracks">
 						<li
-							v-for="(track, index) in queue"
-							:key="`${track._id}-${index}`"
-							:class="{ dragging: draggedIndex === index, over: overIndex === index }"
+							v-for="(row, index) in queueRows"
+							:key="row.key"
+							:class="{
+								dragging: draggedKey === row.key,
+								over: overKey === row.key,
+							}"
 							draggable="true"
 							@dragstart="startDrag($event, index)"
-							@dragover.prevent="overIndex = index"
-							@dragleave="overIndex = null"
-							@drop="dropAt($event, index)"
-							@dragend="draggedIndex = null; overIndex = null"
+							@dragenter="moveTo($event, row.key)"
+							@dragover.prevent
+							@dragleave="overKey = null"
+							@drop="finishDrag"
+							@dragend="cancelDrag"
 						>
 							<TrackRow
-								:track="track"
+								:track="row.track"
 								:index="index"
 								show-image
 								queue-mode
