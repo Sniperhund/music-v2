@@ -6,9 +6,11 @@ interface TrackRowProps {
 	index: number
 	extendedInfo?: boolean
 	showImage?: boolean
+	queueMode?: boolean
 }
 
-const { track, index, extendedInfo, showImage } = defineProps<TrackRowProps>()
+const { track, index, extendedInfo, showImage, queueMode } =
+	defineProps<TrackRowProps>()
 const emit = defineEmits<{ (e: "playAlbumAtIndex"): void }>()
 
 const hovering = ref(false)
@@ -56,6 +58,7 @@ const artworkSrc = computed(() => GET_FILE(track.album.file))
 			extended: extendedInfo,
 			odd: index % 2 == 1,
 			image: showImage,
+			queue: queueMode,
 		}"
 		@mouseenter="hovering = true"
 		@mouseleave="hovering = false"
@@ -92,7 +95,13 @@ const artworkSrc = computed(() => GET_FILE(track.album.file))
 
 		<p>{{ durationFormatted }}</p>
 
-		<DropdownMenu :items="dropdownMenuItems">
+		<Icon
+			v-if="queueMode"
+			name="lucide:grip-vertical"
+			class="queue-handle"
+			aria-hidden="true"
+		/>
+		<DropdownMenu v-else :items="dropdownMenuItems">
 			<Icon name="lucide:ellipsis" class="dropdown-icon" />
 		</DropdownMenu>
 	</article>
@@ -132,6 +141,10 @@ const artworkSrc = computed(() => GET_FILE(track.album.file))
 		.index {
 			height: 40px;
 		}
+	}
+
+	&.queue {
+		cursor: grab;
 	}
 
 	p {
@@ -194,5 +207,10 @@ const artworkSrc = computed(() => GET_FILE(track.album.file))
 .dropdown-icon {
 	font-size: 20px;
 	cursor: pointer;
+}
+
+.queue-handle {
+	opacity: 0.5;
+	cursor: grab;
 }
 </style>

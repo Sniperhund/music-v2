@@ -38,8 +38,8 @@ const durationFormatted = computed(() =>
 	new Date(duration.value * 1000).toISOString().slice(14, 19),
 )
 
-const toast = useToast()
 const { open: openFullscreen } = useFullscreen()
+const queueOpen = ref(false)
 </script>
 
 <template>
@@ -105,12 +105,13 @@ const { open: openFullscreen } = useFullscreen()
 				</div>
 				<Icon
 					name="lucide:list"
-					@click="toast.show('Not yet implemented')"
+					@click="queueOpen = true"
 				/>
 				<Icon name="lucide:expand" @click="openFullscreen()" />
 			</div>
 		</template>
 	</article>
+	<PlayerQueue v-model:open="queueOpen" />
 	<PlayerFullscreen />
 </template>
 
