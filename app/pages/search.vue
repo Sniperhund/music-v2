@@ -24,7 +24,12 @@ watch(query, (value) => {
 	clearTimeout(debounceTimeout)
 	debounceTimeout = setTimeout(() => {
 		debouncedQuery.value = value
+		debounceTimeout = undefined
 	}, 300)
+})
+
+onBeforeUnmount(() => {
+	clearTimeout(debounceTimeout)
 })
 
 const { data, status, error } = await useApiFetch<SearchResult[]>("/search", {
@@ -110,18 +115,10 @@ const playResult = (result: SearchResult | Track) => {
 				v-for="(result, index) in results"
 				:key="`${result.type}-${result._id}`"
 			>
-				<TrackRow
-					v-if="result.type === 'track'"
-					:track="result as unknown as Track"
+				<SearchRow
+					:result="result"
 					:index="index"
-					show-image
-					@play-album-at-index="playResult(result)"
-				/>
-				<TrackRow
-					v-else
-					:entity="result"
-					:index="index"
-					show-image
+					@play="playResult(result)"
 				/>
 			</template>
 		</section>
