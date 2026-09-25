@@ -100,6 +100,12 @@ const serializeLyrics = (lyrics: Track["lyrics"] | undefined) => {
 	return JSON.stringify(lyrics)
 }
 
+const getArtistIds = (artists: Array<string | Option> = []) =>
+	artists.map((artist) => (typeof artist === "string" ? artist : artist.value))
+
+const getOptionId = (option: string | Option) =>
+	typeof option === "string" ? option : option.value
+
 const showModal = ref<boolean>(false)
 const item = ref<Track | undefined>(undefined)
 
@@ -145,8 +151,8 @@ const save = async (value: any) => {
 					method: "POST",
 					data: {
 						name: `${value.name} - Single`,
-						artists: value.artists.map((artist: Option) => artist.value),
-						genres: value.genre.value,
+						artists: getArtistIds(value.artists),
+						genre: getOptionId(value.genre),
 						file: value.cover,
 					},
 				})
@@ -164,7 +170,7 @@ const save = async (value: any) => {
 				data: {
 					...value,
 					album: value.album?.value ?? value.album,
-					artists: value.artists.map((artist: Option) => artist.value),
+					artists: getArtistIds(value.artists),
 					lyrics: serializeLyrics(value.lyrics),
 				},
 			})
