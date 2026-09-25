@@ -4,6 +4,7 @@ import { type Option } from "~/ui/SearchSelect.vue"
 interface BaseField<T> {
 	key: keyof T
 	label?: string
+	visibleWhen?: (value: any) => boolean
 }
 
 interface TextField<T> extends BaseField<T> {
@@ -114,7 +115,12 @@ watch(
 		<p v-if="props.title" class="title">{{ props.title }}</p>
 
 		<form class="form" @submit.prevent="save">
-			<template v-for="field in props.fields">
+			<template
+				v-for="field in props.fields.filter(
+					(field) =>
+						!field.visibleWhen || field.visibleWhen(localItem),
+				)"
+			>
 				<SearchSelect
 					v-if="
 						field.type == 'search-select' ||

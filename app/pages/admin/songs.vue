@@ -48,6 +48,14 @@ const albumFetchOptions = async (q?: string): Promise<Option[]> => {
 	}))
 }
 
+const { data: genreData } = useApiFetch<Genre[]>("/all/genres")
+const genreFetchOptions = async (): Promise<Option[]> => {
+	return genreData.value.map<Option>((genre) => ({
+		label: genre.name,
+		value: genre._id,
+	}))
+}
+
 const modalFields: Field[] = [
 	{ key: "name", label: "Name" },
 	{ key: "file", label: "Audio file", type: "file" },
@@ -58,10 +66,30 @@ const modalFields: Field[] = [
 		fetchOptions: artistFetchOptions,
 	},
 	{
+		key: "createSingle",
+		label: "Create a single album automatically",
+		type: "checkbox",
+		visibleWhen: (value) => !value._id,
+	},
+	{
 		key: "album",
 		label: "Album",
 		type: "search-select",
 		fetchOptions: albumFetchOptions,
+		visibleWhen: (value) => !value.createSingle,
+	},
+	{
+		key: "cover",
+		label: "Single cover",
+		type: "file",
+		visibleWhen: (value) => !value._id && value.createSingle,
+	},
+	{
+		key: "genre",
+		label: "Genre",
+		type: "search-select",
+		fetchOptions: genreFetchOptions,
+		visibleWhen: (value) => !value._id && value.createSingle,
 	},
 	{ key: "lyrics.text", label: "Lyrics", type: "textarea", rows: 6 },
 	{ key: "lyrics.synced", label: "Synced lyrics", type: "checkbox" },
@@ -96,10 +124,47 @@ const save = async (value: any) => {
 		}
 	} else {
 		try {
+			if (!value.name || !value.file || !value.artists?.length) {
+				toast.show(
+					"Name, audio file, and at least one artist are required",
+					"error",
+				)
+				return false
+			}
+
+			if (value.createSingle) {
+				if (!value.cover || !value.genre) {
+					toast.show(
+						"A cover image and genre are required for a single",
+						"error",
+					)
+					return false
+				}
+
+				const albumResponse = await cfetch("/admin/album", {
+					method: "POST",
+					data: {
+						name: `${value.name} - Single`,
+						artists: value.artists.map((artist: Option) => artist.value),
+						genres: value.genre.value,
+						file: value.cover,
+					},
+				})
+				value.album = albumResponse.data._id
+			} else if (!value.album) {
+				toast.show(
+					"Choose an album or create a single album",
+					"error",
+				)
+				return false
+			}
+
 			await cfetch("/admin/track", {
 				method: "POST",
 				data: {
 					...value,
+					album: value.album?.value ?? value.album,
+					artists: value.artists.map((artist: Option) => artist.value),
 					lyrics: serializeLyrics(value.lyrics),
 				},
 			})
