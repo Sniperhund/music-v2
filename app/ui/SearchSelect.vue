@@ -21,6 +21,17 @@ const show = ref<boolean>(false)
 
 const isMultiple = computed(() => !!props.multiple)
 
+const loadOptions = async (q = "") => {
+	const allOptions = await props.fetchOptions(q)
+	const normalizedQuery = q.trim().toLocaleLowerCase()
+
+	options.value = allOptions
+		.filter((option) =>
+			option.label.toLocaleLowerCase().includes(normalizedQuery),
+		)
+		.slice(0, 10)
+}
+
 watchEffect(() => {
 	if (!props.predefined) return
 
@@ -47,9 +58,7 @@ watchEffect(() => {
 	nextTick(() => (options.value = []))
 })
 
-watch(query, async (q) => {
-	options.value = await (await props.fetchOptions(q)).slice(0, 10)
-})
+watch(query, loadOptions)
 
 const isSelected = (opt: Option) => {
 	if (isMultiple.value && Array.isArray(value.value)) {
@@ -78,7 +87,7 @@ const select = (item: Option) => {
 const onFocus = async () => {
 	if (isMultiple.value) query.value = ""
 	show.value = true
-	options.value = await (await props.fetchOptions()).slice(0, 10)
+	await loadOptions(isMultiple.value ? "" : query.value)
 }
 
 const onFocusOut = () => {
