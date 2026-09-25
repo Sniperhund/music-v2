@@ -53,4 +53,4 @@ Pull requests should include:
 
 ## Security & Configuration Tips
 
-The app reads `VITE_PUBLIC_BACKEND` from `.env`, expects remote assets from `api.music.lucasskt.dk`, and the API schema can be read from `https://api.music.lucasskt.dk/schema`. Do not commit secrets or machine-specific values.
+The app reads `VITE_PUBLIC_BACKEND` from `.env` and expects remote assets from `api.music.lucasskt.dk`. You can get the API schema from `https://api.music.lucasskt.dk/schema`. Do not commit secrets or machine-specific values.
