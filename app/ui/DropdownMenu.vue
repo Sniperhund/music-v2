@@ -14,6 +14,7 @@ const props = defineProps<DropdownMenuProps>()
 const open = ref(false)
 const placement = ref<"bottom" | "top">("bottom")
 const root = useTemplateRef("root")
+const menuPosition = ref({ top: 0, left: 0 })
 
 const toggle = async () => {
 	open.value = !open.value
@@ -37,16 +38,12 @@ const updatePlacement = () => {
 	// TODO: Calculate height instead
 	const menuHeight = 220
 
-	console.log(
-		spaceBelow,
-		menuHeight,
-		spaceAbove,
-		spaceBelow < menuHeight && spaceAbove > spaceBelow,
-		spaceBelow < menuHeight && spaceAbove > spaceBelow ? "top" : "bottom",
-	)
-
-	placement.value =
-		spaceBelow < menuHeight && spaceAbove > spaceBelow ? "top" : "bottom"
+	const showAbove = spaceBelow < menuHeight && spaceAbove > spaceBelow
+	placement.value = showAbove ? "top" : "bottom"
+	menuPosition.value = {
+		top: showAbove ? rect.top : rect.bottom,
+		left: rect.right,
+	}
 }
 
 const handleOutsideClick = (e: MouseEvent) => {
@@ -84,7 +81,16 @@ onBeforeMount(() => {
 		</div>
 
 		<Transition name="dropdown">
-			<div v-show="open" class="menu" :class="placement">
+			<Teleport to="body">
+				<div
+					v-show="open"
+					class="dropdown-menu"
+					:class="placement"
+					:style="{
+						top: `${menuPosition.top}px`,
+						left: `${menuPosition.left}px`,
+					}"
+				>
 				<div
 					v-for="(group, i) in items"
 					:key="`group-${i}`"
@@ -105,7 +111,8 @@ onBeforeMount(() => {
 						<span>{{ item.label }}</span>
 					</button>
 				</div>
-			</div>
+				</div>
+			</Teleport>
 		</Transition>
 	</div>
 </template>
@@ -116,10 +123,11 @@ onBeforeMount(() => {
 .dropdown {
 	position: relative;
 	display: inline-block;
+}
 
-	.menu {
-		position: absolute;
-		right: 0;
+.dropdown-menu {
+		position: fixed;
+		z-index: 1000;
 
 		padding: 0.5rem;
 		min-width: 180px;
@@ -131,18 +139,17 @@ onBeforeMount(() => {
 		display: flex;
 		flex-direction: column;
 
-		z-index: 1000;
+		transform: translateX(-100%);
 
 		&.bottom {
-			top: calc(100% + 0.5rem);
+			transform: translate(-100%, 0.5rem);
 			transform-origin: top right;
 		}
 
 		&.top {
-			bottom: calc(100% + 0.5rem);
+			transform: translate(-100%, calc(-100% - 0.5rem));
 			transform-origin: bottom right;
 		}
-	}
 
 	.group {
 		width: 100%;
