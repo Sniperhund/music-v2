@@ -1,6 +1,7 @@
 import { Howl } from "howler"
 
 export default defineNuxtPlugin((nuxtApp) => {
+	const { close: closeFullscreen } = useFullscreen()
 	const VOLUME_STORAGE_KEY = "music-v2-player-volume"
 	const DEFAULT_VOLUME = 0.5
 
@@ -117,6 +118,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				sound.value?.volume(storedVolume.value)
 			},
 			onend: () => {
+				void closeFullscreen()
 				next()
 				stopTracking()
 			},
