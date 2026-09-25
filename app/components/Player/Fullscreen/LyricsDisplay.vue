@@ -98,6 +98,10 @@ let scrollingTimeout: any = null
 const onWheel = (event: WheelEvent) => {
 	if (!containerRef.value || !outerRef.value) return
 
+	if (!isScrolling.value) {
+		manualOffset.value = transformY.value + offset
+	}
+
 	isScrolling.value = true
 	clearTimeout(scrollingTimeout)
 
@@ -119,6 +123,12 @@ const onWheel = (event: WheelEvent) => {
 	)
 
 	scrollingTimeout = setTimeout(() => (isScrolling.value = false), 3000)
+}
+
+const onLyricClick = (time: number) => {
+	clearTimeout(scrollingTimeout)
+	isScrolling.value = false
+	secondsPlayed.value = time
 }
 
 const finalTransform = computed(() => {
@@ -152,7 +162,7 @@ const finalTransform = computed(() => {
 				:key="lyric.time"
 				:class="{ active: i == scrollActiveIndex }"
 				ref="lyrics"
-				@click="() => (secondsPlayed = lyric.time)"
+				@click="onLyricClick(lyric.time)"
 			>
 				{{ lyric.text }}
 			</p>
