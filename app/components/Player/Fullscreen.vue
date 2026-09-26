@@ -65,7 +65,7 @@ nuxtApp.hook("page:finish", () => {
 				<PlayerFullscreenTrackDisplay :show-buttons="mouseMovedRecently" />
 				<PlayerFullscreenLyricsDisplay
 					:animation-duration="0.2"
-					:offset="150"
+					:offset="200"
 					:show-scroll-bar="mouseMovedRecently"
 				/>
 			</div>
