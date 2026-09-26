@@ -15,11 +15,18 @@ onMounted(() => {
 			mouseMovedRecently.value = false
 		}, 2000)
 	}
+	const handleKeydown = (event: KeyboardEvent) => {
+		if (event.key === "Escape" && fullscreen.value) {
+			closeFullscreen()
+		}
+	}
 
 	window.addEventListener("mousemove", handleMouseMove)
+	window.addEventListener("keydown", handleKeydown)
 
 	onUnmounted(() => {
 		window.removeEventListener("mousemove", handleMouseMove)
+		window.removeEventListener("keydown", handleKeydown)
 	})
 })
 

@@ -59,40 +59,114 @@ export default defineNuxtPlugin((nuxtApp) => {
 		},
 	})
 	const duration = ref(0)
+	let lastPositionUpdate = 0
+	let mediaSessionSongId: string | null = null
 
 	const aniFrame = ref<number | null>(null)
 
 	// Helpers
-	const updateMediaSession = async () => {
+	const updateMediaSession = () => {
 		if (!import.meta.client) return
-		if (!navigator.mediaSession) {
-			console.warn("Media Session API is not supported")
+		const mediaSession = navigator.mediaSession
+		if (!mediaSession) return
+
+		if (!currentSong.value) {
+			mediaSession.metadata = null
+			mediaSession.playbackState = "none"
+			mediaSessionSongId = null
 			return
 		}
 
-		if (!currentSong.value) return
+		if (mediaSessionSongId !== currentSong.value._id) {
+			mediaSession.metadata = new MediaMetadata({
+				title: currentSong.value.name,
+				artist: currentSong.value.artists[0]?.name,
+				album: currentSong.value.album.name,
+				artwork: [
+					{
+						src: GET_FILE(currentSong.value.album.file),
+						sizes: "512x512",
+					},
+				],
+			})
+			mediaSessionSongId = currentSong.value._id
+		}
 
-		navigator.mediaSession.metadata = new MediaMetadata({
-			title: currentSong.value.name,
-			artist: currentSong.value.artists[0]?.name,
-			album: currentSong.value.album.name,
-			artwork: [
-				{
-					src: GET_FILE(currentSong.value.album.file),
-					sizes: "512x512",
-				},
-			],
-		})
+		if (duration.value > 0) {
+			try {
+				mediaSession.setPositionState({
+					duration: duration.value,
+					position: Math.min(secondsPlayed.value, duration.value),
+				})
+			} catch {
+				// Position state can be unavailable while media metadata is loading.
+			}
+		}
+	}
 
-		navigator.mediaSession.setPositionState({
-			duration: duration.value,
-			position: secondsPlayed.value,
-		})
+	const registerMediaSessionActions = () => {
+		if (!import.meta.client || !navigator.mediaSession) return
+
+		const actions: MediaSessionAction[] = [
+			"play",
+			"pause",
+			"nexttrack",
+			"previoustrack",
+			"seekto",
+			"seekbackward",
+			"seekforward",
+		]
+
+		for (const action of actions) {
+			try {
+				navigator.mediaSession.setActionHandler(action, (event) => {
+					switch (action) {
+						case "play":
+							void play()
+							break
+						case "pause":
+							pause()
+							break
+						case "nexttrack":
+							void next()
+							break
+						case "previoustrack":
+							void prev()
+							break
+						case "seekto":
+							if (event.seekTime !== undefined)
+								secondsPlayed.value = event.seekTime
+							updateMediaSession()
+							break
+						case "seekbackward":
+							secondsPlayed.value = Math.max(
+								0,
+								secondsPlayed.value - (event.seekOffset ?? 10),
+							)
+							updateMediaSession()
+							break
+						case "seekforward":
+							secondsPlayed.value = Math.min(
+								duration.value,
+								secondsPlayed.value + (event.seekOffset ?? 10),
+							)
+							updateMediaSession()
+					}
+				})
+			} catch {
+				// Browsers may support Media Session without supporting every action.
+			}
+		}
 	}
 
 	const startTracking = () => {
 		const update = () => {
 			tick.value++
+			const now = Date.now()
+			if (now - lastPositionUpdate >= 1000) {
+				lastPositionUpdate = now
+				updateMediaSession()
+			}
 			aniFrame.value = requestAnimationFrame(update)
 		}
 
@@ -116,6 +190,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 			onload: () => {
 				duration.value = sound.value?.duration() || 0
 				sound.value?.volume(storedVolume.value)
+				updateMediaSession()
 			},
 			onend: () => {
 				void closeFullscreen()
@@ -225,6 +300,44 @@ export default defineNuxtPlugin((nuxtApp) => {
 		currentSong.value = null
 		sound.value?.stop()
 		sound.value = null
+		updateMediaSession()
+	}
+
+	if (import.meta.client) {
+		registerMediaSessionActions()
+
+		window.addEventListener("keydown", (event) => {
+			if (
+				event.defaultPrevented ||
+				event.repeat ||
+				event.ctrlKey ||
+				event.metaKey ||
+				event.altKey
+			) return
+
+			const target = event.target
+			if (
+				target instanceof HTMLElement &&
+				target.closest(
+					"input, textarea, select, button, [contenteditable='true'], [role='slider']",
+				)
+			) return
+
+			switch (event.code) {
+				case "Space":
+					event.preventDefault()
+					if (isPlaying.value) pause()
+					else void play()
+					break
+				case "ArrowRight":
+					event.preventDefault()
+					void next()
+					break
+				case "ArrowLeft":
+					event.preventDefault()
+					void prev()
+			}
+		})
 	}
 
 	const shuffle = () => {
