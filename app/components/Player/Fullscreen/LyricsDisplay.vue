@@ -49,6 +49,7 @@ const scrollActiveIndex = computed(() => {
 const height = ref<number>()
 const top = ref(0)
 const syncedHeight = ref<number>()
+const topFadeExtension = 75
 
 const updateLyricsLayout = () => {
 	const trackDisplay = document.querySelector(".track-display")
@@ -99,7 +100,7 @@ const onWheel = (event: WheelEvent) => {
 	if (!containerRef.value || !outerRef.value) return
 
 	if (!isScrolling.value) {
-		manualOffset.value = transformY.value + offset
+		manualOffset.value = transformY.value + offset + topFadeExtension
 	}
 
 	isScrolling.value = true
@@ -109,7 +110,7 @@ const onWheel = (event: WheelEvent) => {
 
 	manualOffset.value -= delta
 
-	const maxTranslate = offset
+	const maxTranslate = offset + topFadeExtension
 	const lowerViewportLimit = Math.max(
 		outerRef.value.offsetHeight,
 		window.innerHeight - 300,
@@ -134,7 +135,7 @@ const onLyricClick = (time: number) => {
 const finalTransform = computed(() => {
 	if (isScrolling.value) return manualOffset.value
 
-	return transformY.value + offset
+	return transformY.value + offset + topFadeExtension
 })
 </script>
 
@@ -144,8 +145,8 @@ const finalTransform = computed(() => {
 		v-if="song && song.lyrics && song.lyrics.synced"
 		class="synced-lyrics-container"
 		:style="{
-			height: `${syncedHeight}px`,
-			marginTop: `${top}px`,
+			height: `${syncedHeight + topFadeExtension}px`,
+			marginTop: `${top - topFadeExtension}px`,
 		}"
 		@wheel.prevent="onWheel"
 	>
@@ -160,7 +161,10 @@ const finalTransform = computed(() => {
 			<p
 				v-for="(lyric, i) in parsedLyrics"
 				:key="lyric.time"
-				:class="{ active: i == scrollActiveIndex }"
+				:class="{
+					active: i == scrollActiveIndex,
+					past: i < scrollActiveIndex && !isScrolling,
+				}"
 				ref="lyrics"
 				@click="onLyricClick(lyric.time)"
 			>
@@ -225,6 +229,18 @@ const finalTransform = computed(() => {
 			cursor: pointer;
 			opacity: 1;
 			filter: initial;
+		}
+
+		&.past {
+			opacity: 0;
+			filter: blur(1.5px);
+			transition: opacity 0.4s ease;
+
+			&:hover {
+				cursor: default;
+				opacity: 0;
+				filter: blur(1.5px);
+			}
 		}
 	}
 }
