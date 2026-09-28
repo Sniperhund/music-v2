@@ -10,7 +10,7 @@ const submit = async (e: any) => {
 	} catch {}
 
 	try {
-		await auth.signin(data.email, data.password, data.remember)
+		await auth.signin(data.email, data.password, data.remember === "on")
 	} catch (e: string | any) {
 		toast.show(e, "error")
 	}
