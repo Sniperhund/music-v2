@@ -2,7 +2,7 @@ import { getQuery, setResponseStatus } from "h3"
 import { Track } from "../../models/track"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
-import { tryCleanUploadFileOrDirectory } from "../../utils/upload-files"
+import { tryDeleteObjectPrefix } from "../../utils/object-storage"
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true)
@@ -14,6 +14,6 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		setResponseStatus(event, 404)
 		return {}
 	}
-	void tryCleanUploadFileOrDirectory(event, track.fileDir)
+	await tryDeleteObjectPrefix(event, `${track.fileDir}/`)
 	return {}
 })

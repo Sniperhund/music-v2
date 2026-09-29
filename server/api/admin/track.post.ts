@@ -1,8 +1,7 @@
-import path from "node:path"
 import mongoose from "mongoose"
 import { readAdminForm, adminFormText, adminFormTexts, adminFormFile, parseOptionalJson, splitIds } from "../../utils/admin-form"
-import { saveUploadFile, tryCleanUploadFileOrDirectory } from "../../utils/upload-files"
-import { getAudioDuration, processAudioFile } from "../../utils/audio-files"
+import { prepareAudioUpload } from "../../utils/audio-files"
+import { putObjects, tryDeleteObjectPrefix } from "../../utils/object-storage"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { Track } from "../../models/track"
 
@@ -37,27 +36,36 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		return { message: "Only audio files are accepted" }
 	}
 
-	const relativeFilePath = `tracks/${crypto.randomUUID()}/original`
-	const fileDirectory = path.dirname(relativeFilePath)
+	const fileDirectory = `tracks/${crypto.randomUUID()}`
 	try {
-		console.log("Processing audio")
-		await saveUploadFile(event, relativeFilePath, file.data)
-		const duration = await getAudioDuration(event, relativeFilePath)
-		void processAudioFile(event, relativeFilePath).catch((error) => console.error(error))
+		const extension = safeFileExtension(file.name)
+		const processed = await prepareAudioUpload(file.data, extension)
+		await putObjects(event, [
+			{ key: `${fileDirectory}/original${extension ? `.${extension}` : ""}`, body: processed.original, contentType: file.type },
+			...processed.renditions.map((rendition) => ({
+				key: `${fileDirectory}/${rendition.name}`,
+				body: rendition.body,
+				contentType: rendition.contentType,
+			})),
+		])
 		const track = new Track({
 			name,
 			album: new mongoose.Types.ObjectId(album),
 			artists: artists.map((id) => new mongoose.Types.ObjectId(id)),
 			fileDir: fileDirectory,
-			durationInSeconds: Math.round(duration),
+			durationInSeconds: Math.round(processed.duration),
 			lyrics: parsedLyrics.value || undefined,
 		})
-		await track.save()
+		try {
+			await track.save()
+		} catch (error) {
+			await tryDeleteObjectPrefix(event, `${fileDirectory}/`)
+			throw error
+		}
 		setResponseStatus(event, 201)
 		return track
 	} catch (error) {
-		void tryCleanUploadFileOrDirectory(event, fileDirectory)
-		console.log(error)
+		console.error(error)
 		setResponseStatus(event, 500)
 		return undefined
 	}

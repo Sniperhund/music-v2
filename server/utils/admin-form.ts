@@ -24,7 +24,8 @@ export function splitIds(value: string | undefined) {
 }
 
 export function safeFileExtension(fileName: string) {
-	return fileName.split(".")[1]?.replace(/[^A-Za-z0-9]/g, "") ?? ""
+	if (!fileName.includes(".")) return ""
+	return fileName.split(".").pop()?.replace(/[^A-Za-z0-9]/g, "") ?? ""
 }
 
 export function parseOptionalJson(value: string | undefined) {
