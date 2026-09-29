@@ -1,6 +1,7 @@
 import { Howl } from "howler"
 
 export default defineNuxtPlugin((nuxtApp) => {
+	const mediaBaseUrl = useRuntimeConfig().public.mediaBaseUrl
 	const { close: closeFullscreen } = useFullscreen()
 	const VOLUME_STORAGE_KEY = "music-v2-player-volume"
 	const DEFAULT_VOLUME = 0.5
@@ -84,7 +85,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				album: currentSong.value.album.name,
 				artwork: [
 					{
-						src: GET_FILE(currentSong.value.album.file),
+						src: GET_FILE(currentSong.value.album.file, mediaBaseUrl),
 						sizes: "512x512",
 					},
 				],
@@ -183,7 +184,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 		if (!song) throw new Error("Song not provided")
 
 		const newSound = new Howl({
-			src: [GET_AUDIO_FILE(song.fileDir)],
+			src: [GET_AUDIO_FILE(song.fileDir, mediaBaseUrl)],
 			html5: false,
 			autoplay: false,
 			volume: storedVolume.value,

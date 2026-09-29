@@ -14,8 +14,6 @@ const tableRows: Row[] = [
 		name: "fileDir",
 		displayName: "Audio File",
 		type: "audio",
-		prefix: `${BACKEND_SERVE}`,
-		suffix: "/high.m4a",
 	},
 	{
 		name: "name",

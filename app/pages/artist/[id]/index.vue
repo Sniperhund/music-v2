@@ -90,7 +90,7 @@ const { playAlbum, playShuffledAlbum, playAlbumAtIndex } = usePlayer()
 			v-for="album in albumsData"
 			:key="album._id"
 			:name="album.name"
-			:file="`${BACKEND_SERVE}${album.file}`"
+			:file="GET_FILE(album.file)"
 			:artists="album.artists"
 			:_id="album._id"
 		/>

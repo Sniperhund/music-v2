@@ -4,8 +4,6 @@ export type Row = {
 	class?: string
 	width?: string
 	type?: "image" | "audio"
-	prefix?: string
-	suffix?: string
 	displayName?: string
 }
 
@@ -37,12 +35,12 @@ const { rows, data } = defineProps<TableProps>()
 					<slot :name="row.name" :item="item" :index="i">
 						<nuxt-img
 							v-if="row.type == 'image'"
-							:src="`${row.prefix}${item[row.name]}`"
+							:src="GET_FILE(item[row.name])"
 						/>
 						<audio
 							v-else-if="row.type == 'audio'"
 							controls
-							:src="`${row.prefix}${item[row.name]}${row.suffix}`"
+							:src="GET_AUDIO_FILE(item[row.name])"
 						/>
 						<p v-else>{{ item[row.name] }}</p>
 					</slot>

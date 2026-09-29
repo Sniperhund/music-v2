@@ -32,7 +32,7 @@ const data = await Promise.allSettled(
 					v-for="album in item.albums"
 					:key="album._id"
 					:name="album.name"
-					:file="`${BACKEND_SERVE}${album.file}`"
+					:file="GET_FILE(album.file)"
 					:artists="album.artists"
 					:_id="album._id"
 				/>
