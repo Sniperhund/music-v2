@@ -12,8 +12,12 @@ export default defineNuxtConfig({
 		// defaults at runtime in the built Nitro server. Legacy variable names
 		// are resolved by server utilities at runtime, never during this build.
 		mongodbUri: "",
-		uploadDir: "",
 		tokenExpire: "",
+		s3Endpoint: "",
+		s3Bucket: "",
+		s3Region: "us-east-1",
+		s3AccessKeyId: "",
+		s3SecretAccessKey: "",
 		public: {
 			mediaBaseUrl: "",
 		},
