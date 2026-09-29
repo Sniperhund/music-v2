@@ -1,7 +1,7 @@
 import { getQuery, setResponseStatus } from "h3"
 import mongoose from "mongoose"
 import { readAdminForm, adminFormText, adminFormFile, safeFileExtension } from "../../utils/admin-form"
-import { saveUploadFile, tryCleanUploadFileOrDirectory } from "../../utils/upload-files"
+import { putObjects, tryDeleteObject } from "../../utils/object-storage"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
 import { Artist } from "../../models/artist"
@@ -24,10 +24,19 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		return {}
 	}
 	if (file) {
-		void tryCleanUploadFileOrDirectory(event, artist.file)
 		const filePath = `artists/${crypto.randomUUID()}.${safeFileExtension(file.name)}`
-		await saveUploadFile(event, filePath, file.data)
+		await putObjects(event, [{ key: filePath, body: file.data, contentType: file.type }])
+		const previousPath = artist.file
 		artist.file = filePath
+		if (name) artist.name = name
+		try {
+			await artist.save()
+		} catch (error) {
+			await tryDeleteObject(event, filePath)
+			throw error
+		}
+		await tryDeleteObject(event, previousPath)
+		return artist
 	}
 	if (name) artist.name = name
 	await artist.save()

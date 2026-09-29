@@ -1,7 +1,7 @@
 import { getQuery, setResponseStatus } from "h3"
 import mongoose from "mongoose"
 import { readAdminForm, adminFormText, adminFormTexts, adminFormFile, safeFileExtension, splitIds } from "../../utils/admin-form"
-import { saveUploadFile, tryCleanUploadFileOrDirectory } from "../../utils/upload-files"
+import { putObjects, tryDeleteObject } from "../../utils/object-storage"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
 import { Album } from "../../models/album"
@@ -32,10 +32,21 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		return {}
 	}
 	if (file) {
-		void tryCleanUploadFileOrDirectory(event, album.file)
 		const filePath = `album/${crypto.randomUUID()}.${safeFileExtension(file.name)}`
-		await saveUploadFile(event, filePath, file.data)
+		await putObjects(event, [{ key: filePath, body: file.data, contentType: file.type }])
+		const previousPath = album.file
 		album.file = filePath
+		if (name) album.name = name
+		if (artists) album.artists = artists.map((id) => new mongoose.Types.ObjectId(id))
+		if (genre) album.genre = new mongoose.Types.ObjectId(genre)
+		try {
+			await album.save()
+		} catch (error) {
+			await tryDeleteObject(event, filePath)
+			throw error
+		}
+		await tryDeleteObject(event, previousPath)
+		return album
 	}
 	if (name) album.name = name
 	if (artists) album.artists = artists.map((id) => new mongoose.Types.ObjectId(id))

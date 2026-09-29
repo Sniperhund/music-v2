@@ -4,7 +4,7 @@ import { Artist } from "../../models/artist"
 import { Track } from "../../models/track"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
-import { tryCleanUploadFileOrDirectory } from "../../utils/upload-files"
+import { tryDeleteObject, tryDeleteObjectPrefix } from "../../utils/object-storage"
 
 async function findDependents(model: typeof Track | typeof Album, field: string, value: unknown) {
 	return model.find({ [field]: value }).select("_id name").exec()
@@ -23,20 +23,28 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 
 	let dependents = await findDependents(Track, "artists", artist._id)
-	if (force) await Promise.all(dependents.map((dependent) => Track.findByIdAndDelete(dependent._id)))
+	if (force) {
+		const tracks = await Track.find({ artists: artist._id }).select("_id fileDir").exec()
+		await Promise.all(tracks.map((track) => Track.findByIdAndDelete(track._id)))
+		await Promise.all(tracks.map((track) => tryDeleteObjectPrefix(event, `${track.fileDir}/`)))
+	}
 	else if (dependents.length) {
 		setResponseStatus(event, 409)
 		return { message: "Artist has one or more dependents", dependentType: "Track", dependents }
 	}
 
 	dependents = await findDependents(Album, "artists", artist._id)
-	if (force) await Promise.all(dependents.map((dependent) => Album.findByIdAndDelete(dependent._id)))
+	if (force) {
+		const albums = await Album.find({ artists: artist._id }).select("_id file").exec()
+		await Promise.all(albums.map((album) => Album.findByIdAndDelete(album._id)))
+		await Promise.all(albums.map((album) => tryDeleteObject(event, album.file)))
+	}
 	else if (dependents.length) {
 		setResponseStatus(event, 409)
 		return { message: "Artist has one or more dependents", dependentType: "Artist", dependents }
 	}
 
 	await Artist.findByIdAndDelete(parsedId.value)
-	void tryCleanUploadFileOrDirectory(event, artist.file)
+	await tryDeleteObject(event, artist.file)
 	return {}
 })

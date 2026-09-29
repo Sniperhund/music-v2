@@ -3,7 +3,7 @@ import { Album } from "../../models/album"
 import { Track } from "../../models/track"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
-import { tryCleanUploadFileOrDirectory } from "../../utils/upload-files"
+import { tryDeleteObject, tryDeleteObjectPrefix } from "../../utils/object-storage"
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true)
@@ -18,13 +18,17 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 
 	const dependents = await Track.find({ album: album._id }).select("_id name").exec()
-	if (force) await Promise.all(dependents.map((dependent) => Track.findByIdAndDelete(dependent._id)))
+	if (force) {
+		const tracks = await Track.find({ album: album._id }).select("_id fileDir").exec()
+		await Promise.all(tracks.map((track) => Track.findByIdAndDelete(track._id)))
+		await Promise.all(tracks.map((track) => tryDeleteObjectPrefix(event, `${track.fileDir}/`)))
+	}
 	else if (dependents.length) {
 		setResponseStatus(event, 409)
 		return { message: "Album has one or more dependents", dependentType: "Track", dependents }
 	}
 
 	await Album.findByIdAndDelete(parsedId.value)
-	void tryCleanUploadFileOrDirectory(event, album.file)
+	await tryDeleteObject(event, album.file)
 	return {}
 })

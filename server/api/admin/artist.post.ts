@@ -1,5 +1,5 @@
 import { readAdminForm, adminFormText, adminFormFile, safeFileExtension } from "../../utils/admin-form"
-import { saveUploadFile } from "../../utils/upload-files"
+import { putObjects, tryDeleteObject } from "../../utils/object-storage"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { Artist } from "../../models/artist"
 
@@ -18,8 +18,14 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 
 	const filePath = `artists/${crypto.randomUUID()}.${safeFileExtension(file.name)}`
-	await saveUploadFile(event, filePath, file.data)
-	const artist = await Artist.create({ name, file: filePath })
+	await putObjects(event, [{ key: filePath, body: file.data, contentType: file.type }])
+	let artist
+	try {
+		artist = await Artist.create({ name, file: filePath })
+	} catch (error) {
+		await tryDeleteObject(event, filePath)
+		throw error
+	}
 	setResponseStatus(event, 201)
 	return artist
 })

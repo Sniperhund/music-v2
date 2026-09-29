@@ -1,5 +1,5 @@
 import { readAdminForm, adminFormText, adminFormTexts, adminFormFile, safeFileExtension, splitIds } from "../../utils/admin-form"
-import { saveUploadFile } from "../../utils/upload-files"
+import { putObjects, tryDeleteObject } from "../../utils/object-storage"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { Album } from "../../models/album"
 import mongoose from "mongoose"
@@ -30,8 +30,14 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 
 	const filePath = `album/${crypto.randomUUID()}.${safeFileExtension(file.name)}`
-	await saveUploadFile(event, filePath, file.data)
-	const album = await Album.create({ name, artists, file: filePath, genre })
+	await putObjects(event, [{ key: filePath, body: file.data, contentType: file.type }])
+	let album
+	try {
+		album = await Album.create({ name, artists, file: filePath, genre })
+	} catch (error) {
+		await tryDeleteObject(event, filePath)
+		throw error
+	}
 	setResponseStatus(event, 201)
 	return album
 })
