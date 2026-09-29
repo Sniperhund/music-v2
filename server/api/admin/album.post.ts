@@ -1,10 +1,10 @@
 import { readAdminForm, adminFormText, adminFormTexts, adminFormFile, safeFileExtension, splitIds } from "../../utils/admin-form"
 import { saveUploadFile } from "../../utils/upload-files"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { Album } from "../../models/album"
 import mongoose from "mongoose"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true)
 	const parts = await readAdminForm(event)
 	const name = adminFormText(parts, "name")

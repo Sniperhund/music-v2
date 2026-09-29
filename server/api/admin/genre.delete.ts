@@ -1,10 +1,10 @@
 import { getQuery, setResponseStatus } from "h3"
 import { Album } from "../../models/album"
 import { Genre } from "../../models/genre"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId } from "../../utils/api-validation"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true)
 
 	const query = getQuery(event)

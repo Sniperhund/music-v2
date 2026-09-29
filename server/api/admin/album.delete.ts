@@ -1,11 +1,11 @@
 import { getQuery, setResponseStatus } from "h3"
 import { Album } from "../../models/album"
 import { Track } from "../../models/track"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
 import { tryCleanUploadFileOrDirectory } from "../../utils/upload-files"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true)
 	const query = getQuery(event)
 	const parsedId = parseMongoId(query.id)

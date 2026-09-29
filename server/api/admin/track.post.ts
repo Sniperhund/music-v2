@@ -3,10 +3,10 @@ import mongoose from "mongoose"
 import { readAdminForm, adminFormText, adminFormTexts, adminFormFile, parseOptionalJson, splitIds } from "../../utils/admin-form"
 import { saveUploadFile, tryCleanUploadFileOrDirectory } from "../../utils/upload-files"
 import { getAudioDuration, processAudioFile } from "../../utils/audio-files"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { Track } from "../../models/track"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true)
 	const parts = await readAdminForm(event)
 	const name = adminFormText(parts, "name")
@@ -59,6 +59,6 @@ export default defineEventHandler(async (event) => {
 		void tryCleanUploadFileOrDirectory(event, fileDirectory)
 		console.log(error)
 		setResponseStatus(event, 500)
-		return null
+		return undefined
 	}
 })

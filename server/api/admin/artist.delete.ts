@@ -2,7 +2,7 @@ import { getQuery, setResponseStatus } from "h3"
 import { Album } from "../../models/album"
 import { Artist } from "../../models/artist"
 import { Track } from "../../models/track"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
 import { tryCleanUploadFileOrDirectory } from "../../utils/upload-files"
 
@@ -10,7 +10,7 @@ async function findDependents(model: typeof Track | typeof Album, field: string,
 	return model.find({ [field]: value }).select("_id name").exec()
 }
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true)
 	const query = getQuery(event)
 	const parsedId = parseMongoId(query.id)

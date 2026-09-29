@@ -2,11 +2,11 @@ import { getQuery, setResponseStatus } from "h3"
 import mongoose from "mongoose"
 import { readAdminForm, adminFormText, adminFormTexts, adminFormFile, safeFileExtension, splitIds } from "../../utils/admin-form"
 import { saveUploadFile, tryCleanUploadFileOrDirectory } from "../../utils/upload-files"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
 import { Album } from "../../models/album"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true)
 	const parsedId = parseMongoId(getQuery(event).id)
 	if ("error" in parsedId) return validationResponse(event, parsedId.error)

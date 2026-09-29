@@ -4,11 +4,11 @@ import { getQuery } from "h3"
 import { readAdminForm, adminFormText, adminFormTexts, adminFormFile, safeFileExtension, parseOptionalJson, splitIds } from "../../utils/admin-form"
 import { saveUploadFile, tryCleanUploadFileOrDirectory } from "../../utils/upload-files"
 import { getAudioDuration, processAudioFile } from "../../utils/audio-files"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
 import { Track } from "../../models/track"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true)
 	const parsedId = parseMongoId(getQuery(event).id)
 	if ("error" in parsedId) return validationResponse(event, parsedId.error)

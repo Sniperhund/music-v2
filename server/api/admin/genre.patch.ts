@@ -1,9 +1,9 @@
 import { getQuery, readBody, setResponseStatus } from "h3"
 import { Genre } from "../../models/genre"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId } from "../../utils/api-validation"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true)
 
 	const parsedId = parseMongoId(getQuery(event).id)
