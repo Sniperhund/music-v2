@@ -2,13 +2,15 @@ import { getCookie, readBody, setCookie, setResponseStatus } from "h3"
 import { User } from "../../models/user"
 import { getSessionModel } from "../../models/session"
 import {
+	assertCookieRequestOrigin,
+	defineAuthenticatedEventHandler,
 	getSessionTtl,
 	REFRESH_COOKIE,
 	SESSION_COOKIE,
 } from "../../utils/auth"
 import { getAuthValidationMessage } from "../../utils/auth-validation"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	const body = await readBody(event).catch(() => undefined)
 	const validationMessage =
 		body === undefined ? null : getAuthValidationMessage(body, [{ name: "refreshToken" }])
@@ -17,9 +19,10 @@ export default defineEventHandler(async (event) => {
 		return { message: validationMessage }
 	}
 
-	const refreshToken =
-		(typeof body?.refreshToken === "string" && body.refreshToken) ||
-		getCookie(event, REFRESH_COOKIE)
+	const bodyRefreshToken = typeof body?.refreshToken === "string" && body.refreshToken
+	const cookieRefreshToken = getCookie(event, REFRESH_COOKIE)
+	if (!bodyRefreshToken && cookieRefreshToken) assertCookieRequestOrigin(event)
+	const refreshToken = bodyRefreshToken || cookieRefreshToken
 
 	if (!refreshToken) {
 		setResponseStatus(event, 401)

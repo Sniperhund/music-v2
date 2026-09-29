@@ -1,10 +1,15 @@
 import { readBody, setCookie, setResponseStatus } from "h3"
 import argon2 from "argon2"
 import { User } from "../../models/user"
-import { REFRESH_COOKIE } from "../../utils/auth"
+import {
+	assertCookieRequestOrigin,
+	defineAuthenticatedEventHandler,
+	REFRESH_COOKIE,
+} from "../../utils/auth"
 import { getAuthValidationMessage } from "../../utils/auth-validation"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
+	assertCookieRequestOrigin(event)
 	const body = await readBody(event)
 	const validationMessage = getAuthValidationMessage(body, [
 		{ name: "email", email: true },
