@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 import mongoose, { Schema, type Model } from "mongoose"
+import "./user"
 
 export function getSessionModel(sessionTtlMs: number) {
 	if (mongoose.models.Session) return mongoose.models.Session as Model<any>

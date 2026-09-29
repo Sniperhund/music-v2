@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 import mongoose, { Schema, type Model } from "mongoose"
+import "./track"
 
 const userSchema = new Schema(
 	{

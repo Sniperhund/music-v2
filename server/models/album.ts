@@ -1,4 +1,6 @@
 import mongoose, { Schema, type Model } from "mongoose"
+import "./artist"
+import "./genre"
 
 const albumSchema = new Schema({
 	name: { type: String, required: true },
