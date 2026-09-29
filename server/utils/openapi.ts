@@ -14,6 +14,7 @@ type ApiOperation = {
 }
 
 const operations: ApiOperation[] = [
+	{ method: "get", path: "/health", tag: "Health", summary: "Health check", response: "Health" },
 	{ method: "post", path: "/auth/register", tag: "Auth", summary: "Register a user", body: "json", response: "EmptyObject", status: 201 },
 	{ method: "post", path: "/auth/signin", tag: "Auth", summary: "Sign in", body: "json", response: "EmptyObject" },
 	{ method: "post", path: "/auth/session", tag: "Auth", summary: "Create a session", body: "json", response: "Session", status: 201 },
@@ -119,9 +120,12 @@ function operationSpec(operation: ApiOperation) {
 			? {
 				401: jsonResponse(
 					"Authentication required",
-					ref(operation.auth || operation.admin ? "UnauthorizedError" : "Error"),
+					ref("Error"),
 				),
 			}
+			: {}),
+		...((operation.method === "post" && operation.path.startsWith("/auth/")) || ((operation.auth || operation.admin) && operation.method !== "get")
+			? { 403: jsonResponse("Invalid request origin", ref("Error")) }
 			: {}),
 		...(operation.path === "/user/tracks" || (operation.path.startsWith("/admin/") && (operation.method === "patch" || operation.method === "delete"))
 			? { 404: jsonResponse("Resource not found", ref("NotFound")) }
@@ -166,7 +170,7 @@ export const openApiDocument = {
 	openapi: "3.1.0",
 	info: { title: "MusicBackend", version: "v2" },
 	servers: [{ url: "/api", description: "Nuxt API routes" }],
-	tags: ["Auth", "Artist", "Album", "Genre", "Track", "All", "Search", "User", "Admin"].map((name) => ({ name })),
+	tags: ["Health", "Auth", "Artist", "Album", "Genre", "Track", "All", "Search", "User", "Admin"].map((name) => ({ name })),
 	paths,
 	components: {
 		securitySchemes: {
@@ -175,15 +179,7 @@ export const openApiDocument = {
 		},
 		schemas: {
 			Error: { type: "object", required: ["message"], properties: { message: { type: "string" } } },
-			UnauthorizedError: {
-				type: "object",
-				required: ["statusCode", "statusMessage", "data"],
-				properties: {
-					statusCode: { type: "integer", enum: [401] },
-					statusMessage: { type: "string", enum: ["Unauthorized"] },
-					data: ref("Error"),
-				},
-			},
+			Health: { type: "object", required: ["status"], properties: { status: { type: "string", const: "ok" } } },
 			InvalidRequest: { oneOf: [ref("Error"), ref("H3Error")] },
 			H3Error: {
 				type: "object",

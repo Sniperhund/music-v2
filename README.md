@@ -42,7 +42,9 @@ npm run build
 NODE_ENV=production node .output/server/index.mjs
 ```
 
-The server listens on port `3000` by default; Nitro also honors `PORT`/`NITRO_PORT` and `HOST`/`NITRO_HOST`. A reverse proxy may terminate TLS and forward requests to this server.
+The server listens on port `3000` by default; Nitro also honors `PORT`/`NITRO_PORT` and `HOST`/`NITRO_HOST`. A reverse proxy may terminate TLS and forward requests to this server. When using cookie authentication, configure a trusted proxy to preserve the public `Host` and overwrite `X-Forwarded-Proto`; the server uses these values to validate same-origin mutation requests.
+
+The health check endpoint is `GET /api/health` and returns `{ "status": "ok" }`.
 
 The upload directory must be writable and persist across deployments/restarts, and all Nuxt instances serving the same library must see the same files. Static/serverless deployments without persistent writable storage are not suitable for the current upload and media routes. Install `ffmpeg` and `ffprobe` on the host and make them available on `PATH`; audio uploads are processed after they are received. Configure an ingress or reverse-proxy request size limit appropriate for audio uploads.
 
