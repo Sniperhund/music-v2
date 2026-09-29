@@ -11,7 +11,6 @@ export function getBackendRuntimeConfig(event?: H3Event) {
 	return {
 		mongodbUri: config.mongodbUri || process.env.MONGODB_URI || "",
 		uploadDir: config.uploadDir || process.env.UPLOAD_DIR || "",
-		mediaBaseUrl: config.mediaBaseUrl || process.env.MEDIA_BASE_URL || "",
 		tokenExpire: config.tokenExpire || process.env.TOKEN_EXPIRE || "1h",
 	}
 }

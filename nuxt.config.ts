@@ -13,7 +13,6 @@ export default defineNuxtConfig({
 		// are resolved by server utilities at runtime, never during this build.
 		mongodbUri: "",
 		uploadDir: "",
-		mediaBaseUrl: "",
 		tokenExpire: "",
 		public: {
 			mediaBaseUrl: "",

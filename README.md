@@ -27,11 +27,10 @@ The private settings are declared in `nuxt.config.ts` and can be set with matchi
 | --- | --- | --- |
 | `NUXT_MONGODB_URI` | Yes | MongoDB connection URI. |
 | `NUXT_UPLOAD_DIR` | Yes for upload/media operations | Writable path where uploaded media is stored. Prefer an absolute path. |
-| `NUXT_MEDIA_BASE_URL` | No | Optional anonymous media read base URL. Object paths are appended as-is, for example `https://s3-seaweedfs.lucasskt.dk/music`. When configured, media reads use this URL first and fall back to local uploads when the object is missing. |
 | `NUXT_PUBLIC_MEDIA_BASE_URL` | Yes for browser media URLs | Public base URL used by `GET_FILE` and `GET_AUDIO_FILE` to build direct bucket URLs. |
 | `NUXT_TOKEN_EXPIRE` | No | Session lifetime accepted by `parse-duration`, such as `1h` or `7d`; defaults to `1h`. |
 
-For a short migration window, the server also accepts the standalone backend names `MONGODB_URI`, `UPLOAD_DIR`, `MEDIA_BASE_URL`, and `TOKEN_EXPIRE` as fallbacks. Prefer the `NUXT_` names for all new deployments. `VITE_PUBLIC_BACKEND` is no longer used: browser API requests are same-origin.
+For a short migration window, the server also accepts the standalone backend names `MONGODB_URI`, `UPLOAD_DIR`, and `TOKEN_EXPIRE` as fallbacks. Prefer the `NUXT_` names for all new deployments. `VITE_PUBLIC_BACKEND` is no longer used: browser API requests are same-origin.
 
 Nuxt loads `.env` while running its CLI for development and local production preview, but a built server does not load `.env`. Configure these variables in the production process manager or hosting environment. See the [Nuxt runtime config guide](https://nuxt.com/docs/4.x/guide/going-further/runtime-config) and [deployment guide](https://nuxt.com/docs/4.x/getting-started/deployment).
 
