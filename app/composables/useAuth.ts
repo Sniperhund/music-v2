@@ -1,3 +1,5 @@
+import { appendResponseHeader } from "h3"
+
 type SessionResponse = {
 	sessionToken: string
 	expireAt: string
@@ -50,9 +52,28 @@ export const useAuth = () => {
 	const refreshSessionToken = async (): Promise<string | null> => {
 		if (refreshPromise) return refreshPromise
 
-		refreshPromise = $fetch<SessionResponse>("/api/auth/session", {
-			method: "POST",
-		})
+		refreshPromise = (async () => {
+			const response = await $fetch.raw<SessionResponse>(
+				"/api/auth/session",
+				{
+					method: "POST",
+					headers: import.meta.server
+						? useRequestHeaders(["cookie", "authorization"])
+						: undefined,
+				},
+			)
+
+			if (import.meta.server) {
+				const event = useRequestEvent()
+				if (event) {
+					for (const cookie of response.headers.getSetCookie()) {
+						appendResponseHeader(event, "set-cookie", cookie)
+					}
+				}
+			}
+
+			return response._data!
+		})()
 			.then((response) => {
 				sessionToken.value = response.sessionToken
 				return response.sessionToken

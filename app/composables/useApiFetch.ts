@@ -6,14 +6,11 @@ export function useApiFetch<DataT = any, ErrorT = any>(
 	options?: UseFetchOptions<DataT, ErrorT>,
 	authorize: boolean = true,
 ): ReturnType<typeof useFetch<DataT, ErrorT>> {
-	const baseUrl = import.meta.env.VITE_PUBLIC_BACKEND
-
-	if (!baseUrl) throw new Error("BACKEND URL not set")
-
 	const { sessionToken, refreshSessionToken } = useAuth()
 
 	const defaults: UseFetchOptions<DataT, ErrorT> = {
-		baseURL: baseUrl,
+		// The migrated API lives in this Nuxt app under server/api.
+		baseURL: "/api",
 
 		retry: 1,
 		retryDelay: 0,
@@ -29,11 +26,9 @@ export function useApiFetch<DataT = any, ErrorT = any>(
 
 				if (!newToken) return
 
-				options.headers = {
-					...(options.headers as unknown as Record<string, string>),
-					// @ts-ignore
-					Authorization: `Bearer ${newToken}`,
-				}
+				const headers = new Headers(options.headers as HeadersInit)
+				headers.set("Authorization", `Bearer ${newToken}`)
+				options.headers = headers
 			}
 		},
 	}

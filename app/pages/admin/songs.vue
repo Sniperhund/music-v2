@@ -147,7 +147,7 @@ const save = async (value: any) => {
 					return false
 				}
 
-				const albumResponse = await cfetch("/admin/album", {
+				const albumResponse = await cfetch<{ _id: string }>("/admin/album", {
 					method: "POST",
 					data: {
 						name: `${value.name} - Single`,
@@ -156,7 +156,7 @@ const save = async (value: any) => {
 						file: value.cover,
 					},
 				})
-				value.album = albumResponse.data._id
+				value.album = albumResponse._id
 			} else if (!value.album) {
 				toast.show(
 					"Choose an album or create a single album",

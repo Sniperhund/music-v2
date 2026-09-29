@@ -1,78 +1,82 @@
-import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios"
-import defu from "defu"
+import type { FetchOptions } from "ofetch"
 
-const hasFile = (value: any): boolean => {
+type RequestConfig = Omit<FetchOptions, "body" | "query"> & {
+	data?: unknown
+	params?: Record<string, unknown>
+	forceFormData?: boolean
+}
+
+const hasFile = (value: unknown): boolean => {
 	if (!value || typeof value !== "object") return false
 
+	const isFile = (item: unknown) =>
+		typeof File !== "undefined" && item instanceof File
+	const isBlob = (item: unknown) =>
+		typeof Blob !== "undefined" && item instanceof Blob
+
 	return Object.values(value).some(
-		(v) =>
-			v instanceof File ||
-			v instanceof Blob ||
-			(Array.isArray(v) && v.some((i) => i instanceof File)),
+		(item) =>
+			isFile(item) ||
+			isBlob(item) ||
+			(Array.isArray(item) && item.some((entry) => isFile(entry) || isBlob(entry))),
 	)
 }
 
-type RequestConfig = {
-	forceFormData?: boolean
-} & AxiosRequestConfig
+const toApiUrl = (url: string) => {
+	if (url === "/api" || url.startsWith("/api/")) return url
+	return `/api${url.startsWith("/") ? url : `/${url}`}`
+}
 
-export const cfetch = async (
+export const cfetch = async <DataT = any>(
 	url: string,
 	options: RequestConfig = {},
-	authorize: boolean = true,
-): Promise<AxiosResponse> => {
-	const baseUrl = import.meta.env.VITE_PUBLIC_BACKEND
+	authorize = true,
+): Promise<DataT> => {
+	const { data, params, forceFormData, ...fetchOptions } = options
+	const headers = new Headers(fetchOptions.headers as HeadersInit | undefined)
+	const requestOptions: FetchOptions = {
+		...fetchOptions,
+		query: params ?? (fetchOptions as FetchOptions).query,
+		body: data ?? (fetchOptions as FetchOptions).body,
+		headers,
+	}
 
-	if (!baseUrl) throw new Error("BACKEND URL not set")
+	if (
+		requestOptions.body &&
+		(typeof requestOptions.body === "object" || forceFormData) &&
+		(hasFile(requestOptions.body) || forceFormData)
+	) {
+		const form = new FormData()
 
-	const defaults: AxiosRequestConfig = {
-		baseURL: baseUrl,
+		for (const [key, value] of Object.entries(requestOptions.body as Record<string, unknown>)) {
+			if (Array.isArray(value)) {
+				value.forEach((entry) => form.append(key, entry as string | Blob))
+			} else if (value !== undefined && value !== null) {
+				form.append(key, value as string | Blob)
+			}
+		}
+
+		requestOptions.body = form
+		headers.delete("Content-Type")
 	}
 
 	if (authorize) {
 		const { sessionToken, refreshSessionToken } = useAuth()
-
 		let token = sessionToken.value
 
-		if (token) defaults.headers = { Authorization: `Bearer ${token}` }
-		else
-			defaults.headers = {
-				Authorization: `Bearer ${await refreshSessionToken()}`,
-			}
+		if (!token) token = await refreshSessionToken()
+		if (token) headers.set("Authorization", `Bearer ${token}`)
 	}
 
-	const config: RequestConfig = defu(options, defaults)
-
-	if (config.data && (hasFile(config.data) || config.forceFormData)) {
-		const form = new FormData()
-
-		for (const [key, val] of Object.entries(config.data)) {
-			if (Array.isArray(val)) {
-				val.forEach((v) => form.append(key, v)) // key as-is, no []
-			} else if (val !== undefined && val !== null) {
-				form.append(key, val as any)
-			}
-		}
-
-		config.data = form
-		if (!config.headers) config.headers = {}
-		delete config.headers["Content-Type"]
-	}
-
-	let response
 	try {
-		response = await axios(url, config)
+		return (await $fetch(toApiUrl(url), requestOptions as any)) as DataT
 	} catch (error: any) {
-		if (error.response?.status == 401) {
-			const { sessionToken, refreshSessionToken } = useAuth()
+		if (!authorize || error?.response?.status !== 401) throw error
 
-			if (!config.headers) config.headers = {}
-			config.headers.Authorization = `Bearer ${await refreshSessionToken()}`
+		const token = await useAuth().refreshSessionToken()
+		if (!token) throw error
 
-			response = await axios(url, config)
-		} else throw error
+		headers.set("Authorization", `Bearer ${token}`)
+		return (await $fetch(toApiUrl(url), requestOptions as any)) as DataT
 	}
-
-	if (!response) throw new Error("Something went wrong. Please try again")
-	return response
 }

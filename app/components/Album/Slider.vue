@@ -3,11 +3,11 @@ const { data: genresData } = await useApiFetch<Genre[]>("/genres/random")
 
 const data = await Promise.allSettled(
 	(genresData.value ?? []).map(async (genre: Genre) => {
-		const res = await cfetch(`/genres/albums/${genre._id}`)
+		const albums = await cfetch<Album[]>(`/genres/albums/${genre._id}`)
 
 		return {
 			genre,
-			albums: res.data,
+			albums,
 		}
 	}),
 ).then((results) =>
