@@ -185,7 +185,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 		const newSound = new Howl({
 			src: [GET_AUDIO_FILE(song.fileDir, mediaBaseUrl)],
-			html5: false,
+			html5: true,
 			autoplay: false,
 			volume: storedVolume.value,
 			onload: () => {
