@@ -3,6 +3,9 @@ import { fileURLToPath } from "node:url"
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
 	compatibilityDate: "2025-07-15",
+	nitro: {
+		preset: "node-server",
+	},
 	devtools: { enabled: true },
 	runtimeConfig: {
 		// Private server configuration. Matching NUXT_* variables override these

@@ -94,5 +94,6 @@ export default defineEventHandler(async (event) => {
 	}
 
 	if (event.node.req.method === "HEAD") return null
+	if (metadata.size === 0) return null
 	return sendStream(event, createReadStream(file.path, { start, end }))
 })
