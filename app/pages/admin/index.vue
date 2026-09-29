@@ -1,3 +1,4 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">useHead({ title: "Admin" })
+</script>
 
 <template></template>

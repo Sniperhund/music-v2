@@ -36,6 +36,7 @@ const scrollWidth = () => {
 }
 
 const { playAlbum, playShuffledAlbum, playAlbumAtIndex } = usePlayer()
+useHead({ title: computed(() => artistData.value ? `${artistData.value.name} - Artist` : "Artist") })
 </script>
 
 <template>

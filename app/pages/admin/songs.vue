@@ -219,6 +219,7 @@ const show = (id?: string) => {
 
 	showModal.value = true
 }
+useHead({ title: "Admin - Songs" })
 </script>
 
 <template>

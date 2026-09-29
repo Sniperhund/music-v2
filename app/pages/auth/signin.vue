@@ -15,6 +15,7 @@ const submit = async (e: any) => {
 		toast.show(e, "error")
 	}
 }
+useHead({ title: "Sign In" })
 </script>
 
 <template>

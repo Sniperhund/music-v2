@@ -79,6 +79,7 @@ const show = (id?: string) => {
 
 	showModal.value = true
 }
+useHead({ title: "Admin - Genres" })
 </script>
 
 <template>

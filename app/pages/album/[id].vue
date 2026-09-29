@@ -9,6 +9,7 @@ const { data: tracksData } = await useApiFetch<Track[]>(
 )
 
 const { playAlbum, playShuffledAlbum, playAlbumAtIndex } = usePlayer()
+useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Album` : "Album") })
 </script>
 
 <template>

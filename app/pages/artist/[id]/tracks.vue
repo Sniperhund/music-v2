@@ -7,6 +7,7 @@ const { data: tracksData } = await useApiFetch<Track[]>(
 )
 
 const { playAlbumAtIndex } = usePlayer()
+useHead({ title: "Artist Songs" })
 </script>
 
 <template>

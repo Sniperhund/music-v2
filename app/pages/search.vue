@@ -80,6 +80,7 @@ watch(currentSong, (track) => {
 const playResult = (result: SearchResult | Track) => {
 	if ("album" in result && result.album) playAlbum([result as Track])
 }
+useHead({ title: computed(() => query.value ? `Search: ${query.value}` : "Search") })
 </script>
 
 <template>

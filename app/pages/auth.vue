@@ -2,6 +2,7 @@
 definePageMeta({
 	layout: false,
 })
+useHead({ title: "Sign In" })
 </script>
 
 <template>

@@ -2,6 +2,7 @@
 definePageMeta({
 	layout: "admin",
 })
+useHead({ title: "Admin" })
 </script>
 
 <template>

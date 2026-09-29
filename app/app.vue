@@ -1,3 +1,14 @@
+<script setup lang="ts">
+const { currentSong, isPlaying } = usePlayer()
+
+useHead({
+	titleTemplate: (titleChunk) =>
+		currentSong.value && isPlaying.value
+			? `${currentSong.value.name} - Now Playing - Music`
+			: `${titleChunk || "Home"} - Music`,
+})
+</script>
+
 <template>
 	<ToastContainer />
 	<NuxtLayout>
