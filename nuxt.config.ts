@@ -23,7 +23,4 @@ export default defineNuxtConfig({
 			pathPrefix: true,
 		},
 	],
-	image: {
-		domains: ["api.music.lucasskt.dk"],
-	},
 })

@@ -53,4 +53,4 @@ Pull requests should include:
 
 ## Security & Configuration Tips
 
-The app reads `VITE_PUBLIC_BACKEND` from `.env` and expects remote assets from `api.music.lucasskt.dk`. You can get the API schema from `https://api.music.lucasskt.dk/schema`. Do not commit secrets or machine-specific values.
+The frontend and backend are served by this Nuxt application; API requests are same-origin and `VITE_PUBLIC_BACKEND` is no longer used. Private runtime settings are `NUXT_MONGODB_URI`, `NUXT_UPLOAD_DIR`, and optional `NUXT_TOKEN_EXPIRE`; see `.env.example` and `README.md`. Production requires the Node Nitro server, persistent writable upload storage, and `ffmpeg`/`ffprobe` on `PATH`. Do not commit secrets or machine-specific values.
