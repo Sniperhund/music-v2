@@ -7,11 +7,11 @@ import {
 	parseQueryString,
 	validationResponse,
 } from "../utils/api-validation"
-import { requireAuthenticatedUser } from "../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../utils/auth"
 
 const searchTypes = ["track", "album", "artist", "default"] as const
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event)
 
 	const query = getQuery(event)

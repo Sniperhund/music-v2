@@ -1,8 +1,8 @@
 import { User } from "../../models/user"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { setResponseStatus } from "h3"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	const authenticatedUser = await requireAuthenticatedUser(event)
 	const user = await User.findById(authenticatedUser._id).populate("savedTracks")
 

@@ -1,7 +1,7 @@
 import { Album } from "../../models/album"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event)
 
 	return Album.find({}).populate("artists").populate("genre")

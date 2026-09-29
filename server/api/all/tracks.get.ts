@@ -1,7 +1,7 @@
 import { Track } from "../../models/track"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event)
 
 	return Track.find({})

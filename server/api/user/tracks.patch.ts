@@ -1,10 +1,10 @@
 import { getQuery, setResponseStatus } from "h3"
 import mongoose, { type ObjectId } from "mongoose"
 import { User } from "../../models/user"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	const authenticatedUser = await requireAuthenticatedUser(event)
 	const parsedId = parseMongoId(getQuery(event).id)
 	if ("error" in parsedId) return validationResponse(event, parsedId.error)

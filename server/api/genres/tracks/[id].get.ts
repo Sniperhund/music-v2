@@ -1,9 +1,9 @@
 import mongoose, { type PipelineStage } from "mongoose"
 import { Track } from "../../../models/track"
 import { parseMongoId, parseNumber, validationResponse } from "../../../utils/api-validation"
-import { requireAuthenticatedUser } from "../../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../../utils/auth"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event)
 
 	const id = parseMongoId(getRouterParam(event, "id"))

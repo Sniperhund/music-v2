@@ -1,7 +1,7 @@
 import { Genre } from "../../models/genre"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event)
 
 	return Genre.find({})

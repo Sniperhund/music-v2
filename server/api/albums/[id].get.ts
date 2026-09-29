@@ -1,9 +1,9 @@
 import { getRouterParam } from "h3"
 import { Album } from "../../models/album"
-import { requireAuthenticatedUser } from "../../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event)
 
 	const parsedId = parseMongoId(getRouterParam(event, "id"))

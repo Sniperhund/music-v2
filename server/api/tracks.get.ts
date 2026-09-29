@@ -1,9 +1,9 @@
 import { getQuery } from "h3"
 import { Track } from "../models/track"
-import { requireAuthenticatedUser } from "../utils/auth"
+import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../utils/auth"
 import { parseMongoIds, validationResponse } from "../utils/api-validation"
 
-export default defineEventHandler(async (event) => {
+export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event)
 
 	const parsedIds = parseMongoIds(getQuery(event).ids)
