@@ -15,31 +15,29 @@ const parsedLyrics = computed(() => {
 	if (song.value.lyrics.synced) return parseLyrics(song.value.lyrics.text)
 })
 
-const lyricsRefs = useTemplateRef("lyrics")
-
-const activeIndex = computed(() => {
+const findLyricIndex = (time: number) => {
 	if (!parsedLyrics.value) return -1
 
-	const time = secondsPlayed.value
-
-	return parsedLyrics.value.findIndex(
+	const index = parsedLyrics.value.findIndex(
 		(lyric, i) =>
 			lyric.time <= time &&
 			(!parsedLyrics.value![i + 1] ||
 				parsedLyrics.value![i + 1]!.time > time),
 	)
+
+	return index
+}
+
+const activeIndex = computed(() => {
+	return findLyricIndex(secondsPlayed.value)
 })
 const scrollActiveIndex = computed(() => {
 	if (!parsedLyrics.value) return -1
 
 	const time = secondsPlayed.value + animationDuration
 
-	let index = parsedLyrics.value.findIndex(
-		(lyric, i) =>
-			lyric.time <= time &&
-			(!parsedLyrics.value![i + 1] ||
-				parsedLyrics.value![i + 1]!.time > time),
-	)
+	let index = findLyricIndex(time)
+	if (index === -1 && time < parsedLyrics.value[0]!.time) index = 0
 
 	if (index >= parsedLyrics.value.length - 1)
 		index = parsedLyrics.value.length - 2
@@ -73,23 +71,22 @@ watch(
 onMounted(() => window.addEventListener("resize", updateLyricsLayout))
 onUnmounted(() => window.removeEventListener("resize", updateLyricsLayout))
 
-const transformY = computed(() => {
-	if (activeIndex.value < 0) return 0
-
-	let accumulatedHeight = 0
-
-	if (!lyricsRefs.value) return 0
-
-	for (let i = 0; i < scrollActiveIndex.value; i++) {
-		const el = lyricsRefs.value[i]
-		if (el) accumulatedHeight += el.getBoundingClientRect().height
-	}
-
-	return -accumulatedHeight
-})
-
 const containerRef = useTemplateRef("container-ref")
 const outerRef = useTemplateRef("outer-ref")
+
+const transformY = computed(() => {
+	const lines = containerRef.value?.children
+	if (scrollActiveIndex.value < 0 || !lines?.length) return 0
+
+	const firstLyric = lines[0] as HTMLElement
+	const activeLyric = lines[scrollActiveIndex.value] as HTMLElement
+	if (!firstLyric || !activeLyric) return 0
+
+	return (
+		firstLyric.getBoundingClientRect().top -
+		activeLyric.getBoundingClientRect().bottom
+	)
+})
 
 const manualOffset = ref(0)
 const isScrolling = ref(false)
@@ -100,7 +97,7 @@ const onWheel = (event: WheelEvent) => {
 	if (!containerRef.value || !outerRef.value) return
 
 	if (!isScrolling.value) {
-		manualOffset.value = transformY.value + offset + topFadeExtension
+		manualOffset.value = finalTransform.value
 	}
 
 	isScrolling.value = true
@@ -110,7 +107,7 @@ const onWheel = (event: WheelEvent) => {
 
 	manualOffset.value -= delta
 
-	const maxTranslate = offset + topFadeExtension
+	const maxTranslate = finalTransform.value + offset
 	const lowerViewportLimit = Math.max(
 		outerRef.value.offsetHeight,
 		window.innerHeight - 300,
@@ -135,7 +132,10 @@ const onLyricClick = (time: number) => {
 const finalTransform = computed(() => {
 	if (isScrolling.value) return manualOffset.value
 
-	return transformY.value + offset + topFadeExtension
+	const lyricsTop = top.value - topFadeExtension
+	const guideY = import.meta.client ? window.innerHeight * 0.45 : 0
+	const laterLyricOffset = scrollActiveIndex.value > 0 ? 100 : 0
+	return transformY.value + guideY - lyricsTop + laterLyricOffset
 })
 </script>
 
@@ -162,10 +162,9 @@ const finalTransform = computed(() => {
 				v-for="(lyric, i) in parsedLyrics"
 				:key="lyric.time"
 				:class="{
-					active: i == scrollActiveIndex,
-					past: i < scrollActiveIndex && !isScrolling,
+					active: i == activeIndex,
+					past: i < activeIndex && !isScrolling,
 				}"
-				ref="lyrics"
 				@click="onLyricClick(lyric.time)"
 			>
 				{{ lyric.text }}
@@ -214,6 +213,7 @@ const finalTransform = computed(() => {
 		font-weight: 600;
 		color: white;
 		opacity: 0.4;
+		margin: 0;
 		padding: 10px 0;
 		transition:
 			opacity 0.1s ease,
