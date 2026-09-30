@@ -8,6 +8,8 @@ const { animationDuration, offset, showScrollBar } = defineProps<{
 const song = useSong()
 const { fullscreen } = useFullscreen()
 const { secondsPlayed } = usePlayer()
+const debugView = useCookie("DEBUG_VIEW")
+const debugViewEnabled = computed(() => String(debugView.value ?? "") === "1")
 
 const parsedLyrics = computed(() => {
 	if (!song.value?.lyrics?.synced) return
@@ -135,6 +137,22 @@ const finalTransform = computed(() => {
 </script>
 
 <template>
+	<div
+		v-if="debugViewEnabled"
+		:style="[
+			{
+				position: 'absolute',
+				top: '455px',
+				width: '100px',
+				height: '1px',
+				backgroundColor: 'red',
+				right: '900px',
+			},
+			{
+				transform: 'translateY(20px)',
+			},
+		]"
+	/>
 	<div
 		ref="outer-ref"
 		v-if="song && song.lyrics && song.lyrics.synced"
