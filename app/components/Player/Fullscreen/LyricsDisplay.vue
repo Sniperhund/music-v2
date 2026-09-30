@@ -78,14 +78,13 @@ const transformY = computed(() => {
 	const lines = containerRef.value?.children
 	if (scrollActiveIndex.value < 0 || !lines?.length) return 0
 
-	const firstLyric = lines[0] as HTMLElement
-	const activeLyric = lines[scrollActiveIndex.value] as HTMLElement
-	if (!firstLyric || !activeLyric) return 0
+	let accumulatedHeight = 0
+	for (let i = 0; i < scrollActiveIndex.value; i++) {
+		const line = lines[i] as HTMLElement | undefined
+		if (line) accumulatedHeight += line.getBoundingClientRect().height
+	}
 
-	return (
-		firstLyric.getBoundingClientRect().top -
-		activeLyric.getBoundingClientRect().bottom
-	)
+	return -accumulatedHeight
 })
 
 const manualOffset = ref(0)
@@ -112,8 +111,7 @@ const onWheel = (event: WheelEvent) => {
 		outerRef.value.offsetHeight,
 		window.innerHeight - 300,
 	)
-	const minTranslate =
-		-containerRef.value.scrollHeight + lowerViewportLimit
+	const minTranslate = -containerRef.value.scrollHeight + lowerViewportLimit
 
 	manualOffset.value = Math.min(
 		maxTranslate,
@@ -132,10 +130,7 @@ const onLyricClick = (time: number) => {
 const finalTransform = computed(() => {
 	if (isScrolling.value) return manualOffset.value
 
-	const lyricsTop = top.value - topFadeExtension
-	const guideY = import.meta.client ? window.innerHeight * 0.45 : 0
-	const laterLyricOffset = scrollActiveIndex.value > 0 ? 100 : 0
-	return transformY.value + guideY - lyricsTop + laterLyricOffset
+	return transformY.value + offset + topFadeExtension
 })
 </script>
 

@@ -61,11 +61,16 @@ nuxtApp.hook("page:finish", () => {
 				@click="closeFullscreen()"
 			/>
 
-			<div class="content-container" :class="{ lyrics: song.lyrics?.text }">
-				<PlayerFullscreenTrackDisplay :show-buttons="mouseMovedRecently" />
+			<div
+				class="content-container"
+				:class="{ lyrics: song.lyrics?.text }"
+			>
+				<PlayerFullscreenTrackDisplay
+					:show-buttons="mouseMovedRecently"
+				/>
 				<PlayerFullscreenLyricsDisplay
 					:animation-duration="0.2"
-					:offset="200"
+					:offset="250"
 					:show-scroll-bar="mouseMovedRecently"
 				/>
 			</div>
