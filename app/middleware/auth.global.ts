@@ -4,6 +4,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
 	if (to.path.startsWith("/auth")) return
 
 	const auth = useAuth()
+	if (import.meta.client && auth.authenticated.value) return
+
 	try {
 		// Forward the incoming SSR credentials to this endpoint; the browser sends
 		// same-origin cookies automatically during client navigation.
@@ -12,7 +14,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
 			: undefined
 		const response = await $fetch.raw<{
 			authenticated: boolean
-			sessionToken?: string
 		}>("/api/auth/session", { headers: requestHeaders })
 		const session = response._data
 
@@ -27,8 +28,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
 			}
 		}
 
-		if (session?.sessionToken) auth.sessionToken.value = session.sessionToken
-		if (session?.authenticated) return
+		if (session?.authenticated) {
+			auth.authenticated.value = true
+			return
+		}
 	} catch {
 		// Treat unavailable auth state as unauthenticated.
 	}

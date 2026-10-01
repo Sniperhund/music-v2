@@ -49,7 +49,5 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	})
 	setResponseStatus(event, 201)
 
-	// The response token remains for unmigrated frontend calls that still send
-	// Authorization: Bearer. The HttpOnly cookie serves migrated Nitro routes.
-	return { sessionToken: session.token, expireAt }
+	return { expireAt }
 })

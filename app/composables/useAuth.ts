@@ -1,17 +1,11 @@
 import { appendResponseHeader } from "h3"
 
-type SessionResponse = {
-	sessionToken: string
-	expireAt: string
-}
+type SessionRefresh = { ok: boolean; sessionCookie?: string }
+const refreshPromises = new WeakMap<object, Promise<SessionRefresh>>()
 
 export const useAuth = () => {
-	const sessionToken = useCookie<string | null>("sessionToken", {
-		sameSite: "lax",
-		maxAge: 60 * 60,
-	})
-
-	let refreshPromise: Promise<string | null> | null = null
+	const nuxtApp = useNuxtApp()
+	const authenticated = useState("auth:authenticated", () => false)
 
 	const signin = async (email: string, password: string, remember = false) => {
 		try {
@@ -20,7 +14,7 @@ export const useAuth = () => {
 				body: { email, password, remember: Boolean(remember) },
 			})
 
-			if (!(await refreshSessionToken())) throw new Error("Unable to create session")
+			if (!(await refreshSession()).ok) throw new Error("Unable to create session")
 			await navigateTo("/")
 		} catch (error: any) {
 			throw new Error(error?.data?.message || error?.statusMessage || "Failed to sign in")
@@ -34,7 +28,7 @@ export const useAuth = () => {
 				body: { name, email, password },
 			})
 
-			if (!(await refreshSessionToken())) throw new Error("Unable to create session")
+			if (!(await refreshSession()).ok) throw new Error("Unable to create session")
 			await navigateTo("/")
 		} catch (error: any) {
 			throw new Error(error?.data?.message || error?.statusMessage || "Failed to sign up")
@@ -45,55 +39,64 @@ export const useAuth = () => {
 		try {
 			await $fetch("/api/auth/signout", { method: "POST" })
 		} finally {
-			sessionToken.value = null
+			authenticated.value = false
 		}
 	}
 
-	const refreshSessionToken = async (): Promise<string | null> => {
-		if (refreshPromise) return refreshPromise
+	const refreshSession = async (): Promise<SessionRefresh> => {
+		const inFlight = refreshPromises.get(nuxtApp)
+		if (inFlight) return inFlight
 
-		refreshPromise = (async () => {
-			const response = await $fetch.raw<SessionResponse>(
+		const refreshPromise = (async () => {
+			const response = await $fetch.raw<{ expireAt: string }>(
 				"/api/auth/session",
 				{
 					method: "POST",
 					headers: import.meta.server
-						? useRequestHeaders(["cookie", "authorization"])
+						? useRequestHeaders(["cookie"])
 						: undefined,
 				},
 			)
 
+			let sessionCookie: string | undefined
+			const setCookies = import.meta.server ? response.headers.getSetCookie() : []
+			for (const cookie of setCookies) {
+				if (!cookie.startsWith("musicSession=")) continue
+				sessionCookie = cookie.split(";", 1)[0]
+			}
+
 			if (import.meta.server) {
 				const event = useRequestEvent()
 				if (event) {
-					for (const cookie of response.headers.getSetCookie()) {
+					for (const cookie of setCookies) {
 						appendResponseHeader(event, "set-cookie", cookie)
 					}
 				}
 			}
 
-			return response._data!
+			return { ok: true, sessionCookie }
 		})()
-			.then((response) => {
-				sessionToken.value = response.sessionToken
-				return response.sessionToken
+			.then((result) => {
+				authenticated.value = true
+				return result
 			})
 			.catch(() => {
-				sessionToken.value = null
-				return null
+				authenticated.value = false
+				return { ok: false }
 			})
 			.finally(() => {
-				refreshPromise = null
+				refreshPromises.delete(nuxtApp)
 			})
 
+		refreshPromises.set(nuxtApp, refreshPromise)
 		return refreshPromise
 	}
 
 	return {
-		sessionToken,
+		authenticated,
 		signin,
 		signup,
 		signout,
-		refreshSessionToken,
+		refreshSession,
 	}
 }

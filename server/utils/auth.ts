@@ -79,46 +79,19 @@ export function getSessionTtl(event?: H3Event) {
 	return parseDuration(tokenExpire) || 60 * 60 * 1000
 }
 
-function getSessionTokens(event: H3Event) {
-	const tokens: { token: string; source: "cookie" | "bearer" }[] = []
-	const cookieToken = getCookie(event, SESSION_COOKIE)
-	const authorization = event.node.req.headers.authorization
-	const bearerToken = authorization?.startsWith("Bearer ")
-		? authorization.slice("Bearer ".length)
-		: undefined
-
-	if (cookieToken) tokens.push({ token: cookieToken, source: "cookie" })
-	if (bearerToken && bearerToken !== cookieToken) {
-		tokens.push({ token: bearerToken, source: "bearer" })
-	}
-
-	return tokens
-}
-
 export async function findSession(event: H3Event) {
 	const Session = getSessionModel(getSessionTtl(event)) as mongoose.Model<any>
+	const token = getCookie(event, SESSION_COOKIE)
+	if (!token) return null
 
-	for (const credential of getSessionTokens(event)) {
-		const session = await Session.findOne({ token: credential.token })
-			.populate("userId", "+verified")
-			.exec()
+	const session = await Session.findOne({ token })
+		.populate("userId", "+verified")
+		.exec()
+	const user = session?.userId as unknown as
+		| { _id: unknown; verified?: boolean; role?: string }
+		| undefined
 
-		const user = session?.userId as unknown as
-			| { _id: unknown; verified?: boolean; role?: string }
-			| undefined
-
-		if (!session || !user) continue
-
-		const bearerToken = event.node.req.headers.authorization?.startsWith("Bearer ")
-			? event.node.req.headers.authorization.slice("Bearer ".length)
-			: undefined
-		// If the cookie and bearer header carry the same valid token, the request
-		// is independently authenticated by the explicit bearer credential.
-		const source = bearerToken === credential.token ? "bearer" : credential.source
-		return { session, user, source }
-	}
-
-	return null
+	return session && user ? { session, user } : null
 }
 
 export async function findAuthenticatedSession(event: H3Event, adminOnly = false) {
@@ -139,9 +112,7 @@ export async function requireAuthenticatedUser(event: H3Event, adminOnly = false
 
 	const method = event.node.req.method?.toUpperCase() || "GET"
 	const isUnsafeMethod = !["GET", "HEAD", "OPTIONS"].includes(method)
-	if (isUnsafeMethod && auth.source === "cookie") {
-		assertCookieRequestOrigin(event)
-	}
+	if (isUnsafeMethod) assertCookieRequestOrigin(event)
 
 	return auth.user
 }

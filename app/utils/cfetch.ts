@@ -60,23 +60,23 @@ export const cfetch = async <DataT = any>(
 		headers.delete("Content-Type")
 	}
 
-	if (authorize) {
-		const { sessionToken, refreshSessionToken } = useAuth()
-		let token = sessionToken.value
-
-		if (!token) token = await refreshSessionToken()
-		if (token) headers.set("Authorization", `Bearer ${token}`)
-	}
-
 	try {
 		return (await $fetch(toApiUrl(url), requestOptions as any)) as DataT
 	} catch (error: any) {
 		if (!authorize || error?.response?.status !== 401) throw error
 
-		const token = await useAuth().refreshSessionToken()
-		if (!token) throw error
+		const refreshed = await useAuth().refreshSession()
+		if (!refreshed.ok) throw error
 
-		headers.set("Authorization", `Bearer ${token}`)
+		if (import.meta.server && refreshed.sessionCookie) {
+			const cookies = (headers.get("cookie") ?? "")
+				.split(";")
+				.map((cookie) => cookie.trim())
+				.filter((cookie) => cookie && !cookie.startsWith("musicSession="))
+			cookies.push(refreshed.sessionCookie)
+			headers.set("cookie", cookies.join("; "))
+		}
+
 		return (await $fetch(toApiUrl(url), requestOptions as any)) as DataT
 	}
 }

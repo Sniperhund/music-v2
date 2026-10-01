@@ -6,7 +6,7 @@ export function useApiFetch<DataT = any, ErrorT = any>(
 	options?: UseFetchOptions<DataT, ErrorT>,
 	authorize: boolean = true,
 ): ReturnType<typeof useFetch<DataT, ErrorT>> {
-	const { sessionToken, refreshSessionToken } = useAuth()
+	const { refreshSession } = useAuth()
 
 	const defaults: UseFetchOptions<DataT, ErrorT> = {
 		// The migrated API lives in this Nuxt app under server/api.
@@ -16,19 +16,23 @@ export function useApiFetch<DataT = any, ErrorT = any>(
 		retryDelay: 0,
 		retryStatusCodes: [401],
 
-		headers:
-			authorize && sessionToken.value
-				? { Authorization: `Bearer ${sessionToken.value}` }
-				: {},
+		headers: {},
 		onResponseError: async ({ request, response, options }) => {
 			if (response.status == 401 && authorize) {
-				const newToken = await refreshSessionToken()
+				const refreshed = await refreshSession()
 
-				if (!newToken) return
+				if (!refreshed.ok) return
 
-				const headers = new Headers(options.headers as HeadersInit)
-				headers.set("Authorization", `Bearer ${newToken}`)
-				options.headers = headers
+				if (import.meta.server && refreshed.sessionCookie) {
+					const headers = new Headers(options.headers as HeadersInit)
+					const cookies = (headers.get("cookie") ?? "")
+						.split(";")
+						.map((cookie) => cookie.trim())
+						.filter((cookie) => cookie && !cookie.startsWith("musicSession="))
+					cookies.push(refreshed.sessionCookie)
+					headers.set("cookie", cookies.join("; "))
+					options.headers = headers
+				}
 			}
 		},
 	}

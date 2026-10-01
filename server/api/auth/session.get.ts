@@ -10,9 +10,7 @@ import {
 
 export default defineEventHandler(async (event) => {
 	const activeSession = await findAuthenticatedSession(event)
-	if (activeSession) {
-		return { authenticated: true, sessionToken: activeSession.session.token }
-	}
+	if (activeSession) return { authenticated: true }
 
 	const refreshToken = getCookie(event, REFRESH_COOKIE)
 	if (!refreshToken) return { authenticated: false }
@@ -31,5 +29,5 @@ export default defineEventHandler(async (event) => {
 		maxAge: Math.floor(ttl / 1000),
 	})
 
-	return { authenticated: true, sessionToken: session.token }
+	return { authenticated: true }
 })

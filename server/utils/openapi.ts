@@ -17,8 +17,8 @@ const operations: ApiOperation[] = [
 	{ method: "get", path: "/health", tag: "Health", summary: "Health check", response: "Health" },
 	{ method: "post", path: "/auth/register", tag: "Auth", summary: "Register a user", body: "json", response: "EmptyObject", status: 201 },
 	{ method: "post", path: "/auth/signin", tag: "Auth", summary: "Sign in", body: "json", response: "EmptyObject" },
-	{ method: "post", path: "/auth/session", tag: "Auth", summary: "Create a session", body: "json", response: "Session", status: 201 },
-	{ method: "get", path: "/auth/session", tag: "Auth", summary: "Get or renew the current session", response: "SessionStatus" },
+	{ method: "post", path: "/auth/session", tag: "Auth", summary: "Renew the current session", body: "json", response: "Session", status: 201 },
+	{ method: "get", path: "/auth/session", tag: "Auth", summary: "Check the current session", response: "SessionStatus" },
 	{ method: "post", path: "/auth/signout", tag: "Auth", summary: "Sign out", response: "Signout" },
 	{ method: "get", path: "/artists", tag: "Artist", summary: "Get artists by ID", auth: true, query: ["ids"], response: "ArtistList" },
 	{ method: "get", path: "/artists/{id}", tag: "Artist", summary: "Get an artist", auth: true, response: "ArtistOrNull" },
@@ -140,7 +140,7 @@ function operationSpec(operation: ApiOperation) {
 	return {
 		tags: [operation.tag],
 		summary: operation.summary,
-		...(operation.auth || operation.admin ? { security: [{ Bearer: [] }, { SessionCookie: [] }] } : {}),
+		...(operation.auth || operation.admin ? { security: [{ SessionCookie: [] }] } : {}),
 		...(parameters.length ? { parameters } : {}),
 		...(operation.body
 			? {
@@ -174,7 +174,6 @@ export const openApiDocument = {
 	paths,
 	components: {
 		securitySchemes: {
-			Bearer: { type: "http", scheme: "bearer" },
 			SessionCookie: { type: "apiKey", in: "cookie", name: "musicSession" },
 		},
 		schemas: {
@@ -232,8 +231,8 @@ export const openApiDocument = {
 				},
 			},
 			User: { type: "object", properties: { _id: { type: "string" }, name: { type: "string" }, email: { type: "string", format: "email" }, role: { type: "string" }, verified: { type: "boolean" }, savedTracks: { type: "array", items: { type: "string", description: "MongoDB ObjectId" } } } },
-			Session: { type: "object", properties: { sessionToken: { type: "string" }, expireAt: { type: "string", format: "date-time" } } },
-			SessionStatus: { type: "object", properties: { authenticated: { type: "boolean" }, sessionToken: { type: "string" } } },
+			Session: { type: "object", properties: { expireAt: { type: "string", format: "date-time" } } },
+			SessionStatus: { type: "object", properties: { authenticated: { type: "boolean" } } },
 			SearchResults: { type: "object", properties: { tracks: { type: "array", items: ref("Track") }, albums: { type: "array", items: ref("Album") }, artists: { type: "array", items: ref("Artist") } } },
 			ArtistList: { type: "array", items: ref("Artist") },
 			GenreList: { type: "array", items: ref("Genre") },
