@@ -49,5 +49,5 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	})
 	setResponseStatus(event, 201)
 
-	return { expireAt }
+	return { expireAt, sessionToken: session.token }
 })

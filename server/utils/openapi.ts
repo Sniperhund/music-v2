@@ -231,7 +231,13 @@ export const openApiDocument = {
 				},
 			},
 			User: { type: "object", properties: { _id: { type: "string" }, name: { type: "string" }, email: { type: "string", format: "email" }, role: { type: "string" }, verified: { type: "boolean" }, savedTracks: { type: "array", items: { type: "string", description: "MongoDB ObjectId" } } } },
-			Session: { type: "object", properties: { expireAt: { type: "string", format: "date-time" } } },
+			Session: {
+				type: "object",
+				properties: {
+					expireAt: { type: "string", format: "date-time" },
+					sessionToken: { type: "string" },
+				},
+			},
 			SessionStatus: { type: "object", properties: { authenticated: { type: "boolean" } } },
 			SearchResults: { type: "object", properties: { tracks: { type: "array", items: ref("Track") }, albums: { type: "array", items: ref("Album") }, artists: { type: "array", items: ref("Artist") } } },
 			ArtistList: { type: "array", items: ref("Artist") },
