@@ -1,27 +1,39 @@
 <script setup lang="ts">
-const { data: genresData } = await useApiFetch<Genre[]>("/genres/random")
+const cacheKey = "album-slider-data"
+const data = ref<{ genre: Genre; albums: Album[] }[]>([])
 
-const data = await Promise.allSettled(
-	(genresData.value ?? []).map(async (genre: Genre) => {
-		const albums = await cfetch<Album[]>(`/genres/albums/${genre._id}`)
-
-		return {
-			genre,
-			albums,
+onMounted(async () => {
+	const cached = sessionStorage.getItem(cacheKey)
+	if (cached) {
+		try {
+			data.value = JSON.parse(cached)
+			return
+		} catch {
+			sessionStorage.removeItem(cacheKey)
 		}
-	}),
-).then((results) =>
-	results
+	}
+
+	const genres = await cfetch<Genre[]>("/genres/random")
+	const results = await Promise.allSettled(
+		(genres ?? []).map(async (genre) => ({
+			genre,
+			albums: await cfetch<Album[]>(`/genres/albums/${genre._id}`),
+		})),
+	)
+
+	data.value = results
 		.filter(
 			(
-				r,
-			): r is PromiseFulfilledResult<{
-				genre: any
-				albums: any[]
-			}> => r.status === "fulfilled",
+				result,
+			): result is PromiseFulfilledResult<{
+					genre: Genre
+					albums: Album[]
+				}> => result.status === "fulfilled",
 		)
-		.map((r) => r.value),
-)
+		.map((result) => result.value)
+
+	sessionStorage.setItem(cacheKey, JSON.stringify(data.value))
+})
 </script>
 
 <template>
