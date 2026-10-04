@@ -7,7 +7,7 @@ const { animationDuration, offset, showScrollBar } = defineProps<{
 
 const song = useSong()
 const { fullscreen } = useFullscreen()
-const { secondsPlayed } = usePlayer()
+const { secondsPlayed, refreshPosition } = usePlayer()
 const debugView = useCookie("DEBUG_VIEW")
 const debugViewEnabled = computed(() => String(debugView.value ?? "") === "1")
 
@@ -49,6 +49,7 @@ const scrollActiveIndex = computed(() => {
 const height = ref<number>()
 const top = ref(0)
 const syncedHeight = ref<number>()
+const layoutVersion = ref(0)
 const topFadeExtension = 75
 
 const updateLyricsLayout = () => {
@@ -64,8 +65,15 @@ const updateLyricsLayout = () => {
 watch(
 	fullscreen,
 	async () => {
+		if (fullscreen.value) refreshPosition()
 		await nextTick()
 		updateLyricsLayout()
+		if (fullscreen.value) {
+			requestAnimationFrame(() => {
+				updateLyricsLayout()
+				layoutVersion.value++
+			})
+		}
 	},
 	{ immediate: true },
 )
@@ -77,6 +85,7 @@ const containerRef = useTemplateRef("container-ref")
 const outerRef = useTemplateRef("outer-ref")
 
 const transformY = computed(() => {
+	layoutVersion.value
 	const lines = containerRef.value?.children
 	if (scrollActiveIndex.value < 0 || !lines?.length) return 0
 

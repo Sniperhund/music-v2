@@ -48,6 +48,9 @@ export default defineNuxtPlugin((nuxtApp) => {
 			sound.value?.seek(value)
 		},
 	})
+	const refreshPosition = () => {
+		tick.value++
+	}
 	const volume = computed<number>({
 		get() {
 			tick.value
@@ -404,6 +407,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				playAlbumAtIndex,
 				getDuration,
 				secondsPlayed,
+				refreshPosition,
 				duration,
 				volume,
 				queue,
