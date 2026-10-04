@@ -3,12 +3,14 @@ const { currentSong, isPlaying } = usePlayer()
 const debugView = useCookie("DEBUG_VIEW")
 const debugViewEnabled = computed(() => String(debugView.value ?? "") === "1")
 
-useHead({
-	titleTemplate: (titleChunk) =>
-		currentSong.value && isPlaying.value
-			? `${currentSong.value.name} - Now Playing - Music`
-			: `${titleChunk || "Home"} - Music`,
-})
+useHead(
+	computed(() => ({
+		titleTemplate:
+			currentSong.value && isPlaying.value
+				? `${currentSong.value.name} - Now Playing - Music`
+				: (titleChunk) => `${titleChunk || "Home"} - Music`,
+	})),
+)
 </script>
 
 <template>
