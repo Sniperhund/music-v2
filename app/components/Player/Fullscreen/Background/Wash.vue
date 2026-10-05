@@ -148,6 +148,7 @@ function draw(now: number) {
 	const colors = palette.value ?? fallback
 	const dominant = toOkLab(colors.dominant)
 	const accent = toOkLab(colors.accent)
+	const maxPaletteLightness = Math.max(dominant[0], accent[0])
 	const motionTime = time * ANIMATION_SPEED
 	for (let y = 0; y < height; y++) {
 		for (let x = 0; x < width; x++) {
@@ -161,7 +162,7 @@ function draw(now: number) {
 					value * (1 - blend) + accent[channel] * blend,
 			) as [number, number, number]
 			const beat = shapeBeatPulse(beatEnergy.value)
-			lab[0] = Math.min(1, lab[0] + beat * 0.01)
+			lab[0] = Math.min(maxPaletteLightness, lab[0] + beat * 0.01)
 			lab[1] *= 1 + beat * 0.02
 			lab[2] *= 1 + beat * 0.02
 			const color = fromOkLab(lab)

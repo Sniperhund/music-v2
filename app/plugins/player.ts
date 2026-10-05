@@ -109,7 +109,9 @@ export default defineNuxtPlugin((nuxtApp) => {
 		const mediaElement = (howl as HowlWithMediaNode)._sounds?.[0]?._node
 		if (!mediaElement) {
 			if (DEBUG_BEAT_ANALYSIS)
-				console.warn("[beat analyzer] failed: Howler media element unavailable")
+				console.warn(
+					"[beat analyzer] failed: Howler media element unavailable",
+				)
 			return
 		}
 
@@ -124,7 +126,9 @@ export default defineNuxtPlugin((nuxtApp) => {
 			elementWithCapture.webkitCaptureStream
 		if (!capture) {
 			if (DEBUG_BEAT_ANALYSIS)
-				console.warn("[beat analyzer] failed: media capture unsupported")
+				console.warn(
+					"[beat analyzer] failed: media capture unsupported",
+				)
 			return
 		}
 
@@ -132,7 +136,9 @@ export default defineNuxtPlugin((nuxtApp) => {
 			const stream = capture.call(mediaElement)
 			if (stream.getAudioTracks().length === 0) {
 				if (DEBUG_BEAT_ANALYSIS)
-					console.warn("[beat analyzer] failed: capture has no audio tracks")
+					console.warn(
+						"[beat analyzer] failed: capture has no audio tracks",
+					)
 				return
 			}
 			analysisContext ??= new AudioContext()
@@ -140,7 +146,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				void analysisContext.resume().catch(() => {})
 			analysisNode = analysisContext.createAnalyser()
 			analysisNode.fftSize = 2048
-			analysisNode.smoothingTimeConstant = 0.3
+			analysisNode.smoothingTimeConstant = 0.05
 			analysisSource = analysisContext.createMediaStreamSource(stream)
 			analysisSource.connect(analysisNode)
 
@@ -155,13 +161,17 @@ export default defineNuxtPlugin((nuxtApp) => {
 				if (!analysisNode) return
 				analysisNode.getByteFrequencyData(samples)
 				const sampleRate = analysisContext!.sampleRate
-				const firstBin = Math.max(1, Math.floor((45 * 2048) / sampleRate))
+				const firstBin = Math.max(
+					1,
+					Math.floor((45 * 2048) / sampleRate),
+				)
 				const lastBin = Math.min(
 					samples.length - 1,
 					Math.ceil((130 * 2048) / sampleRate),
 				)
 				let bass = 0
-				for (let bin = firstBin; bin <= lastBin; bin++) bass += samples[bin]
+				for (let bin = firstBin; bin <= lastBin; bin++)
+					bass += samples[bin]
 				bass /= Math.max(1, lastBin - firstBin + 1) * 255
 				if (previousBass === null) previousBass = bass
 				const rise = Math.max(0, bass - previousBass)
@@ -178,15 +188,13 @@ export default defineNuxtPlugin((nuxtApp) => {
 				)
 				const now = performance.now()
 				const isStrongThump =
-					rise >= strongThumpThreshold && now - lastBeatLogAt > thumpCooldown
+					rise >= strongThumpThreshold &&
+					now - lastBeatLogAt > thumpCooldown
 				const riseDelta = rise - riseAverage
 				riseAverage += riseDelta * 0.01
 				riseVariance += (riseDelta * riseDelta - riseVariance) * 0.01
 				if (isStrongThump) {
-					const thumpStrength = Math.min(
-						0.38,
-						0.1 + attack * 2.5,
-					)
+					const thumpStrength = Math.min(0.38, 0.1 + attack * 2.5)
 					pulse = Math.max(pulse, thumpStrength)
 					if (DEBUG_BEAT_ANALYSIS) {
 						console.log(
@@ -247,7 +255,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 				album: currentSong.value.album.name,
 				artwork: [
 					{
-						src: GET_FILE(currentSong.value.album.file, mediaBaseUrl),
+						src: GET_FILE(
+							currentSong.value.album.file,
+							mediaBaseUrl,
+						),
 						sizes: "512x512",
 					},
 				],
@@ -480,7 +491,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 				event.ctrlKey ||
 				event.metaKey ||
 				event.altKey
-			) return
+			)
+				return
 
 			const target = event.target
 			if (
@@ -488,7 +500,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 				target.closest(
 					"input, textarea, select, button, [contenteditable='true'], [role='slider']",
 				)
-			) return
+			)
+				return
 
 			switch (event.code) {
 				case "Space":
