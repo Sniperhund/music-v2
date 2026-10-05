@@ -44,12 +44,9 @@ nuxtApp.hook("page:finish", () => {
 		v-show="fullscreen"
 	>
 		<template v-if="song">
-			<NuxtImg
+			<PlayerFullscreenBackgroundWash
 				:src="GET_FILE(song.album.file)"
-				:alt="song.name"
-				width="500"
-				height="500"
-				class="background"
+				:active="fullscreen"
 			/>
 		</template>
 
@@ -93,17 +90,6 @@ nuxtApp.hook("page:finish", () => {
 	&.showCursor {
 		cursor: auto;
 	}
-}
-
-.background {
-	position: absolute;
-	top: -25%;
-	left: -25%;
-
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	filter: blur(40px);
 }
 
 .screen-container {
