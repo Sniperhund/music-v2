@@ -1,10 +1,26 @@
-import { Howl } from "howler"
+import { Howl, Howler } from "howler"
 
 export default defineNuxtPlugin((nuxtApp) => {
 	const mediaBaseUrl = useRuntimeConfig().public.mediaBaseUrl
 	const { close: closeFullscreen } = useFullscreen()
+	if (import.meta.client) {
+		const howlerInternal = Howler as unknown as {
+			_obtainHtml5Audio: () => HTMLAudioElement
+			_musicV2CorsEnabled?: boolean
+		}
+		if (!howlerInternal._musicV2CorsEnabled) {
+			const obtainHtml5Audio = howlerInternal._obtainHtml5Audio
+			howlerInternal._obtainHtml5Audio = function () {
+				const audio = obtainHtml5Audio.call(Howler)
+				audio.crossOrigin = "anonymous"
+				return audio
+			}
+			howlerInternal._musicV2CorsEnabled = true
+		}
+	}
 	const VOLUME_STORAGE_KEY = "music-v2-player-volume"
 	const DEFAULT_VOLUME = 0.5
+	const DEBUG_BEAT_ANALYSIS = true
 
 	const sound = ref<Howl | null>(null)
 	const queue = ref<Track[]>([])
@@ -13,7 +29,16 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const currentSong = ref<Track | null>(null)
 	const repeat = ref(false)
 	const isPlaying = ref(false)
+	const beatEnergy = ref(0)
 	const storedVolume = ref(DEFAULT_VOLUME)
+	type HowlWithMediaNode = Howl & {
+		_sounds?: Array<{ _node?: HTMLMediaElement }>
+	}
+	let analysisContext: AudioContext | null = null
+	let analysisSource: MediaStreamAudioSourceNode | null = null
+	let analysisNode: AnalyserNode | null = null
+	let analysisFrame = 0
+	let isAnalyzing = false
 
 	const clampVolume = (value: number) => Math.min(1, Math.max(0, value))
 
@@ -65,6 +90,121 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const duration = ref(0)
 	let lastPositionUpdate = 0
 	let mediaSessionSongId: string | null = null
+
+	const stopBeatAnalysis = (reason = "stopped") => {
+		if (isAnalyzing && DEBUG_BEAT_ANALYSIS)
+			console.info(`[beat analyzer] stopped: ${reason}`)
+		isAnalyzing = false
+		if (analysisFrame) cancelAnimationFrame(analysisFrame)
+		analysisFrame = 0
+		analysisSource?.disconnect()
+		analysisSource = null
+		analysisNode = null
+		beatEnergy.value = 0
+	}
+
+	const startBeatAnalysis = (howl: Howl) => {
+		stopBeatAnalysis("restarted")
+		const mediaElement = (howl as HowlWithMediaNode)._sounds?.[0]?._node
+		if (!mediaElement) {
+			if (DEBUG_BEAT_ANALYSIS)
+				console.warn("[beat analyzer] failed: Howler media element unavailable")
+			return
+		}
+
+		const elementWithCapture = mediaElement as HTMLMediaElement & {
+			captureStream?: () => MediaStream
+			mozCaptureStream?: () => MediaStream
+			webkitCaptureStream?: () => MediaStream
+		}
+		const capture =
+			elementWithCapture.captureStream ??
+			elementWithCapture.mozCaptureStream ??
+			elementWithCapture.webkitCaptureStream
+		if (!capture) {
+			if (DEBUG_BEAT_ANALYSIS)
+				console.warn("[beat analyzer] failed: media capture unsupported")
+			return
+		}
+
+		try {
+			const stream = capture.call(mediaElement)
+			if (stream.getAudioTracks().length === 0) {
+				if (DEBUG_BEAT_ANALYSIS)
+					console.warn("[beat analyzer] failed: capture has no audio tracks")
+				return
+			}
+			analysisContext ??= new AudioContext()
+			if (analysisContext.state === "suspended")
+				void analysisContext.resume().catch(() => {})
+			analysisNode = analysisContext.createAnalyser()
+			analysisNode.fftSize = 2048
+			analysisNode.smoothingTimeConstant = 0.3
+			analysisSource = analysisContext.createMediaStreamSource(stream)
+			analysisSource.connect(analysisNode)
+
+			const samples = new Uint8Array(analysisNode.frequencyBinCount)
+			let previousBass: number | null = null
+			let pulse = 0
+			let lastBeatLogAt = 0
+			let lastLevelLogAt = 0
+			const attackNoiseFloor = 0.05
+			const strongThumpThreshold = 0.05
+			const thumpCooldown = 800
+			const sample = () => {
+				if (!analysisNode) return
+				analysisNode.getByteFrequencyData(samples)
+				const sampleRate = analysisContext!.sampleRate
+				const firstBin = Math.max(1, Math.floor((45 * 2048) / sampleRate))
+				const lastBin = Math.min(
+					samples.length - 1,
+					Math.ceil((130 * 2048) / sampleRate),
+				)
+				let bass = 0
+				for (let bin = firstBin; bin <= lastBin; bin++) bass += samples[bin]
+				bass /= Math.max(1, lastBin - firstBin + 1) * 255
+				if (previousBass === null) previousBass = bass
+				const attack = Math.max(0, bass - previousBass - attackNoiseFloor)
+				previousBass = previousBass * 0.985 + bass * 0.015
+				const now = performance.now()
+				const isStrongThump =
+					attack >= strongThumpThreshold && now - lastBeatLogAt > thumpCooldown
+				if (isStrongThump) {
+					const thumpStrength = Math.min(
+						0.38,
+						0.1 + (attack - strongThumpThreshold) * 2.5,
+					)
+					pulse = Math.max(pulse, thumpStrength)
+				} else pulse *= 0.94
+				beatEnergy.value = Math.min(1, pulse)
+				if (DEBUG_BEAT_ANALYSIS && now - lastLevelLogAt > 1000) {
+					lastLevelLogAt = now
+					console.info(
+						"[beat level]",
+						`bass=${bass.toFixed(3)}`,
+						`attack=${attack.toFixed(3)}`,
+						`pulse=${beatEnergy.value.toFixed(2)}`,
+					)
+				}
+				if (isStrongThump) {
+					lastBeatLogAt = now
+					console.log("[fullscreen beat]", beatEnergy.value.toFixed(2))
+				}
+				analysisFrame = requestAnimationFrame(sample)
+			}
+			analysisFrame = requestAnimationFrame(sample)
+			isAnalyzing = true
+			if (DEBUG_BEAT_ANALYSIS)
+				console.info("[beat analyzer] analysis started")
+		} catch (error) {
+			stopBeatAnalysis()
+			if (DEBUG_BEAT_ANALYSIS)
+				console.warn(
+					"[beat analyzer] failed while setting up audio capture",
+					error,
+				)
+		}
+	}
 
 	const aniFrame = ref<number | null>(null)
 
@@ -197,11 +337,13 @@ export default defineNuxtPlugin((nuxtApp) => {
 				updateMediaSession()
 			},
 			onend: () => {
+				stopBeatAnalysis("track ended")
 				void closeFullscreen()
 				next()
 				stopTracking()
 			},
 			onstop: () => {
+				stopBeatAnalysis("playback stopped")
 				isPlaying.value = false
 				stopTracking()
 				if (navigator.mediaSession)
@@ -209,11 +351,13 @@ export default defineNuxtPlugin((nuxtApp) => {
 			},
 			onplay: () => {
 				isPlaying.value = true
+				startBeatAnalysis(newSound)
 				startTracking()
 				if (navigator.mediaSession)
 					navigator.mediaSession.playbackState = "playing"
 			},
 			onpause: () => {
+				stopBeatAnalysis("paused")
 				isPlaying.value = false
 				stopTracking()
 				if (navigator.mediaSession)
@@ -392,6 +536,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 		provide: {
 			player: {
 				isPlaying,
+				beatEnergy,
 				currentSong,
 				repeat,
 				play,

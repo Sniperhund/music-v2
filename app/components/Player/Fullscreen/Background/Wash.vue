@@ -8,6 +8,7 @@ import {
 
 const props = defineProps<{ src: string; active: boolean }>()
 const ANIMATION_SPEED = 0.3
+const { beatEnergy } = usePlayer()
 const canvas = ref<HTMLCanvasElement | null>(null)
 const palette = ref<AlbumPalette | null>(null)
 let frame = 0
@@ -152,12 +153,16 @@ function draw(now: number) {
 			const px = x / (width - 1)
 			const py = y / (height - 1)
 			const point = flowPoint(px - 0.5, py - 0.5, motionTime)
-			const blend = smoothstep(-0.3, 0.2, point[0])
+			const blend = smoothstep(-0.34, 0.16, point[0])
 			const transition = 1 - Math.abs(blend * 2 - 1)
 			const lab = dominant.map(
 				(value, channel) =>
 					value * (1 - blend) + accent[channel] * blend,
 			) as [number, number, number]
+			const beat = beatEnergy.value
+			lab[0] = Math.min(1, lab[0] + beat * 0.01)
+			lab[1] *= 1 + beat * 0.02
+			lab[2] *= 1 + beat * 0.02
 			const color = fromOkLab(lab)
 			const offset = (y * width + x) * 4
 			image.data[offset] = color[0] + ditherNoise(x, y, 0) * transition * 3
@@ -166,6 +171,7 @@ function draw(now: number) {
 			image.data[offset + 3] = 255
 		}
 	}
+	element.style.transform = `scale(${1.08 + beatEnergy.value * 0.003})`
 	context.putImageData(image, 0, 0)
 	if (props.active) frame = requestAnimationFrame(draw)
 }
