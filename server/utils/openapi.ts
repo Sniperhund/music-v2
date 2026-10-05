@@ -39,6 +39,7 @@ const operations: ApiOperation[] = [
 	{ method: "get", path: "/all/tracks", tag: "All", summary: "Get all tracks", auth: true, response: "TrackList" },
 	{ method: "get", path: "/search", tag: "Search", summary: "Search tracks, albums and artists", auth: true, query: ["q", "type", "limit"], response: "SearchResults" },
 	{ method: "get", path: "/user", tag: "User", summary: "Get the current user", auth: true, response: "User" },
+	{ method: "get", path: "/user/artists", tag: "User", summary: "Get artists represented by saved tracks", auth: true, response: "ArtistList" },
 	{ method: "get", path: "/user/tracks", tag: "User", summary: "Get saved tracks", auth: true, response: "TrackList" },
 	{ method: "patch", path: "/user/tracks", tag: "User", summary: "Save a track", auth: true, query: ["id"], response: "EmptyObject" },
 	{ method: "delete", path: "/user/tracks", tag: "User", summary: "Remove saved tracks", auth: true, query: ["id", "ids"], response: "EmptyObject" },
