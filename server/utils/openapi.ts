@@ -41,6 +41,9 @@ const operations: ApiOperation[] = [
 	{ method: "get", path: "/user", tag: "User", summary: "Get the current user", auth: true, response: "User" },
 	{ method: "get", path: "/user/tracks", tag: "User", summary: "Get saved tracks", auth: true, response: "TrackList" },
 	{ method: "patch", path: "/user/tracks", tag: "User", summary: "Save a track", auth: true, query: ["id"], response: "EmptyObject" },
+	{ method: "delete", path: "/user/tracks", tag: "User", summary: "Remove saved tracks", auth: true, query: ["id", "ids"], response: "EmptyObject" },
+	{ method: "get", path: "/user/tracks/contains", tag: "User", summary: "Check whether a track is saved", auth: true, query: ["id"], response: "TrackMembership" },
+	{ method: "get", path: "/user/albums", tag: "User", summary: "Get albums represented by saved tracks", auth: true, response: "AlbumList" },
 	{ method: "post", path: "/admin/artist", tag: "Admin", summary: "Create an artist", admin: true, body: "multipart", response: "Artist", status: 201 },
 	{ method: "patch", path: "/admin/artist", tag: "Admin", summary: "Update an artist", admin: true, query: ["id"], body: "multipart", response: "Artist" },
 	{ method: "delete", path: "/admin/artist", tag: "Admin", summary: "Delete an artist", admin: true, query: ["id", "force"], response: "EmptyObject" },
@@ -86,9 +89,14 @@ function operationSpec(operation: ApiOperation) {
 		...(operation.query ?? []).map((name) => ({
 			name,
 			in: "query",
-			required: name === "q" || name === "ids" || name === "id" || (name === "force" && operation.path === "/admin/genre"),
+			required: operation.method === "delete" && operation.path === "/user/tracks"
+				? false
+				: name === "q" || name === "ids" || name === "id" || (name === "force" && operation.path === "/admin/genre"),
 			schema: fieldTypes[name] ?? { type: "string" },
 			...(name === "ids" ? { style: "form", explode: true } : {}),
+			...(operation.method === "delete" && operation.path === "/user/tracks"
+				? { description: "Provide either id for one track or repeated ids for multiple tracks." }
+				: {}),
 		})),
 	]
 	const bodySchema = operation.body === "json"
@@ -127,7 +135,7 @@ function operationSpec(operation: ApiOperation) {
 		...((operation.method === "post" && operation.path.startsWith("/auth/")) || ((operation.auth || operation.admin) && operation.method !== "get" && !operation.path.startsWith("/admin/"))
 			? { 403: jsonResponse("Invalid request origin", ref("Error")) }
 			: {}),
-		...(operation.path === "/user/tracks" || (operation.path.startsWith("/admin/") && (operation.method === "patch" || operation.method === "delete"))
+		...(operation.path.startsWith("/user/") || (operation.path.startsWith("/admin/") && (operation.method === "patch" || operation.method === "delete"))
 			? { 404: jsonResponse("Resource not found", ref("NotFound")) }
 			: {}),
 		...(operation.path === "/admin/track" && operation.method === "post"
@@ -202,6 +210,7 @@ export const openApiDocument = {
 			AlbumOrNull: { anyOf: [ref("Album"), { type: "null" }] },
 			TrackOrNull: { anyOf: [ref("Track"), { type: "null" }] },
 			EmptyObject: { type: "object", properties: {}, additionalProperties: false },
+			TrackMembership: { type: "object", required: ["contains"], properties: { contains: { type: "boolean" } } },
 			NotFound: { oneOf: [ref("Error"), ref("EmptyObject")] },
 			DependentError: {
 				type: "object",
