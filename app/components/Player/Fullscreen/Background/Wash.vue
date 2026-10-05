@@ -7,12 +7,15 @@ import {
 } from "./palette"
 
 const props = defineProps<{ src: string; active: boolean }>()
+const ANIMATION_SPEED = 0.3
 const canvas = ref<HTMLCanvasElement | null>(null)
 const palette = ref<AlbumPalette | null>(null)
 let frame = 0
 let startedAt = 0
 let lastFrameAt = 0
 let random = [0, 0]
+let angleJitter = 0
+let flowParams: [number, number, number, number] = [5, 25, 0.75, -0.08]
 
 const fallback: AlbumPalette = { dominant: [30, 35, 55], accent: [105, 65, 45] }
 
@@ -26,18 +29,22 @@ function loadArtwork() {
 			setPalette(fallback)
 		}
 	}
-	image.onerror = () => { setPalette(fallback) }
+	image.onerror = () => {
+		setPalette(fallback)
+	}
 	image.src = props.src
 }
 
 function setPalette(next: AlbumPalette) {
 	palette.value = next
 	random = Array.from({ length: 2 }, () => Math.random() * Math.PI * 2)
-}
-
-function smoothstep(edge0: number, edge1: number, value: number) {
-	const amount = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)))
-	return amount * amount * (3 - 2 * amount)
+	angleJitter = (Math.random() - 0.5) * 0.3
+	flowParams = [
+		4.5 + Math.random(),
+		22 + Math.random() * 7,
+		(0.65 + Math.random() * 0.2) * (Math.random() < 0.5 ? -1 : 1),
+		((-5 + (Math.random() - 0.5) * 12) * Math.PI) / 180,
+	]
 }
 
 function gradientHash(x: number, y: number): [number, number] {
@@ -68,6 +75,33 @@ function gradientNoise(x: number, y: number) {
 	return 0.5 + 0.5 * (lower * (1 - easeY) + upper * easeY)
 }
 
+function smoothstep(edge0: number, edge1: number, value: number) {
+	const amount = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)))
+	return amount * amount * (3 - 2 * amount)
+}
+
+function flowPoint(x: number, y: number, time: number): [number, number] {
+	const degree = gradientNoise(
+		time * 0.1 + random[0] * 0.07,
+		x * y + random[1] * 0.07,
+	)
+	const angle = (((degree - 0.5) * 720 + 180) * Math.PI) / 180 + angleJitter
+	const sine = Math.sin(angle)
+	const cosine = Math.cos(angle)
+	let flowX = x * cosine - y * sine
+	let flowY = x * sine + y * cosine
+	const speed = time * flowParams[2]
+	flowX += Math.sin(flowY * flowParams[0] + speed) / flowParams[1]
+	flowY +=
+		Math.sin(flowX * flowParams[0] * 1.5 + speed) / (flowParams[1] * 0.5)
+	const tiltSine = Math.sin(flowParams[3])
+	const tiltCosine = Math.cos(flowParams[3])
+	return [
+		flowX * tiltCosine - flowY * tiltSine,
+		flowX * tiltSine + flowY * tiltCosine,
+	]
+}
+
 function draw(now: number) {
 	const element = canvas.value
 	const context = element?.getContext("2d")
@@ -80,7 +114,12 @@ function draw(now: number) {
 	lastFrameAt = now
 	const time = (now - startedAt) / 1000
 	const width = 112
-	const height = Math.max(72, Math.round(width * element.clientHeight / Math.max(1, element.clientWidth)))
+	const height = Math.max(
+		72,
+		Math.round(
+			(width * element.clientHeight) / Math.max(1, element.clientWidth),
+		),
+	)
 	if (element.width !== width || element.height !== height) {
 		element.width = width
 		element.height = height
@@ -89,21 +128,13 @@ function draw(now: number) {
 	const colors = palette.value ?? fallback
 	const dominant = toOkLab(colors.dominant)
 	const accent = toOkLab(colors.accent)
-	const motionTime = time * 0.2
-	const gradientTime = motionTime * 0.1
-	const centerX = 0.5 + 0.43 * Math.sin(motionTime * 0.22)
-	const centerY = 0.5 + 0.4 * Math.sin(motionTime * 0.31 + 1.4)
+	const motionTime = time * ANIMATION_SPEED
 	for (let y = 0; y < height; y++) {
 		for (let x = 0; x < width; x++) {
 			const px = x / (width - 1)
 			const py = y / (height - 1)
-			const degree = gradientNoise(
-				gradientTime + random[0] * 0.07,
-				px * py + random[1] * 0.07,
-			)
-			const distance = Math.hypot(px - centerX, py - centerY)
-			const radius = distance + (degree - 0.5) * 0.12
-			const blend = 1 - smoothstep(0.3, 0.52, radius)
+			const point = flowPoint(px - 0.5, py - 0.5, motionTime)
+			const blend = smoothstep(-0.3, 0.2, point[0])
 			const lab = dominant.map(
 				(value, channel) =>
 					value * (1 - blend) + accent[channel] * blend,
@@ -121,15 +152,18 @@ function draw(now: number) {
 }
 
 watch(() => props.src, loadArtwork)
-watch(() => props.active, (active) => {
-	if (active) {
-		startedAt = 0
-		lastFrameAt = 0
-		frame = requestAnimationFrame(draw)
-	} else {
-		cancelAnimationFrame(frame)
-	}
-})
+watch(
+	() => props.active,
+	(active) => {
+		if (active) {
+			startedAt = 0
+			lastFrameAt = 0
+			frame = requestAnimationFrame(draw)
+		} else {
+			cancelAnimationFrame(frame)
+		}
+	},
+)
 
 onMounted(() => {
 	loadArtwork()
