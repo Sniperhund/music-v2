@@ -12,13 +12,14 @@ const debugView = useCookie("DEBUG_VIEW")
 const debugViewEnabled = computed(() => String(debugView.value ?? "") === "1")
 
 const parsedLyrics = computed(() => {
-	if (!song.value?.lyrics?.synced) return
+	if (!song.value?.lyrics?.synced) return []
 
-	if (song.value.lyrics.synced) return parseLyrics(song.value.lyrics.text)
+	return parseLyrics(song.value.lyrics.text)
 })
+const hasParsedLyrics = computed(() => parsedLyrics.value.length > 0)
 
 const findLyricIndex = (time: number) => {
-	if (!parsedLyrics.value) return -1
+	if (!hasParsedLyrics.value) return -1
 
 	const index = parsedLyrics.value.findIndex(
 		(lyric, i) =>
@@ -34,7 +35,7 @@ const activeIndex = computed(() => {
 	return findLyricIndex(secondsPlayed.value)
 })
 const scrollActiveIndex = computed(() => {
-	if (!parsedLyrics.value) return -1
+	if (!hasParsedLyrics.value) return -1
 
 	const time = secondsPlayed.value + animationDuration
 
@@ -164,7 +165,7 @@ const finalTransform = computed(() => {
 	/>
 	<div
 		ref="outer-ref"
-		v-if="song && song.lyrics && song.lyrics.synced"
+		v-if="song && song.lyrics && song.lyrics.synced && hasParsedLyrics"
 		class="synced-lyrics-container"
 		:style="{
 			height: `${syncedHeight + topFadeExtension}px`,
