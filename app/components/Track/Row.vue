@@ -18,14 +18,20 @@ interface TrackRowProps {
 }
 
 const props = defineProps<TrackRowProps>()
-const emit = defineEmits<{ (e: "playAlbumAtIndex"): void }>()
+const emit = defineEmits<{
+	(e: "playAlbumAtIndex"): void
+	(e: "removeFromLibrary", track: Track): void
+}>()
 const route = useRoute()
 
 const hovering = ref(false)
 const { playAlbum, addToFrontOfQueue, addToQueue } = usePlayer()
 const toast = useToast()
+const { isSaved, toggleSaved } = useTrackLibrary(() =>
+	props.queueMode ? undefined : props.track?._id,
+)
 
-const dropdownMenuItems: DropdownMenuItem[][] = [
+const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
 	[
 		{
 			label: "Play only this",
@@ -55,6 +61,28 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 	],
 	[
 		{
+			label:
+				isSaved.value === null
+					? "Checking Library…"
+					: isSaved.value
+						? "Remove from Library"
+						: "Save to Library",
+			icon: isSaved.value ? "lucide:bookmark-minus" : "lucide:bookmark-plus",
+			async onSelect() {
+				const removed = await toggleSaved()
+				if (removed && props.track) emit("removeFromLibrary", props.track)
+			},
+		},
+		{
+			label: "Add to playlist",
+			icon: "lucide:list-plus",
+			onSelect() {
+				toast.show("Playlists are not implemented")
+			},
+		},
+	],
+	[
+		{
 			label: "Go to artist",
 			icon: "lucide:user-round",
 			onSelect() {
@@ -70,13 +98,12 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 			},
 		},
 	],
-]
+])
 
 const visibleDropdownMenuItems = computed(() =>
-	dropdownMenuItems.map((group) =>
+	dropdownMenuItems.value.map((group) =>
 		group.filter(
-			(item) =>
-				!(item.label === "Go to album" && route.path.startsWith("/album/")),
+			(item) => !(item.label === "Go to album" && route.path.startsWith("/album/")),
 		),
 	),
 )

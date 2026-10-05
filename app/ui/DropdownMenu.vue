@@ -12,6 +12,7 @@ interface DropdownMenuProps {
 const props = defineProps<DropdownMenuProps>()
 
 const open = ref(false)
+const mounted = ref(false)
 const placement = ref<"bottom" | "top">("bottom")
 const root = useTemplateRef("root")
 const menuPosition = ref({ top: 0, left: 0 })
@@ -64,6 +65,7 @@ onMounted(() => {
 	document.addEventListener("keydown", handleKey)
 	window.addEventListener("resize", handleReposition)
 	window.addEventListener("scroll", handleReposition, true)
+	mounted.value = true
 })
 
 onBeforeMount(() => {
@@ -81,7 +83,7 @@ onBeforeMount(() => {
 		</div>
 
 		<Transition name="dropdown">
-			<Teleport to="body">
+			<Teleport v-if="mounted" to="body">
 				<div
 					v-show="open"
 					class="dropdown-menu"
@@ -91,26 +93,26 @@ onBeforeMount(() => {
 						left: `${menuPosition.left}px`,
 					}"
 				>
-				<div
-					v-for="(group, i) in items"
-					:key="`group-${i}`"
-					class="group"
-				>
-					<button
-						v-for="(item, i) in group"
-						:key="`item-${i}`"
-						class="item"
-						@click="
-							() => {
-								item.onSelect?.()
-								close()
-							}
-						"
+					<div
+						v-for="(group, i) in items"
+						:key="`group-${i}`"
+						class="group"
 					>
-						<Icon :name="item.icon" class="icon" />
-						<span>{{ item.label }}</span>
-					</button>
-				</div>
+						<button
+							v-for="(item, i) in group"
+							:key="`item-${i}`"
+							class="item"
+							@click="
+								() => {
+									item.onSelect?.()
+									close()
+								}
+							"
+						>
+							<Icon :name="item.icon" class="icon" />
+							<span>{{ item.label }}</span>
+						</button>
+					</div>
 				</div>
 			</Teleport>
 		</Transition>
@@ -126,30 +128,30 @@ onBeforeMount(() => {
 }
 
 .dropdown-menu {
-		position: fixed;
-		z-index: 1000;
+	position: fixed;
+	z-index: 1000;
 
-		padding: 0.5rem;
-		min-width: 180px;
+	padding: 0.5rem;
+	min-width: 180px;
 
-		background-color: $color-secondary-background;
-		border-radius: $border-radius-standard;
-		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+	background-color: $color-secondary-background;
+	border-radius: $border-radius-standard;
+	box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
 
-		display: flex;
-		flex-direction: column;
+	display: flex;
+	flex-direction: column;
 
-		transform: translateX(-100%);
+	transform: translateX(-100%);
 
-		&.bottom {
-			transform: translate(-100%, 0.5rem);
-			transform-origin: top right;
-		}
+	&.bottom {
+		transform: translate(-100%, 0.5rem);
+		transform-origin: top right;
+	}
 
-		&.top {
-			transform: translate(-100%, calc(-100% - 0.5rem));
-			transform-origin: bottom right;
-		}
+	&.top {
+		transform: translate(-100%, calc(-100% - 0.5rem));
+		transform-origin: bottom right;
+	}
 
 	.group {
 		width: 100%;
@@ -184,6 +186,10 @@ onBeforeMount(() => {
 		cursor: pointer;
 
 		transition: background-color 0.2s ease;
+
+		span {
+			white-space: nowrap;
+		}
 	}
 
 	.item:hover {

@@ -12,8 +12,9 @@ const route = useRoute()
 const hovering = ref(false)
 
 const toast = useToast()
+const { isSaved, toggleSaved } = useTrackLibrary(() => track._id)
 
-const dropdownMenuItems: DropdownMenuItem[][] = [
+const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
 	[
 		{
 			label: "Play only this",
@@ -37,6 +38,27 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 	],
 	[
 		{
+			label:
+				isSaved.value === null
+					? "Checking Library…"
+					: isSaved.value
+						? "Remove from Library"
+						: "Save to Library",
+			icon: isSaved.value ? "lucide:bookmark-minus" : "lucide:bookmark-plus",
+			async onSelect() {
+				await toggleSaved()
+			},
+		},
+		{
+			label: "Add to playlist",
+			icon: "lucide:list-plus",
+			onSelect() {
+				toast.show("Playlists are not implemented")
+			},
+		},
+	],
+	[
+		{
 			label: "Go to artist",
 			icon: "lucide:user-round",
 			onSelect() {
@@ -52,10 +74,10 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 			},
 		},
 	],
-]
+])
 
 const visibleDropdownMenuItems = computed(() =>
-	dropdownMenuItems.map((group) =>
+	dropdownMenuItems.value.map((group) =>
 		group.filter(
 			(item) =>
 				!(item.label === "Go to album" && route.path.startsWith("/album/")),
