@@ -37,6 +37,9 @@ function loadArtwork() {
 
 function setPalette(next: AlbumPalette) {
 	palette.value = next
+}
+
+function randomizeMotion() {
 	random = Array.from({ length: 2 }, () => Math.random() * Math.PI * 2)
 	angleJitter = (Math.random() - 0.5) * 0.3
 	flowParams = [
@@ -45,6 +48,14 @@ function setPalette(next: AlbumPalette) {
 		(0.65 + Math.random() * 0.2) * (Math.random() < 0.5 ? -1 : 1),
 		((-5 + (Math.random() - 0.5) * 12) * Math.PI) / 180,
 	]
+}
+
+function startAnimation() {
+	cancelAnimationFrame(frame)
+	startedAt = 0
+	lastFrameAt = 0
+	randomizeMotion()
+	frame = requestAnimationFrame(draw)
 }
 
 function gradientHash(x: number, y: number): [number, number] {
@@ -155,11 +166,8 @@ watch(() => props.src, loadArtwork)
 watch(
 	() => props.active,
 	(active) => {
-		if (active) {
-			startedAt = 0
-			lastFrameAt = 0
-			frame = requestAnimationFrame(draw)
-		} else {
+		if (active) startAnimation()
+		else {
 			cancelAnimationFrame(frame)
 		}
 	},
@@ -167,7 +175,7 @@ watch(
 
 onMounted(() => {
 	loadArtwork()
-	if (props.active) frame = requestAnimationFrame(draw)
+	if (props.active) startAnimation()
 })
 
 onBeforeUnmount(() => {
