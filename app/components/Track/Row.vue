@@ -19,6 +19,7 @@ interface TrackRowProps {
 
 const props = defineProps<TrackRowProps>()
 const emit = defineEmits<{ (e: "playAlbumAtIndex"): void }>()
+const route = useRoute()
 
 const hovering = ref(false)
 const { playAlbum, addToFrontOfQueue, addToQueue } = usePlayer()
@@ -52,7 +53,33 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 			},
 		},
 	],
+	[
+		{
+			label: "Go to artist",
+			icon: "lucide:user-round",
+			onSelect() {
+				const artist = props.track?.artists[0]
+				if (artist) navigateTo(`/artist/${artist._id}`)
+			},
+		},
+		{
+			label: "Go to album",
+			icon: "lucide:disc-3",
+			onSelect() {
+				if (props.track) navigateTo(`/album/${props.track.album._id}`)
+			},
+		},
+	],
 ]
+
+const visibleDropdownMenuItems = computed(() =>
+	dropdownMenuItems.map((group) =>
+		group.filter(
+			(item) =>
+				!(item.label === "Go to album" && route.path.startsWith("/album/")),
+		),
+	),
+)
 
 const durationFormatted = computed(() => {
 	if (!props.track) return ""
@@ -140,7 +167,7 @@ const artworkSrc = computed(() => {
 			class="queue-handle"
 			aria-hidden="true"
 		/>
-		<DropdownMenu v-else-if="props.track" :items="dropdownMenuItems">
+		<DropdownMenu v-else-if="props.track" :items="visibleDropdownMenuItems">
 			<Icon name="lucide:ellipsis" class="dropdown-icon" />
 		</DropdownMenu>
 	</article>

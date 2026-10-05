@@ -7,6 +7,7 @@ interface TrackRowProps {
 
 const { track } = defineProps<TrackRowProps>()
 const emit = defineEmits<{ (e: "playAlbumAtIndex"): void }>()
+const route = useRoute()
 
 const hovering = ref(false)
 
@@ -34,7 +35,33 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 			},
 		},
 	],
+	[
+		{
+			label: "Go to artist",
+			icon: "lucide:user-round",
+			onSelect() {
+				const artist = track.artists[0]
+				if (artist) navigateTo(`/artist/${artist._id}`)
+			},
+		},
+		{
+			label: "Go to album",
+			icon: "lucide:disc-3",
+			onSelect() {
+				navigateTo(`/album/${track.album._id}`)
+			},
+		},
+	],
 ]
+
+const visibleDropdownMenuItems = computed(() =>
+	dropdownMenuItems.map((group) =>
+		group.filter(
+			(item) =>
+				!(item.label === "Go to album" && route.path.startsWith("/album/")),
+		),
+	),
+)
 </script>
 
 <template>
@@ -62,7 +89,7 @@ const dropdownMenuItems: DropdownMenuItem[][] = [
 			<ArtistName :artists="track.artists" class="artists" />
 		</div>
 
-		<DropdownMenu :items="dropdownMenuItems">
+		<DropdownMenu :items="visibleDropdownMenuItems">
 			<Icon name="lucide:ellipsis" class="dropdown-icon" />
 		</DropdownMenu>
 	</article>
