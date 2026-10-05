@@ -5,6 +5,7 @@ import {
 	toOkLab,
 	type AlbumPalette,
 } from "./palette"
+import { shapeBeatPulse } from "~/utils/beat"
 
 const props = defineProps<{ src: string; active: boolean }>()
 const ANIMATION_SPEED = 0.3
@@ -159,7 +160,7 @@ function draw(now: number) {
 				(value, channel) =>
 					value * (1 - blend) + accent[channel] * blend,
 			) as [number, number, number]
-			const beat = beatEnergy.value
+			const beat = shapeBeatPulse(beatEnergy.value)
 			lab[0] = Math.min(1, lab[0] + beat * 0.01)
 			lab[1] *= 1 + beat * 0.02
 			lab[2] *= 1 + beat * 0.02
@@ -171,7 +172,7 @@ function draw(now: number) {
 			image.data[offset + 3] = 255
 		}
 	}
-	element.style.transform = `scale(${1.08 + beatEnergy.value * 0.003})`
+	element.style.transform = `scale(${1.08 + shapeBeatPulse(beatEnergy.value) * 0.003})`
 	context.putImageData(image, 0, 0)
 	if (props.active) frame = requestAnimationFrame(draw)
 }

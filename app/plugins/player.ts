@@ -1,4 +1,5 @@
 import { Howl, Howler } from "howler"
+import { shapeBeatPulse } from "~/utils/beat"
 
 export default defineNuxtPlugin((nuxtApp) => {
 	const mediaBaseUrl = useRuntimeConfig().public.mediaBaseUrl
@@ -145,12 +146,11 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 			const samples = new Uint8Array(analysisNode.frequencyBinCount)
 			let previousBass: number | null = null
+			let riseAverage = 0.01
+			let riseVariance = 0.0004
 			let pulse = 0
 			let lastBeatLogAt = 0
 			let lastLevelLogAt = 0
-			const attackNoiseFloor = 0.05
-			const strongThumpThreshold = 0.05
-			const thumpCooldown = 800
 			const sample = () => {
 				if (!analysisNode) return
 				analysisNode.getByteFrequencyData(samples)
@@ -164,17 +164,37 @@ export default defineNuxtPlugin((nuxtApp) => {
 				for (let bin = firstBin; bin <= lastBin; bin++) bass += samples[bin]
 				bass /= Math.max(1, lastBin - firstBin + 1) * 255
 				if (previousBass === null) previousBass = bass
-				const attack = Math.max(0, bass - previousBass - attackNoiseFloor)
+				const rise = Math.max(0, bass - previousBass)
 				previousBass = previousBass * 0.985 + bass * 0.015
+				const riseDeviation = Math.sqrt(riseVariance)
+				const strongThumpThreshold = Math.min(
+					0.1,
+					Math.max(0.045, riseAverage + riseDeviation * 2),
+				)
+				const attack = Math.max(0, rise - strongThumpThreshold)
+				const thumpCooldown = Math.min(
+					500,
+					Math.max(300, 300 + riseDeviation * 4000),
+				)
 				const now = performance.now()
 				const isStrongThump =
-					attack >= strongThumpThreshold && now - lastBeatLogAt > thumpCooldown
+					rise >= strongThumpThreshold && now - lastBeatLogAt > thumpCooldown
+				const riseDelta = rise - riseAverage
+				riseAverage += riseDelta * 0.01
+				riseVariance += (riseDelta * riseDelta - riseVariance) * 0.01
 				if (isStrongThump) {
 					const thumpStrength = Math.min(
 						0.38,
-						0.1 + (attack - strongThumpThreshold) * 2.5,
+						0.1 + attack * 2.5,
 					)
 					pulse = Math.max(pulse, thumpStrength)
+					if (DEBUG_BEAT_ANALYSIS) {
+						console.log(
+							"[fullscreen beat]",
+							`detected=${thumpStrength.toFixed(2)}`,
+							`visual=${shapeBeatPulse(thumpStrength).toFixed(2)}`,
+						)
+					}
 				} else pulse *= 0.94
 				beatEnergy.value = Math.min(1, pulse)
 				if (DEBUG_BEAT_ANALYSIS && now - lastLevelLogAt > 1000) {
@@ -183,13 +203,12 @@ export default defineNuxtPlugin((nuxtApp) => {
 						"[beat level]",
 						`bass=${bass.toFixed(3)}`,
 						`attack=${attack.toFixed(3)}`,
+						`gate=${strongThumpThreshold.toFixed(3)}`,
+						`cooldown=${Math.round(thumpCooldown)}`,
 						`pulse=${beatEnergy.value.toFixed(2)}`,
 					)
 				}
-				if (isStrongThump) {
-					lastBeatLogAt = now
-					console.log("[fullscreen beat]", beatEnergy.value.toFixed(2))
-				}
+				if (isStrongThump) lastBeatLogAt = now
 				analysisFrame = requestAnimationFrame(sample)
 			}
 			analysisFrame = requestAnimationFrame(sample)
