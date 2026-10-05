@@ -44,7 +44,7 @@ export function fromOkLab([lightness, a, b]: Lab): RGB {
 			value <= 0.0031308
 				? 12.92 * value
 				: 1.055 * Math.max(value, 0) ** (1 / 2.4) - 0.055
-		return Math.round(Math.max(0, Math.min(1, channel)) * 255)
+		return Math.max(0, Math.min(1, channel)) * 255
 	}
 	return [
 		encode(

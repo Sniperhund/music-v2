@@ -91,6 +91,13 @@ function smoothstep(edge0: number, edge1: number, value: number) {
 	return amount * amount * (3 - 2 * amount)
 }
 
+function ditherNoise(x: number, y: number, channel: number) {
+	const value = Math.sin(
+		(x + channel * 17) * 127.1 + (y + channel * 59) * 311.7,
+	) * 43758.5453
+	return value - Math.floor(value) - 0.5
+}
+
 function flowPoint(x: number, y: number, time: number): [number, number] {
 	const degree = gradientNoise(
 		time * 0.1 + random[0] * 0.07,
@@ -124,7 +131,7 @@ function draw(now: number) {
 	}
 	lastFrameAt = now
 	const time = (now - startedAt) / 1000
-	const width = 112
+	const width = 224
 	const height = Math.max(
 		72,
 		Math.round(
@@ -146,15 +153,16 @@ function draw(now: number) {
 			const py = y / (height - 1)
 			const point = flowPoint(px - 0.5, py - 0.5, motionTime)
 			const blend = smoothstep(-0.3, 0.2, point[0])
+			const transition = 1 - Math.abs(blend * 2 - 1)
 			const lab = dominant.map(
 				(value, channel) =>
 					value * (1 - blend) + accent[channel] * blend,
 			) as [number, number, number]
 			const color = fromOkLab(lab)
 			const offset = (y * width + x) * 4
-			image.data[offset] = color[0]
-			image.data[offset + 1] = color[1]
-			image.data[offset + 2] = color[2]
+			image.data[offset] = color[0] + ditherNoise(x, y, 0) * transition * 3
+			image.data[offset + 1] = color[1] + ditherNoise(x, y, 1) * transition * 3
+			image.data[offset + 2] = color[2] + ditherNoise(x, y, 2) * transition * 3
 			image.data[offset + 3] = 255
 		}
 	}
@@ -193,7 +201,7 @@ onBeforeUnmount(() => {
 	inset: 0;
 	width: 50%;
 	height: 50%;
-	filter: blur(28px) saturate(1.08);
+	filter: blur(6px) saturate(1.08);
 	transform: scale(1.08);
 }
 </style>
