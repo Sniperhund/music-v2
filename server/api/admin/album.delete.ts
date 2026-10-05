@@ -6,7 +6,7 @@ import { parseMongoId, validationResponse } from "../../utils/api-validation"
 import { tryDeleteObject, tryDeleteObjectPrefix } from "../../utils/object-storage"
 
 export default defineAuthenticatedEventHandler(async (event) => {
-	await requireAuthenticatedUser(event, true)
+	await requireAuthenticatedUser(event, true, { allowBearer: true, skipOriginCheck: true })
 	const query = getQuery(event)
 	const parsedId = parseMongoId(query.id)
 	if ("error" in parsedId) return validationResponse(event, parsedId.error)

@@ -8,7 +8,7 @@ import { parseMongoId, validationResponse } from "../../utils/api-validation"
 import { Track } from "../../models/track"
 
 export default defineAuthenticatedEventHandler(async (event) => {
-	await requireAuthenticatedUser(event, true)
+	await requireAuthenticatedUser(event, true, { allowBearer: true, skipOriginCheck: true })
 	const parsedId = parseMongoId(getQuery(event).id)
 	if ("error" in parsedId) return validationResponse(event, parsedId.error)
 	const parts = await readAdminForm(event)

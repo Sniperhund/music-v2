@@ -79,19 +79,27 @@ export function getSessionTtl(event?: H3Event) {
 	return parseDuration(tokenExpire) || 60 * 60 * 1000
 }
 
-export async function findSession(event: H3Event) {
+export async function findSession(event: H3Event, allowBearer = false) {
 	const Session = getSessionModel(getSessionTtl(event)) as mongoose.Model<any>
-	const token = getCookie(event, SESSION_COOKIE)
-	if (!token) return null
+	const cookieToken = getCookie(event, SESSION_COOKIE)
+	const authorization = allowBearer ? getRequestHeader(event, "authorization") : undefined
+	const bearerToken = authorization?.match(/^Bearer\s+(.+)$/i)?.[1]
+	const credentials = [
+		...(bearerToken ? [{ token: bearerToken, source: "bearer" as const }] : []),
+		...(cookieToken ? [{ token: cookieToken, source: "cookie" as const }] : []),
+	]
 
-	const session = await Session.findOne({ token })
-		.populate("userId", "+verified")
-		.exec()
-	const user = session?.userId as unknown as
-		| { _id: unknown; verified?: boolean; role?: string }
-		| undefined
+	for (const credential of credentials) {
+		const session = await Session.findOne({ token: credential.token })
+			.populate("userId", "+verified")
+			.exec()
+		const user = session?.userId as unknown as
+			| { _id: unknown; verified?: boolean; role?: string }
+			| undefined
+		if (session && user) return { session, user, source: credential.source }
+	}
 
-	return session && user ? { session, user } : null
+	return null
 }
 
 export async function findAuthenticatedSession(event: H3Event, adminOnly = false) {
@@ -100,9 +108,13 @@ export async function findAuthenticatedSession(event: H3Event, adminOnly = false
 	return auth
 }
 
-export async function requireAuthenticatedUser(event: H3Event, adminOnly = false) {
-	const auth = await findAuthenticatedSession(event, adminOnly)
-	if (!auth) {
+export async function requireAuthenticatedUser(
+	event: H3Event,
+	adminOnly = false,
+	options: { allowBearer?: boolean; skipOriginCheck?: boolean } = {},
+) {
+	const auth = await findSession(event, options.allowBearer)
+	if (!auth?.user.verified || (adminOnly && auth.user.role !== "admin")) {
 		throw createError({
 			statusCode: 401,
 			statusMessage: "Unauthorized",
@@ -112,7 +124,7 @@ export async function requireAuthenticatedUser(event: H3Event, adminOnly = false
 
 	const method = event.node.req.method?.toUpperCase() || "GET"
 	const isUnsafeMethod = !["GET", "HEAD", "OPTIONS"].includes(method)
-	if (isUnsafeMethod) assertCookieRequestOrigin(event)
+	if (isUnsafeMethod && !options.skipOriginCheck && auth.source === "cookie") assertCookieRequestOrigin(event)
 
 	return auth.user
 }

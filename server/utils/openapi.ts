@@ -124,7 +124,7 @@ function operationSpec(operation: ApiOperation) {
 				),
 			}
 			: {}),
-		...((operation.method === "post" && operation.path.startsWith("/auth/")) || ((operation.auth || operation.admin) && operation.method !== "get")
+		...((operation.method === "post" && operation.path.startsWith("/auth/")) || ((operation.auth || operation.admin) && operation.method !== "get" && !operation.path.startsWith("/admin/"))
 			? { 403: jsonResponse("Invalid request origin", ref("Error")) }
 			: {}),
 		...(operation.path === "/user/tracks" || (operation.path.startsWith("/admin/") && (operation.method === "patch" || operation.method === "delete"))
@@ -140,7 +140,13 @@ function operationSpec(operation: ApiOperation) {
 	return {
 		tags: [operation.tag],
 		summary: operation.summary,
-		...(operation.auth || operation.admin ? { security: [{ SessionCookie: [] }] } : {}),
+		...(operation.auth || operation.admin
+			? {
+				security: operation.admin
+					? [{ SessionCookie: [] }, { BearerSession: [] }]
+					: [{ SessionCookie: [] }],
+			}
+			: {}),
 		...(parameters.length ? { parameters } : {}),
 		...(operation.body
 			? {
@@ -175,6 +181,7 @@ export const openApiDocument = {
 	components: {
 		securitySchemes: {
 			SessionCookie: { type: "apiKey", in: "cookie", name: "musicSession" },
+			BearerSession: { type: "http", scheme: "bearer", description: "Session token; supported by admin endpoints." },
 		},
 		schemas: {
 			Error: { type: "object", required: ["message"], properties: { message: { type: "string" } } },

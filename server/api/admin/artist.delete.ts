@@ -11,7 +11,7 @@ async function findDependents(model: typeof Track | typeof Album, field: string,
 }
 
 export default defineAuthenticatedEventHandler(async (event) => {
-	await requireAuthenticatedUser(event, true)
+	await requireAuthenticatedUser(event, true, { allowBearer: true, skipOriginCheck: true })
 	const query = getQuery(event)
 	const parsedId = parseMongoId(query.id)
 	if ("error" in parsedId) return validationResponse(event, parsedId.error)

@@ -6,7 +6,7 @@ import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../..
 import { Track } from "../../models/track"
 
 export default defineAuthenticatedEventHandler(async (event) => {
-	await requireAuthenticatedUser(event, true)
+	await requireAuthenticatedUser(event, true, { allowBearer: true, skipOriginCheck: true })
 	const parts = await readAdminForm(event)
 	const name = adminFormText(parts, "name")
 	const album = adminFormText(parts, "album")

@@ -3,7 +3,7 @@ import { Genre } from "../../models/genre"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 
 export default defineAuthenticatedEventHandler(async (event) => {
-	await requireAuthenticatedUser(event, true)
+	await requireAuthenticatedUser(event, true, { allowBearer: true, skipOriginCheck: true })
 
 	const body = await readBody<unknown>(event)
 	if (!body || typeof body !== "object" || Array.isArray(body)) {

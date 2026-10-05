@@ -5,7 +5,7 @@ import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../..
 import { parseMongoId } from "../../utils/api-validation"
 
 export default defineAuthenticatedEventHandler(async (event) => {
-	await requireAuthenticatedUser(event, true)
+	await requireAuthenticatedUser(event, true, { allowBearer: true, skipOriginCheck: true })
 
 	const query = getQuery(event)
 	const parsedId = parseMongoId(query.id)

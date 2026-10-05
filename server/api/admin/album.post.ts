@@ -5,7 +5,7 @@ import { Album } from "../../models/album"
 import mongoose from "mongoose"
 
 export default defineAuthenticatedEventHandler(async (event) => {
-	await requireAuthenticatedUser(event, true)
+	await requireAuthenticatedUser(event, true, { allowBearer: true, skipOriginCheck: true })
 	const parts = await readAdminForm(event)
 	const name = adminFormText(parts, "name")
 	const artistInput = adminFormTexts(parts, "artists")
