@@ -106,6 +106,7 @@ const getOptionId = (option: string | Option) =>
 
 const showModal = ref<boolean>(false)
 const item = ref<Track | undefined>(undefined)
+const addingSong = ref(false)
 
 const save = async (value: any) => {
 	if (value._id) {
@@ -127,24 +128,31 @@ const save = async (value: any) => {
 			return false
 		}
 	} else {
+		if (!value.name || !value.file || !value.artists?.length) {
+			toast.show(
+				"Name, audio file, and at least one artist are required",
+				"error",
+			)
+			return false
+		}
+
+		if (value.createSingle && (!value.cover || !value.genre)) {
+			toast.show(
+				"A cover image and genre are required for a single",
+				"error",
+			)
+			return false
+		}
+
+		if (!value.createSingle && !value.album) {
+			toast.show("Choose an album or create a single album", "error")
+			return false
+		}
+
+		addingSong.value = true
+		await nextTick()
 		try {
-			if (!value.name || !value.file || !value.artists?.length) {
-				toast.show(
-					"Name, audio file, and at least one artist are required",
-					"error",
-				)
-				return false
-			}
-
 			if (value.createSingle) {
-				if (!value.cover || !value.genre) {
-					toast.show(
-						"A cover image and genre are required for a single",
-						"error",
-					)
-					return false
-				}
-
 				const albumResponse = await cfetch<{ _id: string }>("/admin/album", {
 					method: "POST",
 					data: {
@@ -155,12 +163,6 @@ const save = async (value: any) => {
 					},
 				})
 				value.album = albumResponse._id
-			} else if (!value.album) {
-				toast.show(
-					"Choose an album or create a single album",
-					"error",
-				)
-				return false
 			}
 
 			await cfetch("/admin/track", {
@@ -178,6 +180,8 @@ const save = async (value: any) => {
 			toast.show("Failed to add song", "error")
 
 			return false
+		} finally {
+			addingSong.value = false
 		}
 	}
 
@@ -241,6 +245,8 @@ useHead({ title: "Admin - Songs" })
 		:fields="modalFields"
 		:item="item"
 		:title="item ? 'Edit song' : 'Add new song'"
+		:loading="addingSong"
+		:loading-text="'Adding song…'"
 	/>
 </template>
 

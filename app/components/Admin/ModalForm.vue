@@ -47,6 +47,8 @@ interface ModalFormProps<T> {
 	fields: Field<T>[]
 	title?: string
 	onSave: (value: any) => Promise<boolean>
+	loading?: boolean
+	loadingText?: string
 }
 
 const props = defineProps<ModalFormProps<any>>()
@@ -150,7 +152,10 @@ watch(
 				/>
 			</template>
 
-			<Button type="submit" full center-text>Save</Button>
+			<Button type="submit" full center-text :disabled="props.loading">
+				<span v-if="props.loading" class="spinner" aria-hidden="true" />
+				{{ props.loading ? props.loadingText || "Saving…" : "Save" }}
+			</Button>
 		</form>
 	</Modal>
 </template>
@@ -168,5 +173,20 @@ watch(
 	display: flex;
 	flex-direction: column;
 	gap: 0.8rem;
+}
+
+.spinner {
+	width: 1rem;
+	height: 1rem;
+	border: 2px solid currentColor;
+	border-right-color: transparent;
+	border-radius: 50%;
+	animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
 }
 </style>

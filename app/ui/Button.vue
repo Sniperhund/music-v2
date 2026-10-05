@@ -8,6 +8,7 @@ interface ButtonProps {
 	full?: boolean
 	iconName?: string
 	centerText?: boolean
+	disabled?: boolean
 }
 
 const props = withDefaults(defineProps<ButtonProps>(), {
@@ -22,6 +23,7 @@ const props = withDefaults(defineProps<ButtonProps>(), {
 			props.type == 'link' && props.to != undefined ? NuxtLink : 'button'
 		"
 		:to="props.to"
+		:disabled="props.disabled"
 		:class="[
 			`button type-${props.variant}`,
 			{
