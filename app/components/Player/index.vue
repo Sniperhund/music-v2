@@ -27,6 +27,8 @@ const {
 	prev,
 	shuffle,
 	repeat,
+	repeatOnce,
+	cycleRepeat,
 	secondsPlayed,
 	duration,
 	volume,
@@ -47,6 +49,7 @@ const queueOpen = ref(false)
 <template>
 	<div id="width-fixer" ref="width-fixer-ref"></div>
 	<article class="player" ref="player-ref" :class="{ active: song }">
+		<Icon name="lucide:repeat-1" class="icon-preload" aria-hidden="true" />
 		<template v-if="song">
 			<div class="track">
 				<NuxtImg
@@ -73,9 +76,9 @@ const queueOpen = ref(false)
 					<Icon name="lucide:play" v-else @click="play()" />
 					<Icon name="lucide:skip-forward" @click="next()" />
 					<Icon
-						name="lucide:repeat"
-						:class="{ repeating: repeat }"
-						@click="repeat = !repeat"
+						:name="repeatOnce ? 'lucide:repeat-1' : 'lucide:repeat'"
+						:class="{ repeating: repeat || repeatOnce }"
+						@click="cycleRepeat()"
 					/>
 				</div>
 				<div class="slider">
@@ -120,6 +123,10 @@ const queueOpen = ref(false)
 <style lang="scss" scoped>
 @use "@/styles/variables" as *;
 @use "@/styles/util" as *;
+
+.icon-preload {
+	display: none;
+}
 
 #width-fixer {
 	width: 100%;

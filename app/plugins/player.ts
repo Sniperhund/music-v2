@@ -29,6 +29,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const currentQueue = ref<Track[]>([])
 	const currentSong = ref<Track | null>(null)
 	const repeat = ref(false)
+	const repeatOnce = ref(false)
 	const isPlaying = ref(false)
 	const beatEnergy = ref(0)
 	const storedVolume = ref(DEFAULT_VOLUME)
@@ -369,7 +370,13 @@ export default defineNuxtPlugin((nuxtApp) => {
 			onend: () => {
 				stopBeatAnalysis("track ended")
 				void closeFullscreen()
-				next()
+				if (repeatOnce.value && sound.value === newSound) {
+					repeatOnce.value = false
+					newSound.seek(0)
+					newSound.play()
+				} else {
+					void next()
+				}
 				stopTracking()
 			},
 			onstop: () => {
@@ -419,6 +426,17 @@ export default defineNuxtPlugin((nuxtApp) => {
 		sound.value?.pause()
 		isPlaying.value = false
 		updateMediaSession()
+	}
+
+	const cycleRepeat = () => {
+		if (repeatOnce.value) {
+			repeatOnce.value = false
+			repeat.value = true
+		} else if (repeat.value) {
+			repeat.value = false
+		} else {
+			repeatOnce.value = true
+		}
 	}
 
 	const next = async (autoplay: boolean = true) => {
@@ -571,6 +589,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 				beatEnergy,
 				currentSong,
 				repeat,
+				repeatOnce,
+				cycleRepeat,
 				play,
 				pause,
 				next,

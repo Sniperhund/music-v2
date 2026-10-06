@@ -12,6 +12,8 @@ const {
 	prev,
 	shuffle,
 	repeat,
+	repeatOnce,
+	cycleRepeat,
 	secondsPlayed,
 	duration,
 	volume,
@@ -64,9 +66,9 @@ const durationFormatted = computed(() =>
 			<Icon name="lucide:play" v-else @click="play()" />
 			<Icon name="lucide:skip-forward" @click="next()" />
 			<Icon
-				name="lucide:repeat"
-				:class="{ repeating: repeat }"
-				@click="repeat = !repeat"
+				:name="repeatOnce ? 'lucide:repeat-1' : 'lucide:repeat'"
+				:class="{ repeating: repeat || repeatOnce }"
+				@click="cycleRepeat()"
 			/>
 		</div>
 
