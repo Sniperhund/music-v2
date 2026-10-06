@@ -167,7 +167,7 @@ nuxtApp.hook("page:finish", () => {
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
-		justify-content: flex-start;
+		justify-content: safe center;
 		gap: 1.25rem;
 		overflow-y: auto;
 		overscroll-behavior: contain;
