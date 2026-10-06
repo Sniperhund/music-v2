@@ -15,7 +15,8 @@ const route = useRoute()
 const { currentSong, playAlbum } = usePlayer()
 const query = computed(() => {
 	const value = route.query.q
-	return (Array.isArray(value) ? value[0] : value ?? "").trim()
+	const firstValue = Array.isArray(value) ? value[0] : value
+	return (firstValue ?? "").trim()
 })
 const debouncedQuery = ref(query.value)
 let debounceTimeout: ReturnType<typeof setTimeout> | undefined
