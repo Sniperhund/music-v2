@@ -40,9 +40,16 @@ const durationFormatted = computed(() =>
 			height="512"
 		/>
 
-		<div class="track">
-			<p class="name">{{ song.name }}</p>
-			<ArtistName :artists="song.artists" />
+		<div class="track-row">
+			<div class="track">
+				<p class="name">{{ song.name }}</p>
+				<ArtistName :artists="song.artists" />
+			</div>
+			<div class="track-actions">
+				<button aria-label="More track options">
+					<Icon name="lucide:ellipsis" />
+				</button>
+			</div>
 		</div>
 
 		<div class="slider">
@@ -122,6 +129,31 @@ const durationFormatted = computed(() =>
 	}
 }
 
+.track-row,
+.track-actions {
+	display: flex;
+	align-items: center;
+}
+
+.track-row {
+	width: 100%;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.track-actions {
+	display: none;
+	gap: 0.75rem;
+
+	button {
+		border: 0;
+		padding: 0;
+		color: inherit;
+		background: transparent;
+		font-size: 1.8rem;
+	}
+}
+
 .slider {
 	display: flex;
 	flex-direction: column;
@@ -185,26 +217,33 @@ const durationFormatted = computed(() =>
 
 @media (max-width: 767px) {
 	.track-display {
-		gap: 0.85rem;
+		display: contents;
+	}
+
+	.track-actions {
+		display: flex;
+		gap: 0.6rem;
 	}
 
 	.btns {
-		gap: clamp(0.4rem, 3vw, 0.85rem);
-		font-size: 1.75rem;
+		justify-content: space-between;
+		gap: 0.75rem;
+		font-size: 2.5rem;
+		opacity: 1 !important;
+		pointer-events: auto !important;
+
+		& > :first-child,
+		& > :last-child {
+			display: none;
+		}
 
 		& > * {
-			padding: 0.45rem;
+			padding: 0.5rem;
 		}
 	}
 
 	.volume-slider {
 		margin-inline: 0;
-	}
-}
-
-@media (max-width: 767px) and (hover: none) {
-	.btns,
-	.volume-slider {
 		opacity: 1 !important;
 		pointer-events: auto !important;
 	}

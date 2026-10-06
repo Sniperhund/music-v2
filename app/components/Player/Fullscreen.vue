@@ -5,6 +5,8 @@ const { fullscreen, close: closeFullscreen } = useFullscreen()
 const song = useSong()
 const mouseMovedRecently = ref(true)
 const mobileView = ref(false)
+const showMobileLyrics = ref(false)
+const queueOpen = useState<boolean>("queueOpen", () => false)
 
 onMounted(() => {
 	let timeoutId: NodeJS.Timeout
@@ -72,7 +74,26 @@ nuxtApp.hook("page:finish", () => {
 				<PlayerFullscreenTrackDisplay
 					:show-buttons="mouseMovedRecently"
 				/>
+				<nav
+					v-if="mobileView"
+					class="mobile-tabs"
+					aria-label="Player views"
+				>
+					<button
+						:class="{ selected: showMobileLyrics }"
+						aria-label="Toggle lyrics"
+						@click="showMobileLyrics = !showMobileLyrics"
+					>
+						<Icon name="lucide:message-square-quote" />
+					</button>
+					<button aria-label="Open queue" @click="queueOpen = true">
+						<Icon name="lucide:list" />
+					</button>
+				</nav>
 				<PlayerFullscreenLyricsDisplay
+					v-if="
+						!mobileView || (showMobileLyrics && song.lyrics?.text)
+					"
 					:animation-duration="0.2"
 					:offset="mobileView ? 100 : 250"
 					:show-scroll-bar="mouseMovedRecently"
@@ -99,7 +120,7 @@ nuxtApp.hook("page:finish", () => {
 	position: fixed;
 	inset: 0;
 
-		background-color: rgba(0, 0, 0, 0.34);
+	background-color: rgba(0, 0, 0, 0.34);
 }
 
 .close-btn {
@@ -115,6 +136,10 @@ nuxtApp.hook("page:finish", () => {
 	&.show {
 		opacity: 1;
 	}
+}
+
+.mobile-tabs {
+	display: none;
 }
 
 .content-container {
@@ -162,17 +187,37 @@ nuxtApp.hook("page:finish", () => {
 		}
 	}
 
+	.mobile-tabs {
+		display: flex;
+		justify-content: center;
+		gap: 3rem;
+		margin: 0 auto;
+		color: rgba(255, 255, 255, 0.72);
+
+		button {
+			border: 0;
+			padding: 0.5rem;
+			color: inherit;
+			background: transparent;
+			font-size: 1.5rem;
+		}
+
+		.selected {
+			color: white;
+		}
+	}
+
 	.content-container {
 		max-width: none;
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
-		justify-content: safe center;
-		gap: 1.25rem;
-		overflow-y: auto;
-		overscroll-behavior: contain;
-		padding: calc(3.75rem + env(safe-area-inset-top)) 1rem
-			calc(1rem + env(safe-area-inset-bottom));
+		justify-content: space-between;
+		gap: 1.5rem;
+		overflow: hidden;
+		padding: max(11vh, calc(2.75rem + env(safe-area-inset-top))) 1.5rem
+			calc(env(safe-area-inset-bottom));
+		height: 100vh;
 
 		& > * {
 			max-height: none;
@@ -182,7 +227,6 @@ nuxtApp.hook("page:finish", () => {
 		&.lyrics {
 			grid-template-columns: 1fr;
 		}
-
 	}
 }
 </style>

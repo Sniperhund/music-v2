@@ -43,7 +43,7 @@ const durationFormatted = computed(() =>
 )
 
 const { open: openFullscreen } = useFullscreen()
-const queueOpen = ref(false)
+const queueOpen = useState<boolean>("queueOpen", () => false)
 </script>
 
 <template>
