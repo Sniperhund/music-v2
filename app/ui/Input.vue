@@ -45,6 +45,11 @@ const onFileChange = (e: Event) => {
 const onTextInput = (e: Event) => {
 	emit("input", (e.currentTarget as HTMLInputElement | HTMLTextAreaElement).value)
 }
+
+const clearSearch = () => {
+	value.value = ""
+	emit("input", "")
+}
 </script>
 
 <template>
@@ -81,7 +86,6 @@ const onTextInput = (e: Event) => {
 				:required="props.required"
 				:autocomplete="props.autocomplete"
 			/>
-
 			<textarea
 				v-else-if="props.textarea"
 				:placeholder="props.placeholder"
@@ -106,6 +110,16 @@ const onTextInput = (e: Event) => {
 				:id="props.name"
 				:required="props.required"
 			/>
+			<button
+				v-if="props.type == 'search' && typeof value == 'string' && value"
+				type="button"
+				class="clear-search"
+				aria-label="Clear search"
+				@mousedown.prevent
+				@click="clearSearch"
+			>
+				<Icon name="lucide:x" />
+			</button>
 		</div>
 	</div>
 </template>
@@ -163,6 +177,30 @@ const onTextInput = (e: Event) => {
 
 	& input::placeholder {
 		color: $color-placeholder-text;
+	}
+
+	& input[type="search"] {
+		color-scheme: dark;
+
+		&::-webkit-search-cancel-button {
+			display: none;
+		}
+	}
+
+	.clear-search {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border-radius: $border-radius-standard;
+		line-height: 1;
+		color: $color-placeholder-text;
+		cursor: pointer;
+		transition: color 0.2s ease;
+
+		&:hover {
+			color: $color-text;
+		}
 	}
 }
 
