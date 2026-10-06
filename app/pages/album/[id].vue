@@ -9,6 +9,7 @@ const { data: albumData } = await useApiFetch<Album>(`/albums/${id.value}`)
 const { data: tracksData } = await useApiFetch<Track[]>(
 	`/albums/${id.value}/tracks`,
 )
+const tracks = computed(() => tracksData.value ?? [])
 
 const { playAlbum, playShuffledAlbum, playAlbumAtIndex } = usePlayer()
 useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Album` : "Album") })
@@ -30,12 +31,12 @@ useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Alb
 			<div class="buttons">
 				<Button
 					icon-name="lucide:play"
-					@click="() => playAlbum(tracksData)"
+					@click="() => playAlbum(tracks)"
 					>Play</Button
 				>
 				<Button
 					icon-name="lucide:shuffle"
-					@click="() => playShuffledAlbum(tracksData)"
+					@click="() => playShuffledAlbum(tracks)"
 					>Shuffle</Button
 				>
 			</div>
@@ -44,11 +45,11 @@ useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Alb
 
 	<section class="tracks">
 		<TrackRow
-			v-for="(track, i) in tracksData"
+			v-for="(track, i) in tracks"
 			:key="track._id"
 			:track="track"
 			:index="i"
-			@play-album-at-index="() => playAlbumAtIndex(tracksData, i)"
+			@play-album-at-index="() => playAlbumAtIndex(tracks, i)"
 		/>
 	</section>
 </template>

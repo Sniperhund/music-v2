@@ -32,7 +32,7 @@ import { type Option } from "~/ui/SearchSelect.vue"
 
 const { data: artistData } = useApiFetch<Artist[]>("/all/artists")
 const artistFetchOptions = async (q?: string): Promise<Option[]> => {
-	return artistData.value.map<Option>((g) => ({
+	return (artistData.value ?? []).map<Option>((g) => ({
 		label: g.name,
 		value: g._id,
 	}))
@@ -40,7 +40,7 @@ const artistFetchOptions = async (q?: string): Promise<Option[]> => {
 
 const { data: genreData } = useApiFetch<Genre[]>("/all/genres")
 const genreFetchOptions = async (q?: string): Promise<Option[]> => {
-	return genreData.value.map<Option>((g) => ({
+	return (genreData.value ?? []).map<Option>((g) => ({
 		label: g.name,
 		value: g._id,
 	}))
@@ -113,7 +113,7 @@ const show = (id?: string) => {
 		return
 	}
 
-	const curItem: any = data.value.filter((i) => i._id == id)[0]
+	const curItem: any = (data.value ?? []).filter((i) => i._id == id)[0]
 
 	if (!curItem) return
 

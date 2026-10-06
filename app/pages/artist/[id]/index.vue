@@ -13,13 +13,14 @@ const { data: albumsData } = await useApiFetch<Album[]>(
 const { data: tracksData } = await useApiFetch<Track[]>(
 	`/artists/${id.value}/tracks`,
 )
+const tracks = computed(() => tracksData.value ?? [])
 
 const chunkedTracks = computed(() => {
 	const SIZE = 3
 	const chunks = []
 
-	for (let i = 0; i < tracksData.value.length; i += SIZE) {
-		chunks.push(tracksData.value.slice(i, i + SIZE))
+	for (let i = 0; i < tracks.value.length; i += SIZE) {
+		chunks.push(tracks.value.slice(i, i + SIZE))
 	}
 
 	return chunks
@@ -56,12 +57,12 @@ useHead({ title: computed(() => artistData.value ? `${artistData.value.name} - A
 			<div class="buttons">
 				<Button
 					icon-name="lucide:play"
-					@click="() => playAlbum(tracksData)"
+					@click="() => playAlbum(tracks)"
 					>Play</Button
 				>
 				<Button
 					icon-name="lucide:shuffle"
-					@click="() => playShuffledAlbum(tracksData)"
+					@click="() => playShuffledAlbum(tracks)"
 					>Shuffle</Button
 				>
 			</div>
@@ -82,7 +83,7 @@ useHead({ title: computed(() => artistData.value ? `${artistData.value.name} - A
 				:track="track"
 				:index="i + pI * 3"
 				@play-album-at-index="
-					() => playAlbumAtIndex(tracksData, i + pI * 3)
+					() => playAlbumAtIndex(tracks, i + pI * 3)
 				"
 			/>
 		</section>

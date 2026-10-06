@@ -71,7 +71,7 @@ const show = (id?: string) => {
 		return
 	}
 
-	const curItem: any = data.value.filter((i) => i._id == id)[0]
+	const curItem: any = (data.value ?? []).filter((i) => i._id == id)[0]
 
 	if (!curItem) return
 

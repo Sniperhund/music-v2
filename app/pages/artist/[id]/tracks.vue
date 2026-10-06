@@ -5,6 +5,7 @@ const id = computed(() => route.params.id)
 const { data: tracksData } = await useApiFetch<Track[]>(
 	`/artists/${id.value}/tracks`,
 )
+const tracks = computed(() => tracksData.value ?? [])
 
 const { playAlbumAtIndex } = usePlayer()
 useHead({ title: "Artist Songs" })
@@ -15,12 +16,12 @@ useHead({ title: "Artist Songs" })
 		<h1 class="title">Songs</h1>
 
 		<TrackRow
-			v-for="(track, i) in tracksData"
+			v-for="(track, i) in tracks"
 			:key="track._id"
 			:track="track"
 			:index="i"
 			show-image
-			@play-album-at-index="() => playAlbumAtIndex(tracksData, i)"
+			@play-album-at-index="() => playAlbumAtIndex(tracks, i)"
 		/>
 	</section>
 </template>
