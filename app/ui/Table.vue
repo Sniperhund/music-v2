@@ -2,6 +2,8 @@
 import { computed, ref, watch } from "vue"
 import { GET_AUDIO_FILE, GET_FILE } from "@/utils/file"
 
+defineOptions({ inheritAttrs: false })
+
 export type Row = {
 	name: string
 	class?: string
@@ -26,10 +28,11 @@ const props = withDefaults(defineProps<TableProps>(), {
 
 const currentPage = ref(1)
 const query = ref("")
+const data = computed(() => (Array.isArray(props.data) ? props.data : []))
 const pageSize = computed(() => Math.max(1, Math.floor(props.pageSize)))
 const filteredData = computed(() => {
 	const normalizedQuery = query.value.trim().toLocaleLowerCase()
-	const indexedData = props.data.map((item: any, index: number) => ({
+	const indexedData = data.value.map((item: any, index: number) => ({
 		item,
 		index,
 	}))
@@ -71,7 +74,7 @@ watch(pageCount, (count) => {
 		placeholder="Search table"
 		class="table-search"
 	/>
-	<table class="table">
+	<table v-bind="$attrs" class="table">
 		<thead>
 			<tr>
 				<th
