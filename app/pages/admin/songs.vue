@@ -229,7 +229,7 @@ useHead({ title: "Admin - Songs" })
 <template>
 	<h1 class="title">Manage songs</h1>
 
-	<Table :rows="tableRows" :data="data" search class="table">
+	<Table :rows="tableRows" :data="data" search pagination class="table">
 		<template #action="{ item, index }">
 			<div class="action">
 				<Button @click="show(item._id)">Edit</Button>
