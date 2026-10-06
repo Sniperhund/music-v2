@@ -184,7 +184,7 @@ const finalTransform = computed(() => {
 		v-if="song && song.lyrics && song.lyrics.synced && hasParsedLyrics"
 		class="synced-lyrics-container"
 		:style="{
-			height: `${syncedHeight + topFadeExtension}px`,
+			height: `${(syncedHeight ?? 0) + topFadeExtension}px`,
 			marginTop: `${top - topFadeExtension}px`,
 		}"
 		@wheel.prevent="onWheel"
