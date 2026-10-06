@@ -1,4 +1,6 @@
 <script setup lang="tsx">
+import { GET_FILE } from "@/utils/file"
+
 const widthFixerRef = useTemplateRef("width-fixer-ref")
 const playerRef = useTemplateRef("player-ref")
 

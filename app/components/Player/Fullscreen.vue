@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { GET_FILE } from "@/utils/file"
+
 const { fullscreen, close: closeFullscreen } = useFullscreen()
 const song = useSong()
 const mouseMovedRecently = ref(true)

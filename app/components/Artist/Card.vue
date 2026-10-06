@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { GET_FILE } from "@/utils/file"
 import type { Artist } from "@/utils/types"
 
 const props = defineProps<{ artist: Artist }>()

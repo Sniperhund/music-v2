@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { GET_FILE } from "@/utils/file"
+
 const { showButtons } = defineProps<{ showButtons: boolean }>()
 
 const song = useSong()

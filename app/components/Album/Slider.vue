@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { GET_FILE } from "@/utils/file"
+
 const cacheKey = "album-slider-data"
 const data = ref<{ genre: Genre; albums: Album[] }[]>([])
 

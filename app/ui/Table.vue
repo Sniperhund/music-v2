@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { GET_AUDIO_FILE, GET_FILE } from "@/utils/file"
+
 export type Row = {
 	name: string
 	class?: string

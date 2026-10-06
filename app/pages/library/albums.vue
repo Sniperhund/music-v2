@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { GET_FILE } from "@/utils/file"
 import type { Album } from "@/utils/types"
 
 const {
