@@ -7,6 +7,7 @@ export interface DropdownMenuItem {
 
 interface DropdownMenuProps {
 	items: DropdownMenuItem[][]
+	label?: string
 }
 
 const props = defineProps<DropdownMenuProps>()
@@ -15,17 +16,46 @@ const open = ref(false)
 const mounted = ref(false)
 const placement = ref<"bottom" | "top">("bottom")
 const root = useTemplateRef("root")
+const triggerRef = useTemplateRef<HTMLButtonElement>("trigger-ref")
+const menuRef = useTemplateRef<HTMLDivElement>("menu-ref")
 const menuPosition = ref({ top: 0, left: 0 })
 
-const toggle = async () => {
-	open.value = !open.value
+const menuItems = () =>
+	Array.from(
+		menuRef.value?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? [],
+	)
 
-	if (open.value) {
-		await nextTick()
-		updatePlacement()
-	}
+const focusMenuItem = (index: number) => {
+	const items = menuItems()
+	items[index]?.focus()
 }
-const close = () => (open.value = false)
+
+const close = (restoreFocus = false) => {
+	open.value = false
+	if (restoreFocus) nextTick(() => triggerRef.value?.focus())
+}
+
+const openMenu = async (last = false) => {
+	open.value = true
+	await nextTick()
+	updatePlacement()
+	const items = menuItems()
+	focusMenuItem(last ? items.length - 1 : 0)
+}
+
+const toggle = async () => {
+	if (open.value) close(true)
+	else await openMenu()
+}
+
+
+const handleTriggerKeydown = (event: KeyboardEvent) => {
+	if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return
+	event.preventDefault()
+	event.stopPropagation()
+	if (!open.value) void openMenu(event.key === "ArrowUp")
+	else focusMenuItem(event.key === "ArrowUp" ? menuItems().length - 1 : 0)
+}
 
 const updatePlacement = () => {
 	const el = root.value
@@ -48,12 +78,34 @@ const updatePlacement = () => {
 }
 
 const handleOutsideClick = (e: MouseEvent) => {
-	if (!root.value) return
-	if (!root.value.contains(e.target as Node)) close()
+	const target = e.target as Node
+	if (root.value?.contains(target) || menuRef.value?.contains(target)) return
+	close()
 }
 
 const handleKey = (e: KeyboardEvent) => {
-	if (e.key == "Escape") close()
+	if (!open.value) return
+	const items = menuItems()
+	const activeIndex = items.indexOf(document.activeElement as HTMLButtonElement)
+
+	if (e.key === "Escape") {
+		e.preventDefault()
+		close(true)
+	} else if (e.key === "ArrowDown") {
+		e.preventDefault()
+		focusMenuItem((activeIndex + 1 + items.length) % items.length)
+	} else if (e.key === "ArrowUp") {
+		e.preventDefault()
+		focusMenuItem((activeIndex - 1 + items.length) % items.length)
+	} else if (e.key === "Home") {
+		e.preventDefault()
+		focusMenuItem(0)
+	} else if (e.key === "End") {
+		e.preventDefault()
+		focusMenuItem(items.length - 1)
+	} else if (e.key === "Tab") {
+		close()
+	}
 }
 
 const handleReposition = () => {
@@ -68,7 +120,7 @@ onMounted(() => {
 	mounted.value = true
 })
 
-onBeforeMount(() => {
+onBeforeUnmount(() => {
 	document.removeEventListener("click", handleOutsideClick)
 	document.removeEventListener("keydown", handleKey)
 	window.removeEventListener("resize", handleReposition)
@@ -78,15 +130,26 @@ onBeforeMount(() => {
 
 <template>
 	<div ref="root" class="dropdown">
-		<div @click="toggle" class="trigger">
+		<button
+			ref="trigger-ref"
+			type="button"
+			class="trigger"
+			:aria-label="props.label ?? 'Open options'"
+			aria-haspopup="menu"
+			:aria-expanded="open"
+			@click="toggle"
+			@keydown="handleTriggerKeydown"
+		>
 			<slot />
-		</div>
+		</button>
 
 		<Transition name="dropdown">
 			<Teleport v-if="mounted" to="body">
 				<div
+					ref="menu-ref"
 					v-show="open"
 					class="dropdown-menu"
+					role="menu"
 					:class="placement"
 					:style="{
 						top: `${menuPosition.top}px`,
@@ -97,11 +160,13 @@ onBeforeMount(() => {
 						v-for="(group, i) in items"
 						:key="`group-${i}`"
 						class="group"
+						role="group"
 					>
 						<button
 							v-for="(item, i) in group"
 							:key="`item-${i}`"
 							class="item"
+							role="menuitem"
 							@click="
 								() => {
 									item.onSelect?.()
@@ -125,6 +190,22 @@ onBeforeMount(() => {
 .dropdown {
 	position: relative;
 	display: inline-block;
+}
+
+.trigger {
+	display: inline-flex;
+	align-items: center;
+	border: 0;
+	padding: 0;
+	color: inherit;
+	background: transparent;
+	cursor: pointer;
+}
+
+@media (max-width: 767px) {
+	.trigger {
+		padding: 0.75rem;
+	}
 }
 
 .dropdown-menu {

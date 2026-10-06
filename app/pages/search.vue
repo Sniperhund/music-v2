@@ -12,16 +12,20 @@ interface SearchResult {
 }
 
 const route = useRoute()
+const router = useRouter()
 const { currentSong, playAlbum } = usePlayer()
 const query = computed(() => {
 	const value = route.query.q
 	const firstValue = Array.isArray(value) ? value[0] : value
 	return (firstValue ?? "").trim()
 })
+const searchInput = ref(query.value)
 const debouncedQuery = ref(query.value)
+const querySettled = computed(() => query.value === debouncedQuery.value)
 let debounceTimeout: ReturnType<typeof setTimeout> | undefined
 
 watch(query, (value) => {
+	searchInput.value = value
 	clearTimeout(debounceTimeout)
 	debounceTimeout = setTimeout(() => {
 		debouncedQuery.value = value
@@ -29,9 +33,14 @@ watch(query, (value) => {
 	}, 300)
 })
 
-onBeforeUnmount(() => {
-	clearTimeout(debounceTimeout)
-})
+const updateSearchRoute = (value: string) => {
+	const trimmed = value.trim()
+	if (trimmed)
+		router.replace(`/search?q=${encodeURIComponent(trimmed)}`)
+	else router.replace("/search")
+}
+
+onBeforeUnmount(() => clearTimeout(debounceTimeout))
 
 const { data, status, error } = await useApiFetch<SearchResult[]>("/search", {
 	query: { q: debouncedQuery, limit: 9 },
@@ -87,15 +96,30 @@ useHead({ title: computed(() => query.value ? `Search: ${query.value}` : "Search
 <template>
 	<main class="search-page">
 		<h1>Search</h1>
+		<Input
+			class="mobile-search"
+			v-model:value="searchInput"
+			full
+			type="search"
+			name="mobile-search-query"
+			label="Search the library"
+			placeholder="Songs, albums, artists"
+			icon-name="lucide:search"
+			@input="updateSearchRoute"
+		/>
 
-		<p v-if="query && status === 'pending'" class="message" role="status">
+		<p
+			v-if="query && (!querySettled || status === 'pending')"
+			class="message"
+			role="status"
+		>
 			Searching…
 		</p>
-		<p v-else-if="query && error" class="message" role="alert">
+		<p v-else-if="query && querySettled && error" class="message" role="alert">
 			Search could not be loaded. Please try again.
 		</p>
 		<p
-			v-else-if="query && status === 'success' && results.length === 0"
+			v-else-if="query && querySettled && status === 'success' && results.length === 0"
 			class="message"
 		>
 			No results for “{{ query }}”.
@@ -109,7 +133,7 @@ useHead({ title: computed(() => query.value ? `Search: ${query.value}` : "Search
 		</template>
 
 		<section
-			v-if="query && results.length"
+		v-if="query && querySettled && status === 'success' && results.length"
 			class="results"
 			aria-label="Search results"
 		>
@@ -126,7 +150,10 @@ useHead({ title: computed(() => query.value ? `Search: ${query.value}` : "Search
 		</section>
 
 		<section
-			v-else-if="recentTracks.length && (!query || status === 'success')"
+		v-else-if="
+			recentTracks.length &&
+			(!query || (querySettled && status === 'success'))
+		"
 			class="results"
 			aria-label="Recently played tracks"
 		>
@@ -136,6 +163,7 @@ useHead({ title: computed(() => query.value ? `Search: ${query.value}` : "Search
 				:track="track"
 				:index="index"
 				show-image
+				touch-friendly
 				@play-album-at-index="playResult(track)"
 			/>
 		</section>
@@ -161,6 +189,10 @@ useHead({ title: computed(() => query.value ? `Search: ${query.value}` : "Search
 	}
 }
 
+.mobile-search {
+	display: none;
+}
+
 .results {
 	display: flex;
 	flex-direction: column;
@@ -171,5 +203,19 @@ useHead({ title: computed(() => query.value ? `Search: ${query.value}` : "Search
 	@include fontSize(14px);
 	opacity: 0.65;
 	margin: 0.75rem 0;
+}
+
+@media (max-width: 767px) {
+	.mobile-search {
+		display: block;
+		margin-bottom: 1rem;
+	}
+
+	.results :deep(.track.image) {
+		grid-template-columns: 40px minmax(0, 1fr) auto auto;
+		gap: 0.5rem;
+		padding-inline: 0.5rem;
+	}
+
 }
 </style>

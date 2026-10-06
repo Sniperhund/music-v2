@@ -30,7 +30,16 @@ const entryType = computed(() =>
 
 <template>
 	<article class="search-row" :class="{ odd: props.index % 2 === 1 }">
-		<div class="artwork" @click="props.result.type === 'track' && emit('play')">
+		<div
+			class="artwork"
+			:class="{ playable: props.result.type === 'track' }"
+			:role="props.result.type === 'track' ? 'button' : undefined"
+			:tabindex="props.result.type === 'track' ? 0 : undefined"
+			:aria-label="props.result.type === 'track' ? `Play ${props.result.name}` : undefined"
+			@click="props.result.type === 'track' && emit('play')"
+			@keydown.enter.prevent="props.result.type === 'track' && emit('play')"
+			@keydown.space.prevent="props.result.type === 'track' && emit('play')"
+		>
 			<NuxtImg
 				v-if="artworkSrc"
 				:src="artworkSrc"
@@ -93,6 +102,10 @@ const entryType = computed(() =>
 	justify-content: center;
 	border-radius: $border-radius-standard;
 	cursor: pointer;
+	border: 0;
+	padding: 0;
+	color: inherit;
+	background: transparent;
 
 	img {
 		max-width: 100%;
@@ -139,5 +152,50 @@ const entryType = computed(() =>
 
 .artists {
 	min-width: 0;
+}
+
+@media (max-width: 767px) {
+	.search-row {
+		grid-template-columns: 40px minmax(0, 1fr);
+		grid-template-areas:
+			"art details"
+			"art artists";
+		column-gap: 0.75rem;
+		row-gap: 0.25rem;
+		padding-inline: 0.75rem;
+	}
+
+	.artwork {
+		grid-area: art;
+
+		&.playable .play-icon {
+			opacity: 1;
+			padding: 0.5rem;
+			border-radius: 50%;
+			background: rgb(0 0 0 / 55%);
+		}
+	}
+
+	.details {
+		grid-area: details;
+		min-width: 0;
+	}
+
+	.artists {
+		grid-area: artists;
+		overflow-wrap: anywhere;
+
+		:deep(.artist-name) {
+			min-width: 0;
+		}
+
+		:deep(.artist-name a) {
+			overflow-wrap: anywhere;
+		}
+	}
+
+	.search-row > span:last-child {
+		display: none;
+	}
 }
 </style>

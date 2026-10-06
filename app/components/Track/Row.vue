@@ -15,6 +15,7 @@ interface TrackRowProps {
 	extendedInfo?: boolean
 	showImage?: boolean
 	queueMode?: boolean
+	touchFriendly?: boolean
 }
 
 const props = defineProps<TrackRowProps>()
@@ -140,7 +141,21 @@ const artworkSrc = computed(() => {
 					v-if="props.track"
 					name="lucide:play"
 					class="play-icon"
+					:class="{ 'touch-friendly': props.touchFriendly }"
+					:role="props.touchFriendly ? 'button' : undefined"
+					:tabindex="props.touchFriendly ? 0 : undefined"
+					:aria-label="
+						props.touchFriendly
+							? `Play ${props.track.name}`
+							: undefined
+					"
 					@click="emit('playAlbumAtIndex')"
+					@keydown.enter.prevent="
+						props.touchFriendly && emit('playAlbumAtIndex')
+					"
+					@keydown.space.prevent="
+						props.touchFriendly && emit('playAlbumAtIndex')
+					"
 				/>
 				<!-- Keep the existing TrackRow artwork dimensions unchanged. -->
 				<NuxtImg
@@ -194,7 +209,11 @@ const artworkSrc = computed(() => {
 			class="queue-handle"
 			aria-hidden="true"
 		/>
-		<DropdownMenu v-else-if="props.track" :items="visibleDropdownMenuItems">
+		<DropdownMenu
+			v-else-if="props.track"
+			:items="visibleDropdownMenuItems"
+			:label="`Options for ${props.track.name}`"
+		>
 			<Icon name="lucide:ellipsis" class="dropdown-icon" />
 		</DropdownMenu>
 	</article>
@@ -274,6 +293,10 @@ const artworkSrc = computed(() => {
 		opacity: 0;
 		z-index: 1;
 		font-size: 24px;
+
+		&:focus-visible {
+			opacity: 1;
+		}
 	}
 
 	.play-icon.inline {
@@ -295,6 +318,15 @@ const artworkSrc = computed(() => {
 		.play-icon {
 			opacity: 1;
 		}
+	}
+}
+
+@media (max-width: 767px) {
+	.play-icon.touch-friendly {
+		opacity: 1;
+		padding: 0.5rem;
+		border-radius: 50%;
+		background: rgb(0 0 0 / 55%);
 	}
 }
 

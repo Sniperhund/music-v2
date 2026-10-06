@@ -112,7 +112,10 @@ const visibleDropdownMenuItems = computed(() =>
 			<ArtistName :artists="track.artists" class="artists" />
 		</div>
 
-		<DropdownMenu :items="visibleDropdownMenuItems">
+		<DropdownMenu
+			:items="visibleDropdownMenuItems"
+			:label="`Options for ${track.name}`"
+		>
 			<Icon name="lucide:ellipsis" class="dropdown-icon" />
 		</DropdownMenu>
 	</article>
