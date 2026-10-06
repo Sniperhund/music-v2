@@ -58,4 +58,15 @@ h1 {
 	flex-direction: column;
 	gap: 0.8rem;
 }
+
+@media (max-width: 480px) {
+	h1 {
+		@include fontSize(22px);
+		margin-bottom: 0.65em;
+	}
+
+	.form {
+		gap: 0.75rem;
+	}
+}
 </style>

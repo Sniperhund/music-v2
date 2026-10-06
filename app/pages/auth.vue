@@ -30,4 +30,11 @@ useHead({ title: "Sign In" })
 	width: 40%;
 	max-width: 450px;
 }
+
+@media (max-width: 600px) {
+	.card {
+		box-sizing: border-box;
+		width: calc(100% - 2rem);
+	}
+}
 </style>
