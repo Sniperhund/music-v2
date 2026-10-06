@@ -21,10 +21,11 @@ const onSearchInput = (v: string) => {
 }
 
 const { data: user } = useApiFetch<any>("/user")
+const song = useSong()
 </script>
 
 <template>
-	<Sidebar class="default-shell">
+	<Sidebar class="default-shell" :class="{ 'has-player': song }">
 		<template #sidebar>
 			<p class="title">Music</p>
 
@@ -180,7 +181,12 @@ const { data: user } = useApiFetch<any>("/user")
 		}
 
 		:deep(> main) {
-			padding: 1.25rem 1rem calc(6rem + env(safe-area-inset-bottom) + $player-height);
+			padding: calc(1.25rem + env(safe-area-inset-top)) 1rem
+				calc(6rem + env(safe-area-inset-bottom));
+		}
+
+		&.has-player :deep(> main) {
+			padding-bottom: calc(6rem + env(safe-area-inset-bottom) + $player-height);
 		}
 	}
 

@@ -3,7 +3,7 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"build": "nuxt build",
+		"build": "nuxt build && bun scripts/copy-nitro-public-assets.ts",
 		"dev": "nuxt dev",
 		"generate": "nuxt generate",
 		"preview": "nuxt preview",
@@ -31,6 +31,7 @@
 	"devDependencies": {
 		"@golar/vue": "^0.1.10",
 		"@types/node": "^24.9.1",
+		"@vite-pwa/nuxt": "^1.1.1",
 		"golar": "^0.1.10",
 		"sass-embedded": "^1.93.2"
 	}
