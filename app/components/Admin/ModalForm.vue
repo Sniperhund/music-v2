@@ -130,13 +130,13 @@ watch(
 					"
 					v-model:value="localItem[field.key]"
 					:fetch-options="field.fetchOptions"
-					:label="field.label || field.key"
+					:label="field.label || String(field.key)"
 					:predefined="props.item?.[field.key]"
 					:multiple="field.type == 'search-select-array'"
 				/>
 				<Checkbox
 					v-else-if="field.type == 'checkbox'"
-					:label="field.label || field.key"
+					:label="field.label || String(field.key)"
 					:model-value="localItem[field.key]"
 					@change="(v) => (localItem[field.key] = v)"
 				/>
@@ -144,7 +144,7 @@ watch(
 					v-else
 					:type="field.type"
 					:key="field.key"
-					:label="field.label || field.key"
+					:label="field.label || String(field.key)"
 					v-model:value="localItem[field.key]"
 					:textarea="field.type == 'textarea'"
 					:rows="field.type == 'textarea' ? field.rows : 0"
