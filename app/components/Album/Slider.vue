@@ -49,6 +49,7 @@ onMounted(async () => {
 					:file="GET_FILE(album.file)"
 					:artists="album.artists"
 					:_id="album._id"
+					carousel
 				/>
 			</Slider>
 		</template>

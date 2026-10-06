@@ -44,12 +44,15 @@ useHead({ title: computed(() => artistData.value ? `${artistData.value.name} - A
 
 <template>
 	<section class="info" v-if="artistData">
-		<NuxtImg
-			:src="GET_FILE(artistData.file)"
-			width="300"
-			height="300"
-			placeholder
-		/>
+		<div class="artist-art">
+			<NuxtImg
+				class="artist-image"
+				:src="GET_FILE(artistData.file)"
+				width="300"
+				height="300"
+				placeholder
+			/>
+		</div>
 
 		<div class="details">
 			<h1>{{ artistData.name }}</h1>
@@ -57,14 +60,18 @@ useHead({ title: computed(() => artistData.value ? `${artistData.value.name} - A
 			<div class="buttons">
 				<Button
 					icon-name="lucide:play"
+					:aria-label="`Play ${artistData.name}`"
 					@click="() => playAlbum(tracks)"
-					>Play</Button
 				>
+					<span class="button-label">Play</span>
+				</Button>
 				<Button
 					icon-name="lucide:shuffle"
+					:aria-label="`Shuffle ${artistData.name}`"
 					@click="() => playShuffledAlbum(tracks)"
-					>Shuffle</Button
 				>
+					<span class="button-label">Shuffle</span>
+				</Button>
 			</div>
 		</div>
 	</section>
@@ -97,6 +104,7 @@ useHead({ title: computed(() => artistData.value ? `${artistData.value.name} - A
 			:file="GET_FILE(album.file)"
 			:artists="album.artists"
 			:_id="album._id"
+			carousel
 		/>
 	</Slider>
 </template>
@@ -156,6 +164,57 @@ $gap: 12px;
 		&-#{$i} {
 			grid-template-rows: repeat(#{$i}, 1fr);
 		}
+	}
+}
+
+@media (max-width: 767px) {
+	.info {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.25rem;
+	}
+
+	.artist-art {
+		padding: 0.5rem;
+	}
+
+	.artist-image {
+		width: 100%;
+		height: auto;
+	}
+
+	.info .details {
+		align-items: center;
+		padding-top: 0;
+		text-align: center;
+
+		h1 {
+			margin-top: 0;
+			margin-bottom: 0;
+		}
+
+		.buttons {
+			margin-top: 0.375rem;
+			gap: 0.75rem;
+		}
+	}
+
+	.details .buttons :deep(.button) {
+		padding: 0.75rem;
+		border-radius: 50%;
+	}
+
+	.details .buttons :deep(.icon-wrapper) {
+		font-size: 1.5rem;
+	}
+
+	.details .buttons :deep(.button-label) {
+		display: none;
+	}
+
+	.tracks {
+		flex-basis: 100%;
+		min-width: 0;
 	}
 }
 </style>

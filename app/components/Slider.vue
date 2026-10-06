@@ -126,4 +126,17 @@ onMounted(() => {
 .right {
 	right: -48px;
 }
+
+@media (max-width: 767px) {
+	.left,
+	.right {
+		display: none;
+	}
+
+	.slider {
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior-x: contain;
+		scroll-padding-inline: 0.25rem;
+	}
+}
 </style>
