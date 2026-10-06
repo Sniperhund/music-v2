@@ -1,3 +1,4 @@
+import { $fetch } from "ofetch"
 import type { FetchOptions } from "ofetch"
 
 type RequestConfig = Omit<FetchOptions, "body" | "query"> & {
