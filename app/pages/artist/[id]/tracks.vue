@@ -21,6 +21,7 @@ useHead({ title: "Artist Songs" })
 			:track="track"
 			:index="i"
 			show-image
+			touch-friendly
 			@play-album-at-index="() => playAlbumAtIndex(tracks, i)"
 		/>
 	</section>
@@ -40,5 +41,18 @@ useHead({ title: "Artist Songs" })
 	font-weight: 700;
 
 	margin-bottom: 1.5rem;
+}
+
+@media (max-width: 767px) {
+	.title {
+		@include fontSize(26px);
+		margin-bottom: 1rem;
+	}
+
+	.tracks :deep(.track.image) {
+		grid-template-columns: 40px minmax(0, 1fr) auto auto;
+		gap: 0.5rem;
+		padding-inline: 0.5rem;
+	}
 }
 </style>
