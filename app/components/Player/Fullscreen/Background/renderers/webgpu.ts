@@ -43,7 +43,9 @@ interface GpuAdapter {
 }
 
 interface GpuApi {
-	requestAdapter(): Promise<GpuAdapter | null>
+	requestAdapter(options?: {
+		powerPreference?: "low-power" | "high-performance"
+	}): Promise<GpuAdapter | null>
 	getPreferredCanvasFormat(): string
 }
 
@@ -70,7 +72,9 @@ export async function createWebGpuRenderer(
 			console.info("[background renderer] WebGPU API unavailable; using CPU")
 			return null
 		}
-		const adapter = await gpu.requestAdapter()
+		const adapter = await gpu.requestAdapter({
+			powerPreference: "high-performance",
+		})
 		if (!adapter) {
 			console.info("[background renderer] no WebGPU adapter; using CPU")
 			return null
@@ -114,6 +118,11 @@ export async function createWebGpuRenderer(
 		const activeDevice = device
 		const activeContext = context
 		const activeBuffer = uniformBuffer
+		const uniforms = new Float32Array(20)
+		let lastPalette: BackgroundFrame["palette"] | null = null
+		let dominant: [number, number, number] = [0, 0, 0]
+		let accent: [number, number, number] = [0, 0, 0]
+		let maxPaletteLightness = 0
 		let disposed = false
 		void device.lost.then(() => {
 			if (!disposed) onDeviceLost()
@@ -125,27 +134,25 @@ export async function createWebGpuRenderer(
 					canvas.width = frame.width
 					canvas.height = frame.height
 				}
-				const dominant = toOkLab(frame.palette.dominant)
-				const accent = toOkLab(frame.palette.accent)
-				const uniforms = new Float32Array([
-					frame.width,
-					frame.height,
-					frame.time,
-					frame.beat,
-					frame.random[0],
-					frame.random[1],
-					frame.angleJitter,
-					0,
-					...frame.flowParams,
-					dominant[0],
-					dominant[1],
-					dominant[2],
-					Math.max(dominant[0], accent[0]),
-					accent[0],
-					accent[1],
-					accent[2],
-					0,
-				])
+				if (lastPalette !== frame.palette) {
+					dominant = toOkLab(frame.palette.dominant)
+					accent = toOkLab(frame.palette.accent)
+					maxPaletteLightness = Math.max(dominant[0], accent[0])
+					lastPalette = frame.palette
+				}
+				uniforms[0] = frame.width
+				uniforms[1] = frame.height
+				uniforms[2] = frame.time
+				uniforms[3] = frame.beat
+				uniforms[4] = frame.random[0]
+				uniforms[5] = frame.random[1]
+				uniforms[6] = frame.angleJitter
+				uniforms[7] = 0
+				uniforms.set(frame.flowParams, 8)
+				uniforms.set(dominant, 12)
+				uniforms[15] = maxPaletteLightness
+				uniforms.set(accent, 16)
+				uniforms[19] = 0
 				activeDevice.queue.writeBuffer(activeBuffer, 0, uniforms)
 				const encoder = activeDevice.createCommandEncoder()
 				const pass = encoder.beginRenderPass({

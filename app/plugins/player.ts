@@ -21,7 +21,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	}
 	const VOLUME_STORAGE_KEY = "music-v2-player-volume"
 	const DEFAULT_VOLUME = 0.5
-	const DEBUG_BEAT_ANALYSIS = true
+	const DEBUG_BEAT_ANALYSIS = false
 
 	const sound = ref<Howl | null>(null)
 	const queue = ref<Track[]>([])
@@ -90,6 +90,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	})
 	const duration = ref(0)
 	let lastPositionUpdate = 0
+	let trackingTimer: number | null = null
 	let mediaSessionSongId: string | null = null
 
 	const stopBeatAnalysis = (reason = "stopped") => {
@@ -233,8 +234,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 		}
 	}
 
-	const aniFrame = ref<number | null>(null)
-
 	// Helpers
 	const updateMediaSession = () => {
 		if (!import.meta.client) return
@@ -334,6 +333,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	}
 
 	const startTracking = () => {
+		if (trackingTimer !== null) window.clearTimeout(trackingTimer)
 		const update = () => {
 			tick.value++
 			const now = Date.now()
@@ -341,15 +341,15 @@ export default defineNuxtPlugin((nuxtApp) => {
 				lastPositionUpdate = now
 				updateMediaSession()
 			}
-			aniFrame.value = requestAnimationFrame(update)
+			trackingTimer = window.setTimeout(update, 100)
 		}
 
 		update()
 	}
 
 	const stopTracking = () => {
-		if (aniFrame.value) cancelAnimationFrame(aniFrame.value)
-		aniFrame.value = null
+		if (trackingTimer !== null) window.clearTimeout(trackingTimer)
+		trackingTimer = null
 	}
 
 	const createHowl = async (song: Track) => {

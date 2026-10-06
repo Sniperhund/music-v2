@@ -10,14 +10,15 @@ import { shapeBeatPulse } from "~/utils/beat"
 
 const props = defineProps<{ src: string; active: boolean }>()
 const ANIMATION_SPEED = 0.3
+const FRAME_RATE = 12
+const FRAME_INTERVAL = 1000 / FRAME_RATE
 const { beatEnergy } = usePlayer()
 const cpuCanvas = ref<HTMLCanvasElement | null>(null)
 const webGpuCanvas = ref<HTMLCanvasElement | null>(null)
 const palette = ref<AlbumPalette | null>(null)
 const backend = ref<"cpu" | "webgpu">("cpu")
-let frame = 0
+let frameTimer: number | null = null
 let startedAt = 0
-let lastFrameAt = 0
 let random: [number, number] = [0, 0]
 let angleJitter = 0
 let flowParams: [number, number, number, number] = [5, 25, 0.75, -0.08]
@@ -111,17 +112,17 @@ function makeFrame(now: number, canvas: HTMLCanvasElement): BackgroundFrame {
 	}
 }
 
+function updateCanvasScale(canvas: HTMLCanvasElement, beat: number) {
+	const transform = `scale(${1.08 + beat * 0.003})`
+	if (canvas.style.transform !== transform) canvas.style.transform = transform
+}
+
 function draw(now: number) {
 	if (!props.active || disposed) return
-	if (now - lastFrameAt < 1000 / 24) {
-		frame = requestAnimationFrame(draw)
-		return
-	}
-	lastFrameAt = now
 	const canvas = backend.value === "webgpu" ? webGpuCanvas.value : cpuCanvas.value
 	if (canvas && activeRenderer) {
 		const renderFrame = makeFrame(now, canvas)
-		canvas.style.transform = `scale(${1.08 + renderFrame.beat * 0.003})`
+		updateCanvasScale(canvas, renderFrame.beat)
 		try {
 			activeRenderer.render(renderFrame)
 		} catch (error) {
@@ -133,10 +134,8 @@ function draw(now: number) {
 				webGpuRenderer?.dispose()
 				webGpuRenderer = null
 				useCpuFallback()
-				cpuCanvas.value?.style.setProperty(
-					"transform",
-					`scale(${1.08 + renderFrame.beat * 0.003})`,
-				)
+				if (cpuCanvas.value)
+					updateCanvasScale(cpuCanvas.value, renderFrame.beat)
 				try {
 					cpuRenderer?.render(renderFrame)
 				} catch (fallbackError) {
@@ -147,15 +146,18 @@ function draw(now: number) {
 			}
 		}
 	}
-	frame = requestAnimationFrame(draw)
+	frameTimer = window.setTimeout(() => {
+		frameTimer = null
+		draw(performance.now())
+	}, FRAME_INTERVAL)
 }
 
 function startAnimation() {
-	cancelAnimationFrame(frame)
+	if (frameTimer !== null) window.clearTimeout(frameTimer)
+	frameTimer = null
 	startedAt = 0
-	lastFrameAt = 0
 	randomizeMotion()
-	frame = requestAnimationFrame(draw)
+	draw(performance.now())
 }
 
 watch(() => props.src, loadArtwork)
@@ -163,7 +165,10 @@ watch(
 	() => props.active,
 	(active) => {
 		if (active) startAnimation()
-		else cancelAnimationFrame(frame)
+		else if (frameTimer !== null) {
+			window.clearTimeout(frameTimer)
+			frameTimer = null
+		}
 	},
 )
 
@@ -175,7 +180,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
 	disposed = true
-	cancelAnimationFrame(frame)
+	if (frameTimer !== null) window.clearTimeout(frameTimer)
 	webGpuRenderer?.dispose()
 	cpuRenderer?.dispose()
 })
@@ -200,8 +205,8 @@ onBeforeUnmount(() => {
 .background-wash {
 	position: absolute;
 	inset: 0;
-	width: 50%;
-	height: 50%;
+	width: 100%;
+	height: 100%;
 	filter: blur(6px) saturate(1.08);
 	transform: scale(1.08);
 	visibility: hidden;

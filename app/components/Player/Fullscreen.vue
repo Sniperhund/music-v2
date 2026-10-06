@@ -81,8 +81,8 @@ nuxtApp.hook("page:finish", () => {
 	top: 0;
 	left: 0;
 
-	width: 200vw;
-	height: 200vh;
+	width: 100vw;
+	height: 100vh;
 	z-index: 150;
 
 	cursor: none;
