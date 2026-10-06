@@ -172,7 +172,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				)
 				let bass = 0
 				for (let bin = firstBin; bin <= lastBin; bin++)
-					bass += samples[bin]
+					bass += samples[bin] ?? 0
 				bass /= Math.max(1, lastBin - firstBin + 1) * 255
 				if (previousBass === null) previousBass = bass
 				const rise = Math.max(0, bass - previousBass)
