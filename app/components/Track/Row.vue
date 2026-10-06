@@ -16,6 +16,7 @@ interface TrackRowProps {
 	showImage?: boolean
 	queueMode?: boolean
 	touchFriendly?: boolean
+	libraryList?: boolean
 }
 
 const props = defineProps<TrackRowProps>()
@@ -131,6 +132,7 @@ const artworkSrc = computed(() => {
 			odd: props.index % 2 == 1,
 			image: props.showImage,
 			queue: props.queueMode,
+			'library-list': props.libraryList,
 		}"
 		@mouseenter="hovering = true"
 		@mouseleave="hovering = false"
@@ -177,7 +179,14 @@ const artworkSrc = computed(() => {
 			</template>
 		</div>
 
-		<p v-if="props.track">{{ props.track.name }}</p>
+		<div v-if="props.track && props.libraryList" class="library-info">
+			<p class="library-title">{{ props.track.name }}</p>
+			<ArtistName :artists="props.track.artists" class="artists" />
+			<NuxtLink :to="`/album/${props.track.album._id}`" class="library-album">
+				{{ props.track.album.name }}
+			</NuxtLink>
+		</div>
+		<p v-else-if="props.track">{{ props.track.name }}</p>
 		<NuxtLink
 			v-else-if="props.entity"
 			:to="`/${props.entity.type}/${props.entity._id}`"
@@ -185,7 +194,7 @@ const artworkSrc = computed(() => {
 			{{ props.entity.name }}
 		</NuxtLink>
 
-		<template v-if="props.track && props.extendedInfo">
+		<template v-if="props.track && props.extendedInfo && !props.libraryList">
 			<ArtistName :artists="props.track.artists" class="artists" />
 			<NuxtLink :to="`/album/${props.track.album._id}`">
 				<p>{{ props.track.album.name }}</p>
@@ -259,6 +268,10 @@ const artworkSrc = computed(() => {
 		cursor: grab;
 	}
 
+	&.library-list {
+		min-width: 0;
+	}
+
 	p,
 	> a {
 		overflow: hidden;
@@ -322,6 +335,54 @@ const artworkSrc = computed(() => {
 }
 
 @media (max-width: 767px) {
+	.track.library-list {
+		grid-template-columns: 28px minmax(0, 1fr) auto 40px;
+		gap: 0.5rem;
+		padding-inline: 0.5rem;
+
+		.index {
+			grid-area: 1 / 1 / 3 / 2;
+		}
+
+		.library-info {
+			grid-area: 1 / 2 / 3 / 3;
+			min-width: 0;
+			display: flex;
+			flex-direction: column;
+			gap: 0.2rem;
+			line-height: 1.25;
+		}
+
+		.library-title,
+		.library-album,
+		.artists {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.library-title {
+			font-weight: 600;
+		}
+
+		.artists,
+		.library-album {
+			font-size: 0.8em;
+			opacity: 0.75;
+		}
+
+		> p {
+			grid-area: 1 / 3 / 3 / 4;
+			font-variant-numeric: tabular-nums;
+		}
+
+		:deep(.dropdown) {
+			grid-area: 1 / 4 / 3 / 5;
+			justify-self: end;
+		}
+	}
+
 	.play-icon.touch-friendly {
 		opacity: 1;
 		padding: 0.5rem;
@@ -332,6 +393,10 @@ const artworkSrc = computed(() => {
 
 .artists {
 	opacity: 1;
+}
+
+.library-info {
+	display: contents;
 }
 
 .dropdown-icon {

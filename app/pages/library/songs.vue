@@ -54,6 +54,7 @@ useHead({ title: "Songs" })
 				:track="track"
 				:index="index"
 				:extended-info="true"
+				library-list
 				@play-album-at-index="() => playAlbumAtIndex(tracks, index)"
 				@remove-from-library="removeFromLibrary"
 			/>
@@ -96,5 +97,12 @@ useHead({ title: "Songs" })
 	@include fontSize(14px);
 	opacity: 0.7;
 	margin: 0.75rem 0;
+}
+
+@media (max-width: 359px) {
+	.page-header {
+		flex-wrap: wrap;
+		justify-content: flex-start;
+	}
 }
 </style>

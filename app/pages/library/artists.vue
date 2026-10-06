@@ -60,4 +60,22 @@ useHead({ title: "Artists" })
 	opacity: 0.7;
 	margin: 0.75rem 0;
 }
+
+@media (max-width: 767px) {
+	.artist-list {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+	}
+
+	.artist-list :deep(.card) {
+		min-width: 0;
+	}
+
+	.artist-list :deep(.card img) {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+}
 </style>
