@@ -66,20 +66,50 @@ const queueOpen = ref(false)
 			</div>
 			<div class="controls">
 				<div class="btns">
-					<Icon name="lucide:shuffle" @click="shuffle()" />
-					<Icon name="lucide:skip-back" @click="prev()" />
-					<Icon
-						name="lucide:pause"
-						v-if="isPlaying"
-						@click="pause()"
-					/>
-					<Icon name="lucide:play" v-else @click="play()" />
-					<Icon name="lucide:skip-forward" @click="next()" />
-					<Icon
-						:name="repeatOnce ? 'lucide:repeat-1' : 'lucide:repeat'"
+					<button
+						class="icon-button"
+						aria-label="Shuffle queue"
+						@click="shuffle()"
+					>
+						<Icon name="lucide:shuffle" aria-hidden="true" />
+					</button>
+					<button
+						class="icon-button"
+						aria-label="Previous track"
+						@click="prev()"
+					>
+						<Icon name="lucide:skip-back" aria-hidden="true" />
+					</button>
+					<button
+						class="icon-button"
+						:aria-label="isPlaying ? 'Pause' : 'Play'"
+						@click="isPlaying ? pause() : play()"
+					>
+						<Icon
+							:name="isPlaying ? 'lucide:pause' : 'lucide:play'"
+							aria-hidden="true"
+						/>
+					</button>
+					<button class="icon-button" aria-label="Next track" @click="next()">
+						<Icon name="lucide:skip-forward" aria-hidden="true" />
+					</button>
+					<button
+						class="icon-button"
 						:class="{ repeating: repeat || repeatOnce }"
+						:aria-label="
+							repeatOnce
+								? 'Repeat current track'
+								: repeat
+									? 'Repeat queue'
+									: 'Repeat off'
+						"
 						@click="cycleRepeat()"
-					/>
+					>
+						<Icon
+							:name="repeatOnce ? 'lucide:repeat-1' : 'lucide:repeat'"
+							aria-hidden="true"
+						/>
+					</button>
 				</div>
 				<div class="slider">
 					<p>{{ secondsPlayedFormatted }}</p>
@@ -108,11 +138,20 @@ const queueOpen = ref(false)
 						:step="0.01"
 					/>
 				</div>
-				<Icon
-					name="lucide:list"
+				<button
+					class="icon-button"
+					aria-label="Open queue"
 					@click="queueOpen = true"
-				/>
-				<Icon name="lucide:expand" @click="openFullscreen()" />
+				>
+					<Icon name="lucide:list" aria-hidden="true" />
+				</button>
+				<button
+					class="icon-button"
+					aria-label="Open fullscreen player"
+					@click="openFullscreen()"
+				>
+					<Icon name="lucide:expand" aria-hidden="true" />
+				</button>
 			</div>
 		</template>
 	</article>
@@ -158,6 +197,17 @@ const queueOpen = ref(false)
 
 	span {
 		font-size: 24px;
+		cursor: pointer;
+		transition: color 0.2s ease;
+	}
+
+	.icon-button {
+		display: grid;
+		place-items: center;
+		border: 0;
+		padding: 0;
+		color: inherit;
+		background: transparent;
 		cursor: pointer;
 		transition: color 0.2s ease;
 	}
@@ -239,6 +289,72 @@ const queueOpen = ref(false)
 		.slider {
 			flex: 1;
 		}
+	}
+}
+
+@media (max-width: 767px) {
+	#width-fixer {
+		width: calc(100% + 1rem);
+		margin-inline: -0.5rem;
+	}
+
+	.player {
+		bottom: calc(4.5rem + env(safe-area-inset-bottom));
+		grid-template-columns: minmax(0, 1fr) auto auto;
+		gap: 0.25rem;
+		padding: 0.5rem 0.5rem;
+		margin-inline: -0.5rem;
+		border-radius: $border-radius-lg;
+		background-color: rgba(26, 32, 44, 0.96);
+		backdrop-filter: blur(18px);
+		-webkit-backdrop-filter: blur(18px);
+	}
+
+	.track {
+		min-width: 0;
+		gap: 0.6rem;
+
+		.details {
+			min-width: 0;
+		}
+
+		img {
+			flex: none;
+		}
+	}
+
+	.controls {
+		width: auto;
+		align-items: center;
+
+		.slider,
+		.btns > :not(:nth-child(3)) {
+			display: none;
+		}
+
+		.btns {
+			width: auto;
+			padding: 0;
+			font-size: 1.5rem;
+		}
+	}
+
+	.misc-btns {
+		width: auto;
+		gap: 0.1rem;
+
+		.volume {
+			display: none;
+		}
+
+		.icon-button {
+			padding: 0.625rem;
+			font-size: 1.35rem;
+		}
+	}
+
+	.controls .icon-button {
+		padding: 0.625rem;
 	}
 }
 </style>

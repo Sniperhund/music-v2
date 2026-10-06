@@ -182,4 +182,31 @@ const durationFormatted = computed(() =>
 		pointer-events: none;
 	}
 }
+
+@media (max-width: 767px) {
+	.track-display {
+		gap: 0.85rem;
+	}
+
+	.btns {
+		gap: clamp(0.4rem, 3vw, 0.85rem);
+		font-size: 1.75rem;
+
+		& > * {
+			padding: 0.45rem;
+		}
+	}
+
+	.volume-slider {
+		margin-inline: 0;
+	}
+}
+
+@media (max-width: 767px) and (hover: none) {
+	.btns,
+	.volume-slider {
+		opacity: 1 !important;
+		pointer-events: auto !important;
+	}
+}
 </style>

@@ -4,9 +4,14 @@ import { GET_FILE } from "@/utils/file"
 const { fullscreen, close: closeFullscreen } = useFullscreen()
 const song = useSong()
 const mouseMovedRecently = ref(true)
+const mobileView = ref(false)
 
 onMounted(() => {
 	let timeoutId: NodeJS.Timeout
+	const mobileQuery = window.matchMedia("(max-width: 767px)")
+	const updateMobileView = () => (mobileView.value = mobileQuery.matches)
+	updateMobileView()
+	mobileQuery.addEventListener("change", updateMobileView)
 
 	const handleMouseMove = () => {
 		mouseMovedRecently.value = true
@@ -28,6 +33,7 @@ onMounted(() => {
 	onUnmounted(() => {
 		window.removeEventListener("mousemove", handleMouseMove)
 		window.removeEventListener("keydown", handleKeydown)
+		mobileQuery.removeEventListener("change", updateMobileView)
 	})
 })
 
@@ -68,7 +74,7 @@ nuxtApp.hook("page:finish", () => {
 				/>
 				<PlayerFullscreenLyricsDisplay
 					:animation-duration="0.2"
-					:offset="250"
+					:offset="mobileView ? 100 : 250"
 					:show-scroll-bar="mouseMovedRecently"
 				/>
 			</div>
@@ -79,11 +85,7 @@ nuxtApp.hook("page:finish", () => {
 <style lang="scss" scoped>
 .fullscreen {
 	position: fixed;
-	top: 0;
-	left: 0;
-
-	width: 100vw;
-	height: 100vh;
+	inset: 0;
 	z-index: 150;
 
 	cursor: none;
@@ -95,11 +97,7 @@ nuxtApp.hook("page:finish", () => {
 
 .screen-container {
 	position: fixed;
-	top: 0;
-	left: 0;
-
-	width: 100vw;
-	height: 100vh;
+	inset: 0;
 
 		background-color: rgba(0, 0, 0, 0.34);
 }
@@ -147,6 +145,44 @@ nuxtApp.hook("page:finish", () => {
 		& > :deep(.synced-lyrics-container) {
 			max-height: none;
 		}
+	}
+}
+
+@media (max-width: 767px) {
+	.close-btn {
+		top: calc(0.75rem + env(safe-area-inset-top));
+		right: 0.75rem;
+		z-index: 2;
+		padding: 0.6rem;
+		opacity: 1;
+		font-size: 1.4rem;
+
+		&.show {
+			opacity: 1;
+		}
+	}
+
+	.content-container {
+		max-width: none;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+		gap: 1.25rem;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: calc(3.75rem + env(safe-area-inset-top)) 1rem
+			calc(1rem + env(safe-area-inset-bottom));
+
+		& > * {
+			max-height: none;
+			margin: 0 auto;
+		}
+
+		&.lyrics {
+			grid-template-columns: 1fr;
+		}
+
 	}
 }
 </style>

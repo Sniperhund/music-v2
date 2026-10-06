@@ -50,6 +50,7 @@ const scrollActiveIndex = computed(() => {
 const height = ref<number>()
 const top = ref(0)
 const syncedHeight = ref<number>()
+const mobileView = ref(false)
 const layoutVersion = ref(0)
 const lyricOffsets = ref<number[]>([])
 const topFadeExtension = 75
@@ -60,7 +61,14 @@ const updateLyricsLayout = () => {
 	if (trackDisplay) {
 		height.value = trackDisplay.clientHeight
 		top.value = trackDisplay.getBoundingClientRect().top
-		syncedHeight.value = window.innerHeight - top.value - 100
+		syncedHeight.value = mobileView.value
+			? Math.max(
+					180,
+					window.innerHeight -
+						trackDisplay.getBoundingClientRect().bottom -
+						100,
+				)
+			: window.innerHeight - top.value - 100
 	}
 
 	const lines = containerRef.value?.children
@@ -93,8 +101,20 @@ watch(
 	{ immediate: true },
 )
 
-onMounted(() => window.addEventListener("resize", updateLyricsLayout))
-onUnmounted(() => window.removeEventListener("resize", updateLyricsLayout))
+onMounted(() => {
+	const mobileQuery = window.matchMedia("(max-width: 767px)")
+	const updateMobileView = () => {
+		mobileView.value = mobileQuery.matches
+		updateLyricsLayout()
+	}
+	updateMobileView()
+	window.addEventListener("resize", updateLyricsLayout)
+	mobileQuery.addEventListener("change", updateMobileView)
+	onUnmounted(() => {
+		window.removeEventListener("resize", updateLyricsLayout)
+		mobileQuery.removeEventListener("change", updateMobileView)
+	})
+})
 
 const containerRef = useTemplateRef("container-ref")
 const outerRef = useTemplateRef("outer-ref")
@@ -185,7 +205,7 @@ const finalTransform = computed(() => {
 		class="synced-lyrics-container"
 		:style="{
 			height: `${(syncedHeight ?? 0) + topFadeExtension}px`,
-			marginTop: `${top - topFadeExtension}px`,
+			marginTop: mobileView ? '0px' : `${top - topFadeExtension}px`,
 		}"
 		@wheel.prevent="onWheel"
 	>
@@ -304,6 +324,28 @@ const finalTransform = computed(() => {
 
 	&.show > p::-webkit-scrollbar-thumb {
 		background-color: $color-secondary-background;
+	}
+}
+
+@media (max-width: 767px) {
+	.synced-lyrics-container {
+		align-self: stretch;
+		mask-image: linear-gradient(
+			to bottom,
+			transparent 0%,
+			#000 12%,
+			#000 calc(100% - 70px),
+			transparent 100%
+		);
+	}
+
+	.synced-lyrics > p {
+		@include fontSize(30px);
+		padding: 0.4rem 0;
+	}
+
+	.lyrics {
+		height: auto !important;
 	}
 }
 </style>

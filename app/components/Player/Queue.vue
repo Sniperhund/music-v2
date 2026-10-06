@@ -79,6 +79,15 @@ const playAt = (index: number) =>
 		queueRows.value.map((row) => row.track),
 		index,
 	)
+
+const moveRow = (index: number, direction: -1 | 1) => {
+	const destination = index + direction
+	if (destination < 0 || destination >= queueRows.value.length) return
+
+	const [row] = queueRows.value.splice(index, 1)
+	queueRows.value.splice(destination, 0, row!)
+	queue.value = queueRows.value.map((item) => item.track)
+}
 </script>
 
 <template>
@@ -118,14 +127,38 @@ const playAt = (index: number) =>
 							@drop="finishDrag"
 							@dragend="cancelDrag"
 						>
-							<TrackRow
-								:track="row.track"
-								:index="index"
-								show-image
-								queue-mode
-								class="queue-track"
-								@play-album-at-index="playAt(index)"
-							/>
+							<div class="queue-row">
+								<TrackRow
+									:track="row.track"
+									:index="index"
+									show-image
+									queue-mode
+									class="queue-track"
+									@play-album-at-index="playAt(index)"
+								/>
+								<div
+									class="queue-order-actions"
+									role="group"
+									:aria-label="`Reorder ${row.track.name}`"
+								>
+									<button
+										type="button"
+										:aria-label="`Move ${row.track.name} up in queue`"
+										:disabled="index === 0"
+										@click="moveRow(index, -1)"
+									>
+										<Icon name="lucide:chevron-up" aria-hidden="true" />
+									</button>
+									<button
+										type="button"
+										:aria-label="`Move ${row.track.name} down in queue`"
+										:disabled="index === queueRows.length - 1"
+										@click="moveRow(index, 1)"
+									>
+										<Icon name="lucide:chevron-down" aria-hidden="true" />
+									</button>
+								</div>
+							</div>
 						</li>
 					</ol>
 				</aside>
@@ -210,6 +243,14 @@ const playAt = (index: number) =>
 	}
 }
 
+.queue-row {
+	position: relative;
+}
+
+.queue-order-actions {
+	display: none;
+}
+
 .empty {
 	flex: 1;
 	display: grid;
@@ -233,6 +274,88 @@ const playAt = (index: number) =>
 
 	.drawer {
 		transform: translateX(100%);
+	}
+}
+
+@media (max-width: 767px) {
+	.queue-root {
+		z-index: 120;
+	}
+
+	.drawer {
+		inset-block: 18dvh 0;
+		inset-inline: 0;
+		inline-size: 100%;
+		border-inline-start: 0;
+		border-top: 1px solid $color-border;
+		border-radius: 1rem 1rem 0 0;
+		padding-bottom: env(safe-area-inset-bottom);
+	}
+
+	.header {
+		padding: 0.85rem 1rem;
+	}
+
+	.close {
+		padding: 0.75rem;
+	}
+
+	.tracks {
+		min-height: 0;
+		flex: 1;
+		overscroll-behavior: contain;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.queue-row {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	.queue-track {
+		flex: 1;
+		min-width: 0;
+		grid-template-columns: 40px minmax(0, 1fr);
+		padding-inline: 0.5rem;
+	}
+
+	.queue-row :deep(.queue-track > :nth-last-child(-n + 2)) {
+		display: none;
+	}
+
+	.queue-order-actions {
+		display: flex;
+		flex-direction: column;
+
+		button {
+			display: grid;
+			place-items: center;
+			border: 0;
+			padding: 0.875rem;
+			color: inherit;
+			background: transparent;
+			font-size: 1rem;
+		}
+
+		button:disabled {
+			color: rgb(255 255 255 / 30%);
+			cursor: default;
+		}
+	}
+
+	.queue-enter-active,
+	.queue-leave-active {
+		.drawer {
+			transition: transform 0.2s ease;
+		}
+	}
+
+	.queue-enter-from,
+	.queue-leave-to {
+		.drawer {
+			transform: translateY(100%);
+		}
 	}
 }
 </style>

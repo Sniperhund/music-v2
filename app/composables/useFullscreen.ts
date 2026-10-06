@@ -26,7 +26,7 @@ export const useFullscreen = () => {
 			await document.documentElement.requestFullscreen()
 			return true
 		} catch {
-			fullscreen.value = false
+			// Keep the in-app fullscreen player open when native fullscreen is denied.
 			return false
 		}
 	}
