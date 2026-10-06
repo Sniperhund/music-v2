@@ -51,16 +51,30 @@ const height = ref<number>()
 const top = ref(0)
 const syncedHeight = ref<number>()
 const layoutVersion = ref(0)
+const lyricOffsets = ref<number[]>([])
 const topFadeExtension = 75
 
 const updateLyricsLayout = () => {
 	const trackDisplay = document.querySelector(".track-display")
 
-	if (!trackDisplay) return
+	if (trackDisplay) {
+		height.value = trackDisplay.clientHeight
+		top.value = trackDisplay.getBoundingClientRect().top
+		syncedHeight.value = window.innerHeight - top.value - 100
+	}
 
-	height.value = trackDisplay.clientHeight
-	top.value = trackDisplay.getBoundingClientRect().top
-	syncedHeight.value = window.innerHeight - top.value - 100
+	const lines = containerRef.value?.children
+	if (!lines) {
+		lyricOffsets.value = []
+		return
+	}
+
+	let accumulatedHeight = 0
+	lyricOffsets.value = Array.from(lines, (line) => {
+		const offset = accumulatedHeight
+		accumulatedHeight += line.getBoundingClientRect().height
+		return offset
+	})
 }
 
 watch(
@@ -87,17 +101,19 @@ const outerRef = useTemplateRef("outer-ref")
 
 const transformY = computed(() => {
 	layoutVersion.value
-	const lines = containerRef.value?.children
-	if (scrollActiveIndex.value < 0 || !lines?.length) return 0
-
-	let accumulatedHeight = 0
-	for (let i = 0; i < scrollActiveIndex.value; i++) {
-		const line = lines[i] as HTMLElement | undefined
-		if (line) accumulatedHeight += line.getBoundingClientRect().height
-	}
-
-	return -accumulatedHeight
+	const offset = lyricOffsets.value[scrollActiveIndex.value]
+	return offset === undefined ? 0 : -offset
 })
+
+watch(
+	parsedLyrics,
+	async () => {
+		await nextTick()
+		updateLyricsLayout()
+		layoutVersion.value++
+	},
+	{ flush: "post" },
+)
 
 const manualOffset = ref(0)
 const isScrolling = ref(false)
