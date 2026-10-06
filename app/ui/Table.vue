@@ -87,7 +87,7 @@ watch(pageCount, (count) => {
 				</th>
 			</tr>
 		</thead>
-		<tbody>
+		<tbody :key="currentPage">
 			<tr
 				v-for="entry in pagedData"
 				:key="entry.index"
@@ -184,6 +184,19 @@ watch(pageCount, (count) => {
 
 .table-search {
 	margin-bottom: 0.75rem;
+}
+
+.table tbody {
+	animation: table-page-fade 0.18s ease;
+}
+
+@keyframes table-page-fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
 }
 
 .pagination {
