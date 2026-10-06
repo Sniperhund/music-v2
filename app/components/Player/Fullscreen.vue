@@ -7,6 +7,115 @@ const mouseMovedRecently = ref(true)
 const mobileView = ref(false)
 const showMobileLyrics = ref(false)
 const queueOpen = useState<boolean>("queueOpen", () => false)
+const dragOffset = ref(0)
+const isDragging = ref(false)
+let dragPointerId: number | null = null
+let dragStartX = 0
+let dragStartY = 0
+let dragStartedAt = 0
+let clickSuppressionTimer: number | undefined
+let closeAnimationTimer: number | undefined
+
+function suppressClickThrough(event: MouseEvent) {
+	event.preventDefault()
+	event.stopImmediatePropagation()
+	if (clickSuppressionTimer !== undefined)
+		window.clearTimeout(clickSuppressionTimer)
+	clickSuppressionTimer = undefined
+	document.removeEventListener("click", suppressClickThrough, true)
+}
+
+function startDrag(event: PointerEvent) {
+	if (!mobileView.value || !event.isPrimary) return
+	if (event.pointerType === "mouse" && event.button !== 0) return
+	if (event.clientY > window.innerHeight * 0.16) return
+
+	const target = event.target
+	if (
+		target instanceof Element &&
+		target.closest(
+			"button, a, input, [role='slider'], .slider, .btns, .volume-slider, .mobile-tabs",
+		)
+	)
+		return
+
+	dragPointerId = event.pointerId
+	dragStartX = event.clientX
+	dragStartY = event.clientY
+	dragStartedAt = performance.now()
+	const element = event.currentTarget as HTMLElement
+	element.setPointerCapture(event.pointerId)
+}
+
+function moveDrag(event: PointerEvent) {
+	if (dragPointerId !== event.pointerId) return
+
+	const deltaX = event.clientX - dragStartX
+	const deltaY = event.clientY - dragStartY
+	if (Math.abs(deltaX) > Math.abs(deltaY)) return
+	if (deltaY <= 0) {
+		dragOffset.value = 0
+		return
+	}
+
+	event.preventDefault()
+	isDragging.value = true
+	dragOffset.value = deltaY
+}
+
+function endDrag(event: PointerEvent) {
+	if (dragPointerId !== event.pointerId) return
+
+	const deltaY = Math.max(0, event.clientY - dragStartY)
+	const deltaX = Math.abs(event.clientX - dragStartX)
+	const elapsed = performance.now() - dragStartedAt
+	const closeThreshold = Math.max(96, window.innerHeight * 0.16)
+	const shouldClose =
+		deltaX <= deltaY &&
+		(deltaY >= closeThreshold || (deltaY >= 56 && elapsed < 220))
+
+	dragPointerId = null
+	if (shouldClose) {
+		document.addEventListener("click", suppressClickThrough, true)
+		clickSuppressionTimer = window.setTimeout(() => {
+			document.removeEventListener("click", suppressClickThrough, true)
+			clickSuppressionTimer = undefined
+		}, 400)
+		isDragging.value = false
+		dragOffset.value = window.innerHeight
+		if (closeAnimationTimer !== undefined)
+			window.clearTimeout(closeAnimationTimer)
+		closeAnimationTimer = window.setTimeout(finishCloseAnimation, 400)
+		return
+	}
+
+	isDragging.value = false
+	dragOffset.value = 0
+}
+
+function finishCloseAnimation() {
+	if (closeAnimationTimer !== undefined)
+		window.clearTimeout(closeAnimationTimer)
+	closeAnimationTimer = undefined
+	closeFullscreen()
+	dragOffset.value = 0
+}
+
+function onFullscreenTransitionEnd(event: TransitionEvent) {
+	if (
+		closeAnimationTimer !== undefined &&
+		event.target === event.currentTarget &&
+		event.propertyName === "transform"
+	)
+		finishCloseAnimation()
+}
+
+function cancelDrag(event: PointerEvent) {
+	if (dragPointerId !== event.pointerId) return
+	dragPointerId = null
+	isDragging.value = false
+	dragOffset.value = 0
+}
 
 onMounted(() => {
 	let timeoutId: NodeJS.Timeout
@@ -36,6 +145,11 @@ onMounted(() => {
 		window.removeEventListener("mousemove", handleMouseMove)
 		window.removeEventListener("keydown", handleKeydown)
 		mobileQuery.removeEventListener("change", updateMobileView)
+		document.removeEventListener("click", suppressClickThrough, true)
+		if (clickSuppressionTimer !== undefined)
+			window.clearTimeout(clickSuppressionTimer)
+		if (closeAnimationTimer !== undefined)
+			window.clearTimeout(closeAnimationTimer)
 	})
 })
 
@@ -49,7 +163,9 @@ nuxtApp.hook("page:finish", () => {
 <template>
 	<section
 		class="fullscreen"
-		:class="{ showCursor: mouseMovedRecently }"
+		:class="{ showCursor: mouseMovedRecently, dragging: isDragging }"
+		:style="{ '--drag-offset': `${dragOffset}px` }"
+		@transitionend="onFullscreenTransitionEnd"
 		v-show="fullscreen"
 	>
 		<template v-if="song">
@@ -59,8 +175,16 @@ nuxtApp.hook("page:finish", () => {
 			/>
 		</template>
 
-		<section class="screen-container" v-if="song">
+		<section
+			class="screen-container"
+			v-if="song"
+			@pointerdown="startDrag"
+			@pointermove="moveDrag"
+			@pointerup="endDrag"
+			@pointercancel="cancelDrag"
+		>
 			<Icon
+				v-if="!mobileView"
 				name="lucide:x"
 				class="close-btn"
 				:class="{ show: mouseMovedRecently }"
@@ -108,6 +232,7 @@ nuxtApp.hook("page:finish", () => {
 	position: fixed;
 	inset: 0;
 	z-index: 150;
+	overflow: hidden;
 
 	cursor: none;
 
@@ -174,6 +299,19 @@ nuxtApp.hook("page:finish", () => {
 }
 
 @media (max-width: 767px) {
+	.screen-container {
+		touch-action: none;
+	}
+
+	.fullscreen {
+		transition: transform 280ms ease-out;
+		transform: translate3d(0, var(--drag-offset, 0px), 0);
+
+		&.dragging {
+			transition: none;
+		}
+	}
+
 	.close-btn {
 		top: calc(0.75rem + env(safe-area-inset-top));
 		right: 0.75rem;

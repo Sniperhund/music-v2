@@ -27,6 +27,7 @@ const song = useSong()
 	bottom: 0;
 	right: 0;
 	z-index: 100;
+	pointer-events: none;
 
 	padding: 2rem;
 
@@ -50,6 +51,7 @@ const song = useSong()
 	min-width: 200px;
 
 	cursor: pointer;
+	pointer-events: auto;
 
 	transition:
 		transform 0.2s ease,
