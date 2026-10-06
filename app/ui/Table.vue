@@ -15,23 +15,47 @@ type TableProps = {
 	data: any
 	pagination?: boolean
 	pageSize?: number
+	search?: boolean
 }
 
 const props = withDefaults(defineProps<TableProps>(), {
 	pagination: false,
 	pageSize: 10,
+	search: false,
 })
 
 const currentPage = ref(1)
+const query = ref("")
 const pageSize = computed(() => Math.max(1, Math.floor(props.pageSize)))
+const filteredData = computed(() => {
+	const normalizedQuery = query.value.trim().toLocaleLowerCase()
+	const indexedData = props.data.map((item: any, index: number) => ({
+		item,
+		index,
+	}))
+
+	if (!props.search || !normalizedQuery) return indexedData
+
+	return indexedData.filter(({ item }: { item: any }) =>
+		props.rows.some((row) =>
+			String(item[row.name] ?? "")
+				.toLocaleLowerCase()
+				.includes(normalizedQuery),
+		),
+	)
+})
 const pageCount = computed(() =>
-	Math.max(1, Math.ceil(props.data.length / pageSize.value)),
+	Math.max(1, Math.ceil(filteredData.value.length / pageSize.value)),
 )
-const visibleData = computed(() => {
-	if (!props.pagination) return props.data
+const pagedData = computed(() => {
+	if (!props.pagination) return filteredData.value
 
 	const start = (currentPage.value - 1) * pageSize.value
-	return props.data.slice(start, start + pageSize.value)
+	return filteredData.value.slice(start, start + pageSize.value)
+})
+
+watch(query, () => {
+	currentPage.value = 1
 })
 
 watch(pageCount, (count) => {
@@ -40,6 +64,13 @@ watch(pageCount, (count) => {
 </script>
 
 <template>
+	<Input
+		v-if="props.search"
+		v-model:value="query"
+		type="search"
+		placeholder="Search table"
+		class="table-search"
+	/>
 	<table class="table">
 		<thead>
 			<tr>
@@ -55,25 +86,25 @@ watch(pageCount, (count) => {
 		</thead>
 		<tbody>
 			<tr
-				v-for="(item, i) in visibleData"
-				:key="(currentPage - 1) * pageSize + i"
+				v-for="entry in pagedData"
+				:key="entry.index"
 			>
 				<td v-for="(row, j) in props.rows" :key="j">
 					<slot
 						:name="row.name"
-						:item="item"
-						:index="props.pagination ? (currentPage - 1) * pageSize + i : i"
+						:item="entry.item"
+						:index="entry.index"
 					>
 						<nuxt-img
 							v-if="row.type == 'image'"
-							:src="GET_FILE(item[row.name])"
+							:src="GET_FILE(entry.item[row.name])"
 						/>
 						<audio
 							v-else-if="row.type == 'audio'"
 							controls
-							:src="GET_AUDIO_FILE(item[row.name])"
+							:src="GET_AUDIO_FILE(entry.item[row.name])"
 						/>
-						<p v-else>{{ item[row.name] }}</p>
+						<p v-else>{{ entry.item[row.name] }}</p>
 					</slot>
 				</td>
 			</tr>
@@ -146,6 +177,10 @@ watch(pageCount, (count) => {
 		max-width: 200px;
 		padding: 5px 0;
 	}
+}
+
+.table-search {
+	margin-bottom: 0.75rem;
 }
 
 .pagination {
