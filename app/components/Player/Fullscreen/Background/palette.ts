@@ -73,16 +73,19 @@ export function extractPalette(image: HTMLImageElement, size = 48): AlbumPalette
 	const pixels = context.getImageData(0, 0, size, size).data
 	const bins = new Map<number, { count: number; r: number; g: number; b: number }>()
 	for (let i = 0; i < pixels.length; i += 4) {
-		if (pixels[i + 3] < 96) continue
-		const r = pixels[i] >> 3
-		const g = pixels[i + 1] >> 3
-		const b = pixels[i + 2] >> 3
+		const red = pixels[i]!
+		const green = pixels[i + 1]!
+		const blue = pixels[i + 2]!
+		if (pixels[i + 3]! < 96) continue
+		const r = red >> 3
+		const g = green >> 3
+		const b = blue >> 3
 		const key = (r << 10) | (g << 5) | b
 		const bin = bins.get(key) ?? { count: 0, r: 0, g: 0, b: 0 }
 		bin.count++
-		bin.r += pixels[i]
-		bin.g += pixels[i + 1]
-		bin.b += pixels[i + 2]
+		bin.r += red
+		bin.g += green
+		bin.b += blue
 		bins.set(key, bin)
 	}
 	const entries = [...bins.values()].map((bin) => ({
@@ -99,7 +102,7 @@ export function extractPalette(image: HTMLImageElement, size = 48): AlbumPalette
 	}
 	const centers: RGB[] = [entries.reduce((best, entry) => entry.count > best.count ? entry : best).color]
 	while (centers.length < 4) {
-		let candidate = entries[0]
+		let candidate = entries[0]!
 		let bestScore = -1
 		for (const entry of entries) {
 			const nearestDistance = Math.min(...centers.map((center) => distance(entry.color, center)))
@@ -119,30 +122,30 @@ export function extractPalette(image: HTMLImageElement, size = 48): AlbumPalette
 			let nearest = 0
 			let nearestDistance = Infinity
 			for (let i = 0; i < centers.length; i++) {
-				const nextDistance = distance(entry.color, centers[i])
+				const nextDistance = distance(entry.color, centers[i]!)
 				if (nextDistance < nearestDistance) {
 					nearest = i
 					nearestDistance = nextDistance
 				}
 			}
-			const cluster = clusters[nearest]
+			const cluster = clusters[nearest]!
 			cluster.count += entry.count
 			cluster.red += entry.color[0] * entry.count
 			cluster.green += entry.color[1] * entry.count
 			cluster.blue += entry.color[2] * entry.count
 		}
 		for (let i = 0; i < clusters.length; i++) {
-			const cluster = clusters[i]
+			const cluster = clusters[i]!
 			if (cluster.count) centers[i] = [cluster.red / cluster.count, cluster.green / cluster.count, cluster.blue / cluster.count]
 		}
 		clusterSupport = clusters.map((cluster) => cluster.count)
 	}
 
 	const dominantIndex = clusterSupport.reduce(
-		(best, count, index) => count > clusterSupport[best] ? index : best,
+		(best, count, index) => count > clusterSupport[best]! ? index : best,
 		0,
 	)
-	const dominant = centers[dominantIndex]
+	const dominant = centers[dominantIndex]!
 	const distinctCenters = centers.filter((center) => distance(center, dominant) > 0.002)
 	const candidates = distinctCenters.length ? distinctCenters : centers
 	const accent = candidates.reduce((best, color) => {
