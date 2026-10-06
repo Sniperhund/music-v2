@@ -41,6 +41,10 @@ const onFileChange = (e: Event) => {
 	value.value = result
 	emit("file", result)
 }
+
+const onTextInput = (e: Event) => {
+	emit("input", (e.currentTarget as HTMLInputElement | HTMLTextAreaElement).value)
+}
 </script>
 
 <template>
@@ -68,7 +72,7 @@ const onFileChange = (e: Event) => {
 				v-if="props.type != 'file' && props.type != 'textarea'"
 				:placeholder="props.placeholder"
 				v-model="value"
-				@input="(e) => emit('input', e.target?.value)"
+				@input="onTextInput"
 				@focus="emit('focus')"
 				@blur="emit('blur')"
 				:type="props.type"
@@ -82,7 +86,7 @@ const onFileChange = (e: Event) => {
 				v-else-if="props.textarea"
 				:placeholder="props.placeholder"
 				v-model="value"
-				@input="(e) => emit('input', e.target?.value)"
+				@input="onTextInput"
 				@focus="emit('focus')"
 				@blur="emit('blur')"
 				:name="props.name"
