@@ -1,4 +1,4 @@
-import { getCookie, setCookie } from "h3"
+import { defineEventHandler, getCookie, setCookie } from "h3"
 import { User } from "../../models/user"
 import { getSessionModel } from "../../models/session"
 import {

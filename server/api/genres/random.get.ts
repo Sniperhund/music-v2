@@ -1,3 +1,4 @@
+import { getQuery } from "h3"
 import { Genre } from "../../models/genre"
 import { parseNumber, validationResponse } from "../../utils/api-validation"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"

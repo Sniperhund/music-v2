@@ -1,3 +1,4 @@
+import { getQuery } from "h3"
 import Fuse from "fuse.js"
 import { Album } from "../models/album"
 import { Artist } from "../models/artist"

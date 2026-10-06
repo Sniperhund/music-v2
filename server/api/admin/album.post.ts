@@ -1,3 +1,4 @@
+import { setResponseStatus } from "h3"
 import { readAdminForm, adminFormText, adminFormTexts, adminFormFile, safeFileExtension, splitIds } from "../../utils/admin-form"
 import { putObjects, tryDeleteObject } from "../../utils/object-storage"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
