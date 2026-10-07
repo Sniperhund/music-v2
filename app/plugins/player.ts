@@ -369,7 +369,12 @@ export default defineNuxtPlugin((nuxtApp) => {
 			},
 			onend: () => {
 				stopBeatAnalysis("track ended")
-				void closeFullscreen()
+				if (
+					queue.value.length === 0 &&
+					!repeat.value &&
+					!repeatOnce.value
+				)
+					void closeFullscreen()
 				if (repeatOnce.value && sound.value === newSound) {
 					repeatOnce.value = false
 					newSound.seek(0)
