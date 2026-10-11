@@ -15,8 +15,16 @@ export default defineEventHandler(async (event) => {
 	const refreshToken = getCookie(event, REFRESH_COOKIE)
 	if (!refreshToken) return { authenticated: false }
 
-	const user = await User.findOne({ refreshToken }).select("+refreshToken +verified")
-	if (!user?.verified) return { authenticated: false }
+	const user = await User.findOne({ refreshToken }).select(
+		"+refreshToken +refreshTokenExpiresAt +verified",
+	)
+	if (
+		!user?.verified ||
+		!user.refreshTokenExpiresAt ||
+		user.refreshTokenExpiresAt.getTime() <= Date.now()
+	) {
+		return { authenticated: false }
+	}
 
 	const ttl = getSessionTtl(event)
 	const Session = getSessionModel(ttl)

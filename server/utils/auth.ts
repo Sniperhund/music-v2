@@ -13,6 +13,8 @@ import mongoose from "mongoose"
 import { getSessionModel } from "../models/session"
 import { getBackendRuntimeConfig } from "./backend-config"
 
+export { REFRESH_TOKEN_TTL_MS } from "./auth-constants"
+
 export const SESSION_COOKIE = "musicSession"
 export const REFRESH_COOKIE = "refreshToken"
 const INVALID_REQUEST_ORIGIN = "Invalid request origin"

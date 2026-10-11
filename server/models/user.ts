@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto"
 import mongoose, { Schema, type Model } from "mongoose"
+import { REFRESH_TOKEN_TTL_MS } from "../utils/auth-constants"
 import "./track"
 
 const userSchema = new Schema(
@@ -11,6 +12,12 @@ const userSchema = new Schema(
 		refreshToken: {
 			type: String,
 			default: () => randomUUID(),
+			required: true,
+			select: false,
+		},
+		refreshTokenExpiresAt: {
+			type: Date,
+			default: () => new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
 			required: true,
 			select: false,
 		},

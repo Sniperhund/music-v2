@@ -29,8 +29,14 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		return { message: "Invalid refresh token" }
 	}
 
-	const user = await User.findOne({ refreshToken }).select("+refreshToken")
-	if (!user) {
+	const user = await User.findOne({ refreshToken }).select(
+		"+refreshToken +refreshTokenExpiresAt",
+	)
+	if (
+		!user ||
+		!user.refreshTokenExpiresAt ||
+		user.refreshTokenExpiresAt.getTime() <= Date.now()
+	) {
 		setResponseStatus(event, 401)
 		return { message: "Invalid refresh token" }
 	}

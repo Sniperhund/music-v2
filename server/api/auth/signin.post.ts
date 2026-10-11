@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { readBody, setCookie, setResponseStatus } from "h3"
 import argon2 from "argon2"
 import { User } from "../../models/user"
@@ -5,6 +6,7 @@ import {
 	assertCookieRequestOrigin,
 	defineAuthenticatedEventHandler,
 	REFRESH_COOKIE,
+	REFRESH_TOKEN_TTL_MS,
 } from "../../utils/auth"
 import { getAuthValidationMessage } from "../../utils/auth-validation"
 import {
@@ -31,7 +33,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 
 	const user = await User.findOne({ email: body.email.toLowerCase() }).select(
-		"+refreshToken +passwordHash",
+		"+refreshToken +refreshTokenExpiresAt +passwordHash",
 	)
 	let passwordMatches = false
 	if (user) {
@@ -51,6 +53,9 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 
 	clearSignInFailures(event)
+	user.refreshToken = randomUUID()
+	user.refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS)
+	await user.save()
 	setCookie(event, REFRESH_COOKIE, user.refreshToken, {
 		path: "/",
 		httpOnly: true,
