@@ -1,14 +1,11 @@
 import { getQuery } from "h3"
-import Fuse from "fuse.js"
-import { Album } from "../models/album"
-import { Artist } from "../models/artist"
-import { Track } from "../models/track"
 import {
 	parseNumber,
 	parseQueryString,
 	validationResponse,
 } from "../utils/api-validation"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../utils/auth"
+import { getSearchIndexes } from "../utils/search-index"
 
 const searchTypes = ["track", "album", "artist", "default"] as const
 
@@ -35,6 +32,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	const parsedLimit = parseNumber(query.limit, 9, 1)
 	if ("error" in parsedLimit) return validationResponse(event, parsedLimit.error)
 	const limit = parsedLimit.value
+	const indexes = await getSearchIndexes()
 
 	let results: { tracks: any[]; albums: any[]; artists: any[] } = {
 		tracks: [],
@@ -43,46 +41,24 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 
 	if (type === "track" || type === "default") {
-		const rawTracks = await Track.find({})
-			.populate(["album", "artists"])
-			.lean()
-
-		const fuse = new Fuse(rawTracks, {
-			keys: ["name", "lyrics.text"],
-			threshold: 0.3,
-			distance: 100,
-			ignoreLocation: true,
-		})
-
-		results.tracks = fuse.search(q.value).slice(0, limit).map((result) => result.item)
+		results.tracks = indexes.tracks
+			.search(q.value)
+			.slice(0, limit)
+			.map((result) => result.item)
 	}
 
 	if (type === "album" || type === "default") {
-		const rawAlbums = await Album.find({})
-			.populate(["artists", "genre"])
-			.lean()
-
-		const fuse = new Fuse(rawAlbums, {
-			keys: ["name"],
-			threshold: 0.3,
-			distance: 100,
-			ignoreLocation: true,
-		})
-
-		results.albums = fuse.search(q.value).slice(0, limit).map((result) => result.item)
+		results.albums = indexes.albums
+			.search(q.value)
+			.slice(0, limit)
+			.map((result) => result.item)
 	}
 
 	if (type === "artist" || type === "default") {
-		const rawArtists = await Artist.find({}).lean()
-
-		const fuse = new Fuse(rawArtists, {
-			keys: ["name"],
-			threshold: 0.3,
-			distance: 100,
-			ignoreLocation: true,
-		})
-
-		results.artists = fuse.search(q.value).slice(0, limit).map((result) => result.item)
+		results.artists = indexes.artists
+			.search(q.value)
+			.slice(0, limit)
+			.map((result) => result.item)
 	}
 
 	// Keep the original API's split allocation, including when type selects one category.
