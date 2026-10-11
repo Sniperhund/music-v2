@@ -34,13 +34,6 @@ function smoothstep(edge0: number, edge1: number, value: number) {
 	return amount * amount * (3 - 2 * amount)
 }
 
-function ditherNoise(x: number, y: number, channel: number) {
-	const value = Math.sin(
-		(x + channel * 17) * 127.1 + (y + channel * 59) * 311.7,
-	) * 43758.5453
-	return value - Math.floor(value) - 0.5
-}
-
 function flowPoint(
 	x: number,
 	y: number,
@@ -90,7 +83,6 @@ export function createCpuRenderer(
 					const py = y / (frame.height - 1)
 					const point = flowPoint(px - 0.5, py - 0.5, frame)
 					const blend = smoothstep(-0.34, 0.16, point[0])
-					const transition = 1 - Math.abs(blend * 2 - 1)
 					const lab: [number, number, number] = [
 						dominant[0] * (1 - blend) + accent[0] * blend,
 						dominant[1] * (1 - blend) + accent[1] * blend,
@@ -101,11 +93,9 @@ export function createCpuRenderer(
 					lab[2] *= 1 + frame.beat * 0.02
 					const color = fromOkLab(lab)
 					const offset = (y * frame.width + x) * 4
-					image.data[offset] = color[0] + ditherNoise(x, y, 0) * transition * 3
-					image.data[offset + 1] =
-						color[1] + ditherNoise(x, y, 1) * transition * 3
-					image.data[offset + 2] =
-						color[2] + ditherNoise(x, y, 2) * transition * 3
+					image.data[offset] = color[0]
+					image.data[offset + 1] = color[1]
+					image.data[offset + 2] = color[2]
 					image.data[offset + 3] = 255
 				}
 			}

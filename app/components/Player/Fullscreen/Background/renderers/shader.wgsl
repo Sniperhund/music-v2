@@ -90,13 +90,6 @@ fn fromOkLab(lab: vec3f) -> vec3f {
 	), vec3f(0.0), vec3f(1.0));
 }
 
-fn ditherNoise(x: f32, y: f32, channel: f32) -> f32 {
-	let value = sin(
-		(x + channel * 17.0) * 127.1 + (y + channel * 59.0) * 311.7,
-	) * 43758.5453;
-	return fract(value) - 0.5;
-}
-
 @vertex
 fn vertexMain(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
 	var positions = array<vec2f, 3>(
@@ -115,19 +108,10 @@ fn fragmentMain(@builtin(position) position: vec4f) -> @location(0) vec4f {
 	let uv = position.xy / dimensions;
 	let point = flowPoint(uv - vec2f(0.5), time);
 	let blend = smoothstep(-0.34, 0.16, point.x);
-	let transition = 1.0 - abs(blend * 2.0 - 1.0);
 	var lab = mix(params.dominant.xyz, params.accent.xyz, blend);
 	lab.x = min(params.dominant.w, lab.x + beat * 0.01);
 	lab.y = lab.y * (1.0 + beat * 0.02);
 	lab.z = lab.z * (1.0 + beat * 0.02);
 	let color = fromOkLab(lab);
-	let pixel = floor(position.xy);
-	let noise = vec3f(
-		ditherNoise(pixel.x, pixel.y, 0.0),
-		ditherNoise(pixel.x, pixel.y, 1.0),
-		ditherNoise(pixel.x, pixel.y, 2.0),
-	);
-	let dithered = clamp(color + noise * transition * (3.0 / 255.0),
-		vec3f(0.0), vec3f(1.0));
-	return vec4f(dithered, 1.0);
+	return vec4f(color, 1.0);
 }
