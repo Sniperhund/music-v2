@@ -10,8 +10,8 @@ import { shapeBeatPulse } from "~/utils/beat"
 
 const props = defineProps<{ src: string; active: boolean }>()
 const ANIMATION_SPEED = 0.3
-const FRAME_RATE = 12
-const FRAME_INTERVAL = 1000 / FRAME_RATE
+const CPU_FRAME_INTERVAL = 1000 / 12
+const WEBGPU_FRAME_INTERVAL = 1000 / 60
 const { beatEnergy } = usePlayer()
 const cpuCanvas = ref<HTMLCanvasElement | null>(null)
 const webGpuCanvas = ref<HTMLCanvasElement | null>(null)
@@ -93,13 +93,21 @@ async function initializeRenderers() {
 
 function makeFrame(now: number, canvas: HTMLCanvasElement): BackgroundFrame {
 	if (!startedAt) startedAt = now
-	const width = 224
-	const height = Math.max(
-		72,
-		Math.round(
-			(width * canvas.clientHeight) / Math.max(1, canvas.clientWidth),
-		),
-	)
+	const pixelRatio = window.devicePixelRatio || 1
+	const width =
+		backend.value === "webgpu"
+			? Math.max(1, Math.round(canvas.clientWidth * pixelRatio))
+			: 224
+	const height =
+		backend.value === "webgpu"
+			? Math.max(1, Math.round(canvas.clientHeight * pixelRatio))
+			: Math.max(
+					72,
+					Math.round(
+						(width * canvas.clientHeight) /
+							Math.max(1, canvas.clientWidth),
+					),
+				)
 	return {
 		width,
 		height,
@@ -134,12 +142,17 @@ function draw(now: number) {
 				webGpuRenderer?.dispose()
 				webGpuRenderer = null
 				useCpuFallback()
-				if (cpuCanvas.value)
-					updateCanvasScale(cpuCanvas.value, renderFrame.beat)
-				try {
-					cpuRenderer?.render(renderFrame)
-				} catch (fallbackError) {
-					console.warn("[background renderer] CPU fallback failed", fallbackError)
+				if (cpuCanvas.value) {
+					const cpuFrame = makeFrame(now, cpuCanvas.value)
+					updateCanvasScale(cpuCanvas.value, cpuFrame.beat)
+					try {
+						cpuRenderer?.render(cpuFrame)
+					} catch (fallbackError) {
+						console.warn(
+							"[background renderer] CPU fallback failed",
+							fallbackError,
+						)
+					}
 				}
 			} else {
 				console.warn("[background renderer] CPU render failed", error)
@@ -149,7 +162,7 @@ function draw(now: number) {
 	frameTimer = window.setTimeout(() => {
 		frameTimer = null
 		draw(performance.now())
-	}, FRAME_INTERVAL)
+	}, backend.value === "webgpu" ? WEBGPU_FRAME_INTERVAL : CPU_FRAME_INTERVAL)
 }
 
 function startAnimation() {
