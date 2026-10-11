@@ -19,6 +19,9 @@ const trackSchema = new Schema({
 	},
 })
 
+trackSchema.index({ album: 1 })
+trackSchema.index({ artists: 1 })
+
 export const Track =
 	(mongoose.models.Track as Model<any> | undefined) ??
 	(mongoose.model<any>("Track", trackSchema) as Model<any>)

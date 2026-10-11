@@ -12,6 +12,9 @@ const albumSchema = new Schema({
 	genre: { type: Schema.Types.ObjectId, ref: "Genre", required: true },
 })
 
+albumSchema.index({ artists: 1 })
+albumSchema.index({ genre: 1 })
+
 export const Album =
 	(mongoose.models.Album as Model<any> | undefined) ??
 	(mongoose.model<any>("Album", albumSchema) as Model<any>)
