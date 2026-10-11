@@ -21,7 +21,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 	}
 	const VOLUME_STORAGE_KEY = "music-v2-player-volume"
 	const DEFAULT_VOLUME = 0.5
-	const DEBUG_BEAT_ANALYSIS = false
+	const DEBUG_BEAT_ANALYSIS = true
+	const DRUM_PULSE_MULTIPLIER = 0.7
 
 	const sound = ref<Howl | null>(null)
 	const queue = ref<Track[]>([])
@@ -166,6 +167,9 @@ export default defineNuxtPlugin((nuxtApp) => {
 			let lastPulseUpdateAt: number | null = null
 			let lastBassHitAt = 0
 			let lastDrumHitAt = 0
+			let bassCooldown = 80
+			let drumCooldown = 240
+			let lastPulseLogAt = 0
 			let lastLevelLogAt = 0
 			const sample = () => {
 				if (!analysisNode) return
@@ -209,8 +213,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 				const bassRiseDeviation = Math.sqrt(bassRiseVariance)
 				const drumRiseDeviation = Math.sqrt(drumRiseVariance)
 				const bassThreshold = Math.min(
-					0.1,
-					Math.max(0.045, bassRiseAverage + bassRiseDeviation * 2),
+					0.16,
+					Math.max(0.065, bassRiseAverage + bassRiseDeviation * 3),
 				)
 				const drumThreshold = Math.min(
 					0.07,
@@ -218,19 +222,14 @@ export default defineNuxtPlugin((nuxtApp) => {
 				)
 				const bassAttack = Math.max(0, bassRise - bassThreshold)
 				const drumAttack = Math.max(0, drumRise - drumThreshold)
-				const bassCooldown = Math.min(
-					500,
-					Math.max(300, 300 + bassRiseDeviation * 4000),
-				)
-				const drumCooldown = Math.min(
-					240,
-					Math.max(70, 70 + drumRiseDeviation * 1750),
-				)
 				const now = performance.now()
 				const isBassHit =
-					bassRise >= bassThreshold && now - lastBassHitAt > bassCooldown
+					bassRise >= bassThreshold &&
+					now - lastBassHitAt > bassCooldown
 				const isDrumHit =
-					drumRise >= drumThreshold && now - lastDrumHitAt > drumCooldown
+					drumRise >= drumThreshold &&
+					now - lastDrumHitAt > drumCooldown &&
+					now - lastBassHitAt > bassCooldown
 				const bassDelta = bassRise - bassRiseAverage
 				bassRiseAverage += bassDelta * 0.01
 				bassRiseVariance +=
@@ -241,17 +240,34 @@ export default defineNuxtPlugin((nuxtApp) => {
 					(drumDelta * drumDelta - drumRiseVariance) * 0.01
 				if (isBassHit || isDrumHit) {
 					const bassStrength = isBassHit
-						? Math.min(0.38, 0.1 + bassAttack * 2.5)
+						? Math.min(0.38, (0.1 + bassAttack * 2.5) * 1.1)
 						: 0
 					const drumStrength = isDrumHit
-						? Math.min(0.4, 0.13 + drumAttack * 4)
+						? Math.min(0.4, 0.13 + drumAttack * 4) *
+							DRUM_PULSE_MULTIPLIER
 						: 0
 					const hitStrength = Math.min(
 						0.4,
 						bassStrength + drumStrength * 0.65,
 					)
 					pulseTarget = Math.max(pulseTarget, hitStrength)
-					if (DEBUG_BEAT_ANALYSIS) {
+					if (isBassHit) {
+						const bassCooldownScale = Math.min(1, bassStrength / 0.38)
+						const combinedCooldownScale = Math.min(
+							1,
+							Math.max(bassStrength, drumStrength) / 0.38,
+						)
+						bassCooldown = 80 + bassCooldownScale * 160
+						drumCooldown = 240 + combinedCooldownScale * 160
+					} else if (isDrumHit) {
+						const drumCooldownScale = Math.min(1, drumStrength / 0.28)
+						drumCooldown = 240 + drumCooldownScale * 160
+					}
+					if (
+						DEBUG_BEAT_ANALYSIS &&
+						now - lastPulseLogAt > 1000
+					) {
+						lastPulseLogAt = now
 						console.log(
 							"[fullscreen pulse]",
 							`bass=${bassStrength.toFixed(2)}`,
@@ -270,7 +286,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 					1 - Math.exp(-pulseDelta / (pulseTarget > pulse ? 90 : 150))
 				pulse += (pulseTarget - pulse) * pulseSmoothing
 				beatEnergy.value = Math.min(1, pulse)
-				if (DEBUG_BEAT_ANALYSIS && now - lastLevelLogAt > 1000) {
+				if (DEBUG_BEAT_ANALYSIS && now - lastLevelLogAt > 5000) {
 					lastLevelLogAt = now
 					console.info(
 						"[pulse levels]",
@@ -281,8 +297,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 						`pulse=${beatEnergy.value.toFixed(2)}`,
 					)
 				}
-				if (isBassHit) lastBassHitAt = now
-				if (isDrumHit) lastDrumHitAt = now
+				if (isBassHit) {
+					lastBassHitAt = now
+					lastDrumHitAt = now
+				} else if (isDrumHit) lastDrumHitAt = now
 				analysisFrame = requestAnimationFrame(sample)
 			}
 			analysisFrame = requestAnimationFrame(sample)
