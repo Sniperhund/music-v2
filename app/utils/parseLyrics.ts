@@ -1,5 +1,5 @@
 export const parseLyrics = (lrc: string) => {
-	const regex = /^\[(\d{2}:\d{2}(.\d{2,3})?)\](.*)/
+	const regex = /^\[(\d{2}:\d{2}(\.\d{2,3})?)\](.*)/
 	const lines = lrc.split("\n")
 	const output: { time: number; text: any }[] = []
 
@@ -23,5 +23,5 @@ export const parseLyrics = (lrc: string) => {
 		})
 	})
 
-	return output
+	return output.sort((a, b) => a.time - b.time)
 }
