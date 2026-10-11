@@ -24,6 +24,7 @@ let angleJitter = 0
 let flowParams: [number, number, number, number] = [5, 25, 0.75, -0.08]
 let cpuRenderer: BackgroundRenderer | null = null
 let webGpuRenderer: BackgroundRenderer | null = null
+let webGpuInitialization: Promise<void> | null = null
 let activeRenderer: BackgroundRenderer | null = null
 let disposed = false
 
@@ -62,44 +63,61 @@ function useCpuFallback() {
 	backend.value = "cpu"
 }
 
-async function initializeRenderers() {
-	const cpuElement = cpuCanvas.value
-	const gpuElement = webGpuCanvas.value
-	if (!cpuElement || !gpuElement) return
-	cpuRenderer = createCpuRenderer(cpuElement)
-	activeRenderer = cpuRenderer
-	if (!cpuRenderer) {
-		console.warn("[background renderer] 2D canvas is unavailable")
-		return
-	}
+async function initializeWebGpuRenderer() {
+	if (webGpuRenderer || webGpuInitialization) return webGpuInitialization
+	webGpuInitialization = (async () => {
+		const gpuElement = webGpuCanvas.value
+		if (!gpuElement || disposed) return
 
-	let rendererLost = false
-	const renderer = await createWebGpuRenderer(gpuElement, () => {
-		rendererLost = true
-		webGpuRenderer = null
-		console.warn("[background renderer] WebGPU device lost; using CPU")
-		useCpuFallback()
-	})
-	if (!renderer) return
-	if (disposed || rendererLost) {
-		renderer.dispose()
-		return
+		let rendererLost = false
+		const renderer = await createWebGpuRenderer(gpuElement, () => {
+			rendererLost = true
+			webGpuRenderer = null
+			console.warn("[background renderer] WebGPU device lost; using CPU")
+			useCpuFallback()
+		})
+		if (!renderer) return
+		if (disposed || rendererLost) {
+			renderer.dispose()
+			return
+		}
+		try {
+			const frame = makeFrame(performance.now(), gpuElement, "webgpu")
+			updateCanvasScale(gpuElement, frame.beat)
+			renderer.render(frame)
+		} catch (error) {
+			console.warn(
+				"[background renderer] WebGPU initial render failed; using CPU",
+				error,
+			)
+			renderer.dispose()
+			return
+		}
+		webGpuRenderer = renderer
+		activeRenderer = renderer
+		backend.value = "webgpu"
+		console.info("[background renderer] using WebGPU")
+	})()
+	try {
+		await webGpuInitialization
+	} finally {
+		webGpuInitialization = null
 	}
-	webGpuRenderer = renderer
-	activeRenderer = renderer
-	backend.value = "webgpu"
-	console.info("[background renderer] using WebGPU")
 }
 
-function makeFrame(now: number, canvas: HTMLCanvasElement): BackgroundFrame {
+function makeFrame(
+	now: number,
+	canvas: HTMLCanvasElement,
+	renderBackend = backend.value,
+): BackgroundFrame {
 	if (!startedAt) startedAt = now
 	const pixelRatio = window.devicePixelRatio || 1
 	const width =
-		backend.value === "webgpu"
+		renderBackend === "webgpu"
 			? Math.max(1, Math.round(canvas.clientWidth * pixelRatio))
 			: 224
 	const height =
-		backend.value === "webgpu"
+		renderBackend === "webgpu"
 			? Math.max(1, Math.round(canvas.clientHeight * pixelRatio))
 			: Math.max(
 					72,
@@ -177,7 +195,10 @@ watch(() => props.src, loadArtwork)
 watch(
 	() => props.active,
 	(active) => {
-		if (active) startAnimation()
+		if (active) {
+			startAnimation()
+			void initializeWebGpuRenderer()
+		}
 		else if (frameTimer !== null) {
 			window.clearTimeout(frameTimer)
 			frameTimer = null
@@ -187,8 +208,16 @@ watch(
 
 onMounted(() => {
 	loadArtwork()
-	void initializeRenderers()
-	if (props.active) startAnimation()
+	const canvas = cpuCanvas.value
+	if (canvas) {
+		cpuRenderer = createCpuRenderer(canvas)
+		activeRenderer = cpuRenderer
+		if (!cpuRenderer) console.warn("[background renderer] 2D canvas is unavailable")
+	}
+	if (props.active) {
+		startAnimation()
+		void initializeWebGpuRenderer()
+	}
 })
 
 onBeforeUnmount(() => {
