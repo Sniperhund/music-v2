@@ -4,6 +4,7 @@ import type { Row } from "~/ui/Table.vue"
 
 const { data, refresh } = useApiFetch<Album[]>("/all/albums")
 const toast = useToast()
+const deleteItem = useAdminDelete()
 
 const tableRows: Row[] = [
 	{
@@ -147,7 +148,19 @@ useHead({ title: "Admin - Albums" })
 		<template #action="{ item, index }">
 			<div class="action">
 				<Button @click="show(item._id)">Edit</Button>
-				<Button @click="">Delete</Button>
+				<Button
+					@click="
+						deleteItem({
+							endpoint: '/admin/album',
+							type: 'Album',
+							id: item._id,
+							name: item.name,
+							refresh,
+						})
+					"
+				>
+					Delete
+				</Button>
 			</div>
 		</template>
 	</Table>

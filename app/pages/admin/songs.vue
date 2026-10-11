@@ -4,6 +4,7 @@ import type { Row } from "~/ui/Table.vue"
 
 const { data, refresh } = useApiFetch<Track[]>("/all/tracks")
 const toast = useToast()
+const deleteItem = useAdminDelete()
 
 const tableRows: Row[] = [
 	{
@@ -233,7 +234,19 @@ useHead({ title: "Admin - Songs" })
 		<template #action="{ item, index }">
 			<div class="action">
 				<Button @click="show(item._id)">Edit</Button>
-				<Button @click="">Delete</Button>
+				<Button
+					@click="
+						deleteItem({
+							endpoint: '/admin/track',
+							type: 'Song',
+							id: item._id,
+							name: item.name,
+							refresh,
+						})
+					"
+				>
+					Delete
+				</Button>
 			</div>
 		</template>
 	</Table>

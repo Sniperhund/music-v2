@@ -1,8 +1,10 @@
 import { getQuery, setResponseStatus } from "h3"
 import { Album } from "../../models/album"
 import { Genre } from "../../models/genre"
+import { Track } from "../../models/track"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId } from "../../utils/api-validation"
+import { tryDeleteObject, tryDeleteObjectPrefix } from "../../utils/object-storage"
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true, { allowBearer: true, skipOriginCheck: true })
@@ -27,7 +29,14 @@ export default defineAuthenticatedEventHandler(async (event) => {
 
 	const dependents = await Album.find({ genre: genre._id }).select("_id name")
 	if (force) {
+		const albums = await Album.find({ genre: genre._id }).select("_id file").exec()
+		const tracks = await Track.find({ album: { $in: albums.map((album) => album._id) } })
+			.select("_id fileDir")
+			.exec()
+		await Promise.all(tracks.map((track) => Track.findByIdAndDelete(track._id)))
+		await Promise.all(tracks.map((track) => tryDeleteObjectPrefix(event, `${track.fileDir}/`)))
 		await Promise.all(dependents.map((dependent) => Album.findByIdAndDelete(dependent._id)))
+		await Promise.all(albums.map((album) => tryDeleteObject(event, album.file)))
 	} else if (dependents.length) {
 		setResponseStatus(event, 409)
 		return {

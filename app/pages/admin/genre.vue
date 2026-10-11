@@ -4,6 +4,7 @@ import type { Row } from "~/ui/Table.vue"
 
 const { data, refresh } = useApiFetch<Genre[]>("/all/genres")
 const toast = useToast()
+const deleteItem = useAdminDelete()
 
 const tableRows: Row[] = [
 	{
@@ -89,7 +90,19 @@ useHead({ title: "Admin - Genres" })
 		<template #action="{ item, index }">
 			<div class="action">
 				<Button @click="show(item._id)">Edit</Button>
-				<Button @click="">Delete</Button>
+				<Button
+					@click="
+						deleteItem({
+							endpoint: '/admin/genre',
+							type: 'Genre',
+							id: item._id,
+							name: item.name,
+							refresh,
+						})
+					"
+				>
+					Delete
+				</Button>
 			</div>
 		</template>
 	</Table>

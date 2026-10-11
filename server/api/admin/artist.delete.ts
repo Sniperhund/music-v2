@@ -41,7 +41,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 	else if (dependents.length) {
 		setResponseStatus(event, 409)
-		return { message: "Artist has one or more dependents", dependentType: "Artist", dependents }
+		return { message: "Artist has one or more dependents", dependentType: "Album", dependents }
 	}
 
 	await Artist.findByIdAndDelete(parsedId.value)
