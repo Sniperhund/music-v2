@@ -154,71 +154,135 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 			const samples = new Uint8Array(analysisNode.frequencyBinCount)
 			let previousBass: number | null = null
-			let riseAverage = 0.01
-			let riseVariance = 0.0004
+			let previousKick: number | null = null
+			let previousDrumBody: number | null = null
+			let previousCymbals: number | null = null
+			let bassRiseAverage = 0.01
+			let bassRiseVariance = 0.0004
+			let drumRiseAverage = 0.01
+			let drumRiseVariance = 0.0004
 			let pulse = 0
-			let lastBeatLogAt = 0
+			let pulseTarget = 0
+			let lastPulseUpdateAt: number | null = null
+			let lastBassHitAt = 0
+			let lastDrumHitAt = 0
 			let lastLevelLogAt = 0
 			const sample = () => {
 				if (!analysisNode) return
 				analysisNode.getByteFrequencyData(samples)
 				const sampleRate = analysisContext!.sampleRate
-				const firstBin = Math.max(
-					1,
-					Math.floor((45 * 2048) / sampleRate),
-				)
-				const lastBin = Math.min(
-					samples.length - 1,
-					Math.ceil((130 * 2048) / sampleRate),
-				)
-				let bass = 0
-				for (let bin = firstBin; bin <= lastBin; bin++)
-					bass += samples[bin] ?? 0
-				bass /= Math.max(1, lastBin - firstBin + 1) * 255
+				const bandEnergy = (lowHz: number, highHz: number) => {
+					const firstBin = Math.max(
+						1,
+						Math.floor((lowHz * 2048) / sampleRate),
+					)
+					const lastBin = Math.min(
+						samples.length - 1,
+						Math.ceil((highHz * 2048) / sampleRate),
+					)
+					let energy = 0
+					for (let bin = firstBin; bin <= lastBin; bin++)
+						energy += samples[bin] ?? 0
+					return energy / Math.max(1, lastBin - firstBin + 1) / 255
+				}
+				const bass = bandEnergy(45, 130)
+				const kick = bandEnergy(55, 250)
+				const drumBody = bandEnergy(130, 1200)
+				const cymbals = bandEnergy(2500, 8000)
 				if (previousBass === null) previousBass = bass
-				const rise = Math.max(0, bass - previousBass)
-				previousBass = previousBass * 0.985 + bass * 0.015
-				const riseDeviation = Math.sqrt(riseVariance)
-				const strongThumpThreshold = Math.min(
-					0.1,
-					Math.max(0.045, riseAverage + riseDeviation * 2),
+				if (previousKick === null) previousKick = kick
+				if (previousDrumBody === null) previousDrumBody = drumBody
+				if (previousCymbals === null) previousCymbals = cymbals
+				const bassRise = Math.max(0, bass - previousBass)
+				const drumRise = Math.max(
+					0,
+					Math.max(
+						kick - previousKick,
+						drumBody - previousDrumBody,
+						cymbals - previousCymbals,
+					),
 				)
-				const attack = Math.max(0, rise - strongThumpThreshold)
-				const thumpCooldown = Math.min(
+				previousBass = previousBass * 0.985 + bass * 0.015
+				previousKick = previousKick * 0.85 + kick * 0.15
+				previousDrumBody = previousDrumBody * 0.9 + drumBody * 0.1
+				previousCymbals = previousCymbals * 0.9 + cymbals * 0.1
+				const bassRiseDeviation = Math.sqrt(bassRiseVariance)
+				const drumRiseDeviation = Math.sqrt(drumRiseVariance)
+				const bassThreshold = Math.min(
+					0.1,
+					Math.max(0.045, bassRiseAverage + bassRiseDeviation * 2),
+				)
+				const drumThreshold = Math.min(
+					0.07,
+					Math.max(0.009, drumRiseAverage + drumRiseDeviation * 1.25),
+				)
+				const bassAttack = Math.max(0, bassRise - bassThreshold)
+				const drumAttack = Math.max(0, drumRise - drumThreshold)
+				const bassCooldown = Math.min(
 					500,
-					Math.max(300, 300 + riseDeviation * 4000),
+					Math.max(300, 300 + bassRiseDeviation * 4000),
+				)
+				const drumCooldown = Math.min(
+					240,
+					Math.max(70, 70 + drumRiseDeviation * 1750),
 				)
 				const now = performance.now()
-				const isStrongThump =
-					rise >= strongThumpThreshold &&
-					now - lastBeatLogAt > thumpCooldown
-				const riseDelta = rise - riseAverage
-				riseAverage += riseDelta * 0.01
-				riseVariance += (riseDelta * riseDelta - riseVariance) * 0.01
-				if (isStrongThump) {
-					const thumpStrength = Math.min(0.38, 0.1 + attack * 2.5)
-					pulse = Math.max(pulse, thumpStrength)
+				const isBassHit =
+					bassRise >= bassThreshold && now - lastBassHitAt > bassCooldown
+				const isDrumHit =
+					drumRise >= drumThreshold && now - lastDrumHitAt > drumCooldown
+				const bassDelta = bassRise - bassRiseAverage
+				bassRiseAverage += bassDelta * 0.01
+				bassRiseVariance +=
+					(bassDelta * bassDelta - bassRiseVariance) * 0.01
+				const drumDelta = drumRise - drumRiseAverage
+				drumRiseAverage += drumDelta * 0.01
+				drumRiseVariance +=
+					(drumDelta * drumDelta - drumRiseVariance) * 0.01
+				if (isBassHit || isDrumHit) {
+					const bassStrength = isBassHit
+						? Math.min(0.38, 0.1 + bassAttack * 2.5)
+						: 0
+					const drumStrength = isDrumHit
+						? Math.min(0.4, 0.13 + drumAttack * 4)
+						: 0
+					const hitStrength = Math.min(
+						0.4,
+						bassStrength + drumStrength * 0.65,
+					)
+					pulseTarget = Math.max(pulseTarget, hitStrength)
 					if (DEBUG_BEAT_ANALYSIS) {
 						console.log(
-							"[fullscreen beat]",
-							`detected=${thumpStrength.toFixed(2)}`,
-							`visual=${shapeBeatPulse(thumpStrength).toFixed(2)}`,
+							"[fullscreen pulse]",
+							`bass=${bassStrength.toFixed(2)}`,
+							`drums=${drumStrength.toFixed(2)}`,
+							`visual=${shapeBeatPulse(hitStrength).toFixed(2)}`,
 						)
 					}
-				} else pulse *= 0.94
+				}
+				const pulseDelta =
+					lastPulseUpdateAt === null
+						? 1000 / 60
+						: Math.min(100, now - lastPulseUpdateAt)
+				lastPulseUpdateAt = now
+				pulseTarget *= Math.exp(-pulseDelta / 260)
+				const pulseSmoothing =
+					1 - Math.exp(-pulseDelta / (pulseTarget > pulse ? 90 : 150))
+				pulse += (pulseTarget - pulse) * pulseSmoothing
 				beatEnergy.value = Math.min(1, pulse)
 				if (DEBUG_BEAT_ANALYSIS && now - lastLevelLogAt > 1000) {
 					lastLevelLogAt = now
 					console.info(
-						"[beat level]",
+						"[pulse levels]",
 						`bass=${bass.toFixed(3)}`,
-						`attack=${attack.toFixed(3)}`,
-						`gate=${strongThumpThreshold.toFixed(3)}`,
-						`cooldown=${Math.round(thumpCooldown)}`,
+						`drums=${Math.max(kick, drumBody, cymbals).toFixed(3)}`,
+						`bassRise=${bassRise.toFixed(3)}`,
+						`drumRise=${drumRise.toFixed(3)}`,
 						`pulse=${beatEnergy.value.toFixed(2)}`,
 					)
 				}
-				if (isStrongThump) lastBeatLogAt = now
+				if (isBassHit) lastBassHitAt = now
+				if (isDrumHit) lastDrumHitAt = now
 				analysisFrame = requestAnimationFrame(sample)
 			}
 			analysisFrame = requestAnimationFrame(sample)
