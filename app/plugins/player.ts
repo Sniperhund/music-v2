@@ -21,7 +21,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	}
 	const VOLUME_STORAGE_KEY = "music-v2-player-volume"
 	const DEFAULT_VOLUME = 0.5
-	const DEBUG_BEAT_ANALYSIS = true
+	const DEBUG_BEAT_ANALYSIS = false
 	const BASS_DRUM_PULSE_MULTIPLIER = 0.9
 	const DRUM_PULSE_MULTIPLIER = 0.7
 
@@ -206,10 +206,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				const bassDrumRise = Math.max(0, bassDrum - previousBassDrum)
 				const bodyRise = Math.max(0, drumBody - previousDrumBody)
 				const cymbalRise = Math.max(0, cymbals - previousCymbals)
-				const drumRise = Math.max(
-					0,
-					Math.max(bodyRise, cymbalRise),
-				)
+				const drumRise = Math.max(0, Math.max(bodyRise, cymbalRise))
 				previousBass = previousBass * 0.985 + bass * 0.015
 				previousBassDrum = previousBassDrum * 0.85 + bassDrum * 0.15
 				previousDrumBody = previousDrumBody * 0.9 + drumBody * 0.1
@@ -258,7 +255,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 				const bassDrumDelta = bassDrumRise - bassDrumRiseAverage
 				bassDrumRiseAverage += bassDrumDelta * 0.01
 				bassDrumRiseVariance +=
-					(bassDrumDelta * bassDrumDelta - bassDrumRiseVariance) * 0.01
+					(bassDrumDelta * bassDrumDelta - bassDrumRiseVariance) *
+					0.01
 				const drumDelta = drumRise - drumRiseAverage
 				drumRiseAverage += drumDelta * 0.01
 				drumRiseVariance +=
@@ -285,7 +283,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 					)
 					pulseTarget = Math.max(pulseTarget, hitStrength)
 					if (isBassHit) {
-						const bassCooldownScale = Math.min(1, bassStrength / 0.38)
+						const bassCooldownScale = Math.min(
+							1,
+							bassStrength / 0.38,
+						)
 						const combinedCooldownScale = Math.min(
 							1,
 							Math.max(bassStrength, drumStrength) / 0.38,
@@ -299,26 +300,20 @@ export default defineNuxtPlugin((nuxtApp) => {
 								1,
 								bassDrumStrength / 0.36,
 							)
-							bassDrumCooldown =
-								240 + bassDrumCooldownScale * 160
+							bassDrumCooldown = 240 + bassDrumCooldownScale * 160
 							lastBassDrumHitAt = now
 						}
 						if (isDrumHit) {
 							const drumCooldownScale = Math.min(
 								1,
-								Math.max(
-									bassDrumStrength,
-									otherDrumStrength,
-								) / 0.36,
+								Math.max(bassDrumStrength, otherDrumStrength) /
+									0.36,
 							)
 							drumCooldown = 240 + drumCooldownScale * 160
 							lastDrumHitAt = now
 						}
 					}
-					if (
-						DEBUG_BEAT_ANALYSIS &&
-						now - lastPulseLogAt > 1000
-					) {
+					if (DEBUG_BEAT_ANALYSIS && now - lastPulseLogAt > 1000) {
 						lastPulseLogAt = now
 						console.log(
 							"[fullscreen pulse]",
