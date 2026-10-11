@@ -22,6 +22,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const VOLUME_STORAGE_KEY = "music-v2-player-volume"
 	const DEFAULT_VOLUME = 0.5
 	const DEBUG_BEAT_ANALYSIS = true
+	const BASS_DRUM_PULSE_MULTIPLIER = 0.9
 	const DRUM_PULSE_MULTIPLIER = 0.7
 
 	const sound = ref<Howl | null>(null)
@@ -155,11 +156,13 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 			const samples = new Uint8Array(analysisNode.frequencyBinCount)
 			let previousBass: number | null = null
-			let previousKick: number | null = null
+			let previousBassDrum: number | null = null
 			let previousDrumBody: number | null = null
 			let previousCymbals: number | null = null
 			let bassRiseAverage = 0.01
 			let bassRiseVariance = 0.0004
+			let bassDrumRiseAverage = 0.002
+			let bassDrumRiseVariance = 0.0001
 			let drumRiseAverage = 0.01
 			let drumRiseVariance = 0.0004
 			let pulse = 0
@@ -167,8 +170,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 			let lastPulseUpdateAt: number | null = null
 			let lastBassHitAt = 0
 			let lastDrumHitAt = 0
+			let lastBassDrumHitAt = 0
 			let bassCooldown = 80
 			let drumCooldown = 240
+			let bassDrumCooldown = 240
 			let lastPulseLogAt = 0
 			let lastLevelLogAt = 0
 			const sample = () => {
@@ -190,27 +195,27 @@ export default defineNuxtPlugin((nuxtApp) => {
 					return energy / Math.max(1, lastBin - firstBin + 1) / 255
 				}
 				const bass = bandEnergy(45, 130)
-				const kick = bandEnergy(55, 250)
+				const bassDrum = bandEnergy(35, 250)
 				const drumBody = bandEnergy(130, 1200)
 				const cymbals = bandEnergy(2500, 8000)
 				if (previousBass === null) previousBass = bass
-				if (previousKick === null) previousKick = kick
+				if (previousBassDrum === null) previousBassDrum = bassDrum
 				if (previousDrumBody === null) previousDrumBody = drumBody
 				if (previousCymbals === null) previousCymbals = cymbals
 				const bassRise = Math.max(0, bass - previousBass)
+				const bassDrumRise = Math.max(0, bassDrum - previousBassDrum)
+				const bodyRise = Math.max(0, drumBody - previousDrumBody)
+				const cymbalRise = Math.max(0, cymbals - previousCymbals)
 				const drumRise = Math.max(
 					0,
-					Math.max(
-						kick - previousKick,
-						drumBody - previousDrumBody,
-						cymbals - previousCymbals,
-					),
+					Math.max(bodyRise, cymbalRise),
 				)
 				previousBass = previousBass * 0.985 + bass * 0.015
-				previousKick = previousKick * 0.85 + kick * 0.15
+				previousBassDrum = previousBassDrum * 0.85 + bassDrum * 0.15
 				previousDrumBody = previousDrumBody * 0.9 + drumBody * 0.1
 				previousCymbals = previousCymbals * 0.9 + cymbals * 0.1
 				const bassRiseDeviation = Math.sqrt(bassRiseVariance)
+				const bassDrumRiseDeviation = Math.sqrt(bassDrumRiseVariance)
 				const drumRiseDeviation = Math.sqrt(drumRiseVariance)
 				const bassThreshold = Math.min(
 					0.16,
@@ -220,20 +225,40 @@ export default defineNuxtPlugin((nuxtApp) => {
 					0.07,
 					Math.max(0.009, drumRiseAverage + drumRiseDeviation * 1.25),
 				)
+				const bassDrumThreshold = Math.min(
+					0.04,
+					Math.max(
+						0.003,
+						bassDrumRiseAverage + bassDrumRiseDeviation * 0.8,
+					),
+				)
 				const bassAttack = Math.max(0, bassRise - bassThreshold)
+				const bassDrumAttack = Math.max(
+					0,
+					bassDrumRise - bassDrumThreshold,
+				)
 				const drumAttack = Math.max(0, drumRise - drumThreshold)
 				const now = performance.now()
 				const isBassHit =
 					bassRise >= bassThreshold &&
 					now - lastBassHitAt > bassCooldown
-				const isDrumHit =
-					drumRise >= drumThreshold &&
+				const isBassDrumHit =
+					bassDrumRise >= bassDrumThreshold &&
+					now - lastBassDrumHitAt > bassDrumCooldown &&
+					now - lastBassHitAt > bassCooldown
+				const isOtherDrumHit =
+					Math.max(bodyRise, cymbalRise) >= drumThreshold &&
 					now - lastDrumHitAt > drumCooldown &&
 					now - lastBassHitAt > bassCooldown
+				const isDrumHit = isBassDrumHit || isOtherDrumHit
 				const bassDelta = bassRise - bassRiseAverage
 				bassRiseAverage += bassDelta * 0.01
 				bassRiseVariance +=
 					(bassDelta * bassDelta - bassRiseVariance) * 0.01
+				const bassDrumDelta = bassDrumRise - bassDrumRiseAverage
+				bassDrumRiseAverage += bassDrumDelta * 0.01
+				bassDrumRiseVariance +=
+					(bassDrumDelta * bassDrumDelta - bassDrumRiseVariance) * 0.01
 				const drumDelta = drumRise - drumRiseAverage
 				drumRiseAverage += drumDelta * 0.01
 				drumRiseVariance +=
@@ -242,10 +267,18 @@ export default defineNuxtPlugin((nuxtApp) => {
 					const bassStrength = isBassHit
 						? Math.min(0.38, (0.1 + bassAttack * 2.5) * 1.1)
 						: 0
-					const drumStrength = isDrumHit
+					const bassDrumStrength = isBassDrumHit
+						? Math.min(0.4, 0.16 + bassDrumAttack * 5) *
+							BASS_DRUM_PULSE_MULTIPLIER
+						: 0
+					const otherDrumStrength = isOtherDrumHit
 						? Math.min(0.4, 0.13 + drumAttack * 4) *
 							DRUM_PULSE_MULTIPLIER
 						: 0
+					const drumStrength = Math.max(
+						bassDrumStrength,
+						otherDrumStrength,
+					)
 					const hitStrength = Math.min(
 						0.4,
 						bassStrength + drumStrength * 0.65,
@@ -259,9 +292,28 @@ export default defineNuxtPlugin((nuxtApp) => {
 						)
 						bassCooldown = 80 + bassCooldownScale * 160
 						drumCooldown = 240 + combinedCooldownScale * 160
-					} else if (isDrumHit) {
-						const drumCooldownScale = Math.min(1, drumStrength / 0.28)
-						drumCooldown = 240 + drumCooldownScale * 160
+						bassDrumCooldown = 240 + bassCooldownScale * 160
+					} else {
+						if (isBassDrumHit) {
+							const bassDrumCooldownScale = Math.min(
+								1,
+								bassDrumStrength / 0.36,
+							)
+							bassDrumCooldown =
+								240 + bassDrumCooldownScale * 160
+							lastBassDrumHitAt = now
+						}
+						if (isDrumHit) {
+							const drumCooldownScale = Math.min(
+								1,
+								Math.max(
+									bassDrumStrength,
+									otherDrumStrength,
+								) / 0.36,
+							)
+							drumCooldown = 240 + drumCooldownScale * 160
+							lastDrumHitAt = now
+						}
 					}
 					if (
 						DEBUG_BEAT_ANALYSIS &&
@@ -271,7 +323,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 						console.log(
 							"[fullscreen pulse]",
 							`bass=${bassStrength.toFixed(2)}`,
-							`drums=${drumStrength.toFixed(2)}`,
+							`bass_drums=${bassDrumStrength.toFixed(2)}`,
+							`drums=${otherDrumStrength.toFixed(2)}`,
 							`visual=${shapeBeatPulse(hitStrength).toFixed(2)}`,
 						)
 					}
@@ -291,8 +344,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 					console.info(
 						"[pulse levels]",
 						`bass=${bass.toFixed(3)}`,
-						`drums=${Math.max(kick, drumBody, cymbals).toFixed(3)}`,
+						`bass_drums=${bassDrum.toFixed(3)}`,
+						`drums=${Math.max(drumBody, cymbals).toFixed(3)}`,
 						`bassRise=${bassRise.toFixed(3)}`,
+						`bassDrumRise=${bassDrumRise.toFixed(3)}`,
 						`drumRise=${drumRise.toFixed(3)}`,
 						`pulse=${beatEnergy.value.toFixed(2)}`,
 					)
@@ -300,7 +355,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 				if (isBassHit) {
 					lastBassHitAt = now
 					lastDrumHitAt = now
-				} else if (isDrumHit) lastDrumHitAt = now
+					lastBassDrumHitAt = now
+				}
 				analysisFrame = requestAnimationFrame(sample)
 			}
 			analysisFrame = requestAnimationFrame(sample)
