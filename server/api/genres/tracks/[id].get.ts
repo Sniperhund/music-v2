@@ -1,7 +1,7 @@
 import { getQuery, getRouterParam } from "h3"
 import mongoose, { type PipelineStage } from "mongoose"
 import { Track } from "../../../models/track"
-import { parseMongoId, parseNumber, validationResponse } from "../../../utils/api-validation"
+import { MAX_QUERY_LIMIT, parseMongoId, parseNumber, validationResponse } from "../../../utils/api-validation"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../../utils/auth"
 
 export default defineAuthenticatedEventHandler(async (event) => {
@@ -11,7 +11,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	if ("error" in id) return validationResponse(event, id.error)
 
 	const { limit: rawLimit } = getQuery(event)
-	const limit = parseNumber(rawLimit, 10, 1)
+	const limit = parseNumber(rawLimit, 10, 1, MAX_QUERY_LIMIT)
 	if ("error" in limit) return validationResponse(event, limit.error)
 
 	const pipeline: PipelineStage[] = [

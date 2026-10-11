@@ -1,7 +1,7 @@
 import { getQuery, getRouterParam } from "h3"
 import { Album } from "../../../models/album"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../../utils/auth"
-import { parseMongoId, parseNumber, validationResponse } from "../../../utils/api-validation"
+import { MAX_QUERY_LIMIT, parseMongoId, parseNumber, validationResponse } from "../../../utils/api-validation"
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event)
@@ -10,7 +10,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	if ("error" in parsedId) return validationResponse(event, parsedId.error)
 
 	const query = getQuery(event)
-	const limit = parseNumber(query.limit, 9, 1)
+	const limit = parseNumber(query.limit, 9, 1, MAX_QUERY_LIMIT)
 	if ("error" in limit) return validationResponse(event, limit.error)
 	const skip = parseNumber(query.skip, 0, 0)
 	if ("error" in skip) return validationResponse(event, skip.error)

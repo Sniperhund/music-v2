@@ -1,5 +1,6 @@
 import { getQuery } from "h3"
 import {
+	MAX_QUERY_LIMIT,
 	parseNumber,
 	parseQueryString,
 	validationResponse,
@@ -29,7 +30,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		type = parsedType.value
 	}
 
-	const parsedLimit = parseNumber(query.limit, 9, 1)
+	const parsedLimit = parseNumber(query.limit, 9, 1, MAX_QUERY_LIMIT)
 	if ("error" in parsedLimit) return validationResponse(event, parsedLimit.error)
 	const limit = parsedLimit.value
 	const indexes = await getSearchIndexes()
