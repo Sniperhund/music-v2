@@ -7,9 +7,19 @@ import {
 	REFRESH_COOKIE,
 } from "../../utils/auth"
 import { getAuthValidationMessage } from "../../utils/auth-validation"
+import {
+	clearSignInFailures,
+	isSignInRateLimited,
+	recordSignInFailure,
+} from "../../utils/sign-in-rate-limit"
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	assertCookieRequestOrigin(event)
+	if (isSignInRateLimited(event)) {
+		setResponseStatus(event, 429)
+		return { message: "Too many sign-in attempts. Try again later." }
+	}
+
 	const body = await readBody(event)
 	const validationMessage = getAuthValidationMessage(body, [
 		{ name: "email", email: true },
@@ -35,10 +45,12 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 
 	if (!user || !passwordMatches) {
+		recordSignInFailure(event)
 		setResponseStatus(event, 400)
 		return { message: "The email or password is wrong" }
 	}
 
+	clearSignInFailures(event)
 	setCookie(event, REFRESH_COOKIE, user.refreshToken, {
 		path: "/",
 		httpOnly: true,
