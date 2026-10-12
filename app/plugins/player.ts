@@ -3,7 +3,7 @@ import { shapeBeatPulse } from "~/utils/beat"
 
 export default defineNuxtPlugin((nuxtApp) => {
 	const mediaBaseUrl = useRuntimeConfig().public.mediaBaseUrl
-	const { close: closeFullscreen } = useFullscreen()
+	const { fullscreen, close: closeFullscreen } = useFullscreen()
 	if (import.meta.client) {
 		const howlerInternal = Howler as unknown as {
 			_obtainHtml5Audio: () => HTMLAudioElement
@@ -24,7 +24,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const DEBUG_BEAT_ANALYSIS = false
 	const BASS_DRUM_PULSE_MULTIPLIER = 0.9
 	const DRUM_PULSE_MULTIPLIER = 0.7
-	const BEAT_ANALYSIS_FRAME_INTERVAL = 1000 / 60
+	const BEAT_ANALYSIS_FRAME_INTERVAL = 1000 / 30
 
 	const sound = ref<Howl | null>(null)
 	const queue = ref<Track[]>([])
@@ -381,6 +381,13 @@ export default defineNuxtPlugin((nuxtApp) => {
 		}
 	}
 
+	const syncBeatAnalysis = () => {
+		if (fullscreen.value && isPlaying.value && sound.value)
+			startBeatAnalysis(sound.value)
+		else stopBeatAnalysis("fullscreen inactive or playback stopped")
+	}
+	watch([fullscreen, isPlaying, sound], syncBeatAnalysis)
+
 	// Helpers
 	const updateMediaSession = () => {
 		if (!import.meta.client) return
@@ -488,7 +495,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				lastPositionUpdate = now
 				updateMediaSession()
 			}
-			trackingTimer = window.setTimeout(update, 250)
+			trackingTimer = window.setTimeout(update, 500)
 		}
 
 		update()
@@ -539,7 +546,6 @@ export default defineNuxtPlugin((nuxtApp) => {
 			},
 			onplay: () => {
 				isPlaying.value = true
-				startBeatAnalysis(newSound)
 				startTracking()
 				if (navigator.mediaSession)
 					navigator.mediaSession.playbackState = "playing"
