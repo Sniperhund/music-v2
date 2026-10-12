@@ -24,6 +24,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const DEBUG_BEAT_ANALYSIS = false
 	const BASS_DRUM_PULSE_MULTIPLIER = 0.9
 	const DRUM_PULSE_MULTIPLIER = 0.7
+	const BEAT_ANALYSIS_FRAME_INTERVAL = 1000 / 60
 
 	const sound = ref<Howl | null>(null)
 	const queue = ref<Track[]>([])
@@ -168,6 +169,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 			let pulse = 0
 			let pulseTarget = 0
 			let lastPulseUpdateAt: number | null = null
+			let lastAnalysisAt: number | null = null
 			let lastBassHitAt = 0
 			let lastDrumHitAt = 0
 			let lastBassDrumHitAt = 0
@@ -176,8 +178,16 @@ export default defineNuxtPlugin((nuxtApp) => {
 			let bassDrumCooldown = 240
 			let lastPulseLogAt = 0
 			let lastLevelLogAt = 0
-			const sample = () => {
+			const sample = (frameTime: number) => {
 				if (!analysisNode) return
+				if (
+					lastAnalysisAt !== null &&
+					frameTime - lastAnalysisAt < BEAT_ANALYSIS_FRAME_INTERVAL
+				) {
+					analysisFrame = requestAnimationFrame(sample)
+					return
+				}
+				lastAnalysisAt = frameTime
 				analysisNode.getByteFrequencyData(samples)
 				const sampleRate = analysisContext!.sampleRate
 				const bandEnergy = (lowHz: number, highHz: number) => {
@@ -333,7 +343,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 				const pulseSmoothing =
 					1 - Math.exp(-pulseDelta / (pulseTarget > pulse ? 90 : 150))
 				pulse += (pulseTarget - pulse) * pulseSmoothing
-				beatEnergy.value = Math.min(1, pulse)
+				const nextBeatEnergy =
+					Math.round(Math.min(1, pulse) * 100) / 100
+				if (nextBeatEnergy !== beatEnergy.value)
+					beatEnergy.value = nextBeatEnergy
 				if (DEBUG_BEAT_ANALYSIS && now - lastLevelLogAt > 5000) {
 					lastLevelLogAt = now
 					console.info(
@@ -475,7 +488,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				lastPositionUpdate = now
 				updateMediaSession()
 			}
-			trackingTimer = window.setTimeout(update, 100)
+			trackingTimer = window.setTimeout(update, 250)
 		}
 
 		update()

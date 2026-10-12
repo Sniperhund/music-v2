@@ -21,14 +21,22 @@ const hasParsedLyrics = computed(() => parsedLyrics.value.length > 0)
 const findLyricIndex = (time: number) => {
 	if (!hasParsedLyrics.value) return -1
 
-	const index = parsedLyrics.value.findIndex(
-		(lyric, i) =>
-			lyric.time <= time &&
-			(!parsedLyrics.value![i + 1] ||
-				parsedLyrics.value![i + 1]!.time > time),
-	)
+	const lyrics = parsedLyrics.value
+	let low = 0
+	let high = lyrics.length - 1
+	let match = -1
 
-	return index
+	while (low <= high) {
+		const middle = Math.floor((low + high) / 2)
+		if (lyrics[middle]!.time <= time) {
+			match = middle
+			low = middle + 1
+		} else {
+			high = middle - 1
+		}
+	}
+
+	return match
 }
 
 const activeIndex = computed(() => {

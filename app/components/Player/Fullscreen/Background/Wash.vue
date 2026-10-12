@@ -11,7 +11,7 @@ import { shapeBeatPulse } from "~/utils/beat"
 const props = defineProps<{ src: string; active: boolean }>()
 const ANIMATION_SPEED = 0.3
 const CPU_FRAME_INTERVAL = 1000 / 12
-const WEBGPU_FRAME_INTERVAL = 1000 / 60
+const WEBGPU_FRAME_INTERVAL = 1000 / 30
 const { beatEnergy } = usePlayer()
 const cpuCanvas = ref<HTMLCanvasElement | null>(null)
 const webGpuCanvas = ref<HTMLCanvasElement | null>(null)
