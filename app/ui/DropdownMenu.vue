@@ -3,6 +3,7 @@ export interface DropdownMenuItem {
 	label: string
 	icon: string
 	onSelect?: () => void
+	children?: DropdownMenuItem[]
 }
 
 interface DropdownMenuProps {
@@ -98,20 +99,43 @@ onBeforeMount(() => {
 						:key="`group-${i}`"
 						class="group"
 					>
-						<button
+						<div
 							v-for="(item, i) in group"
 							:key="`item-${i}`"
-							class="item"
-							@click="
-								() => {
+							class="item-wrapper"
+						>
+							<button
+								class="item"
+								:class="{ 'has-children': item.children?.length }"
+								@click="
+									() => {
+									if (item.children?.length) return
 									item.onSelect?.()
 									close()
 								}
-							"
-						>
-							<Icon :name="item.icon" class="icon" />
-							<span>{{ item.label }}</span>
-						</button>
+								"
+							>
+								<Icon :name="item.icon" class="icon" />
+								<span>{{ item.label }}</span>
+								<Icon v-if="item.children?.length" name="lucide:chevron-right" class="submenu-icon" />
+							</button>
+							<div v-if="item.children?.length" class="submenu">
+								<button
+									v-for="(child, childIndex) in item.children"
+									:key="`child-${childIndex}`"
+									class="item"
+									@click="
+										() => {
+											child.onSelect?.()
+											close()
+										}
+									"
+								>
+									<Icon :name="child.icon" class="icon" />
+									<span>{{ child.label }}</span>
+								</button>
+							</div>
+						</div>
 					</div>
 				</div>
 			</Teleport>
@@ -173,6 +197,31 @@ onBeforeMount(() => {
 		}
 	}
 
+	.item-wrapper {
+		position: relative;
+	}
+
+	.submenu {
+		position: absolute;
+		top: -0.5rem;
+		right: 100%;
+		min-width: 180px;
+		max-height: 60vh;
+		overflow-y: auto;
+		padding: 0.5rem;
+		border-radius: $border-radius-standard;
+		background-color: $color-secondary-background;
+		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+		display: none;
+		flex-direction: column;
+		gap: 4px;
+	}
+
+	.item-wrapper:hover > .submenu,
+	.item-wrapper:focus-within > .submenu {
+		display: flex;
+	}
+
 	.item {
 		display: flex;
 		align-items: center;
@@ -194,6 +243,15 @@ onBeforeMount(() => {
 
 	.item:hover {
 		background-color: $color-button-hover;
+	}
+
+	.item.has-children {
+		width: 100%;
+		text-align: left;
+	}
+
+	.submenu-icon {
+		margin-left: auto;
 	}
 
 	.icon {

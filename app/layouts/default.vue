@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Playlist } from "@/utils/types"
+
 const router = useRouter()
 
 let timeout: ReturnType<typeof setTimeout>
@@ -13,6 +15,8 @@ const onSearchInput = (v: string) => {
 }
 
 const { data: user } = useApiFetch<any>("/user")
+const { data: playlistsData } = useApiFetch<Playlist[]>("/user/playlists")
+const playlists = computed(() => playlistsData.value ?? [])
 </script>
 
 <template>
@@ -69,6 +73,30 @@ const { data: user } = useApiFetch<any>("/user")
 					icon-name="lucide:music"
 				>
 					Songs
+				</Button>
+			</div>
+
+			<div class="category">
+				<p>Playlists</p>
+				<Button
+					full
+					variant="ghost"
+					to="/library/playlists"
+					type="link"
+					icon-name="lucide:list-music"
+				>
+					All Playlists
+				</Button>
+				<Button
+					v-for="playlist in playlists"
+					:key="playlist._id"
+					full
+					variant="ghost"
+					:to="`/library/playlists/${playlist._id}`"
+					type="link"
+					icon-name="lucide:list-music"
+				>
+					{{ playlist.name }}
 				</Button>
 			</div>
 

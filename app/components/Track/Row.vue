@@ -27,6 +27,52 @@ const route = useRoute()
 const hovering = ref(false)
 const { playAlbum, addToFrontOfQueue, addToQueue } = usePlayer()
 const toast = useToast()
+const { data: playlistsData } = useApiFetch<import("@/utils/types").Playlist[]>("/user/playlists")
+const playlists = computed(() => playlistsData.value ?? [])
+const createPlaylistModalOpen = ref(false)
+const newPlaylistName = ref("")
+const creatingPlaylist = ref(false)
+const createPlaylistError = ref("")
+
+const addTrackToPlaylist = async (playlistId: string, playlistName: string) => {
+	if (!props.track) return
+	try {
+		await $fetch(`/api/user/playlists/${playlistId}/tracks`, {
+			method: "POST",
+			body: { trackId: props.track._id },
+		})
+		toast.show(`Added to ${playlistName}`)
+	} catch {
+		toast.show("Could not add song to playlist")
+	}
+}
+
+const createPlaylistAndAddTrack = async () => {
+	if (!props.track) return
+	newPlaylistName.value = ""
+	createPlaylistError.value = ""
+	createPlaylistModalOpen.value = true
+}
+
+const submitNewPlaylist = async () => {
+	if (!props.track || creatingPlaylist.value) return
+	const name = newPlaylistName.value.trim()
+	if (!name) return
+	creatingPlaylist.value = true
+	try {
+		const playlist = await $fetch<{ _id: string; name: string }>("/api/user/playlists", {
+			method: "POST",
+			body: { name },
+		})
+		await addTrackToPlaylist(playlist._id, playlist.name)
+		await refreshNuxtData("/api/user/playlists")
+		createPlaylistModalOpen.value = false
+	} catch (error: any) {
+		createPlaylistError.value = error?.data?.message ?? "Could not create playlist."
+	} finally {
+		creatingPlaylist.value = false
+	}
+}
 const { isSaved, toggleSaved } = useTrackLibrary(() =>
 	props.queueMode ? undefined : props.track?._id,
 )
@@ -76,9 +122,18 @@ const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
 		{
 			label: "Add to playlist",
 			icon: "lucide:list-plus",
-			onSelect() {
-				toast.show("Playlists are not implemented")
-			},
+			children: [
+				{
+					label: "New Playlist",
+					icon: "lucide:plus",
+					onSelect: createPlaylistAndAddTrack,
+				},
+				...playlists.value.map((playlist) => ({
+					label: playlist.name,
+					icon: "lucide:list-music",
+					onSelect: () => addTrackToPlaylist(playlist._id, playlist.name),
+				})),
+			],
 		},
 	],
 	[
@@ -197,6 +252,23 @@ const artworkSrc = computed(() => {
 		<DropdownMenu v-else-if="props.track" :items="visibleDropdownMenuItems">
 			<Icon name="lucide:ellipsis" class="dropdown-icon" />
 		</DropdownMenu>
+		<Modal v-model:open="createPlaylistModalOpen">
+			<form class="create-playlist-form" @submit.prevent="submitNewPlaylist">
+				<h2>Create playlist</h2>
+				<Input v-model:value="newPlaylistName" placeholder="Playlist name" required />
+				<p v-if="createPlaylistError" class="create-playlist-error" role="alert">
+					{{ createPlaylistError }}
+				</p>
+				<div class="create-playlist-actions">
+					<Button variant="ghost" @click="createPlaylistModalOpen = false">
+						Cancel
+					</Button>
+					<button class="create-submit" type="submit" :disabled="creatingPlaylist">
+						{{ creatingPlaylist ? "Creating…" : "Create" }}
+					</button>
+				</div>
+			</form>
+		</Modal>
 	</article>
 </template>
 
@@ -251,6 +323,40 @@ const artworkSrc = computed(() => {
 		color: inherit;
 		text-decoration: none;
 	}
+}
+
+.create-playlist-form {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+
+	h2 {
+		font-size: 1.1rem;
+		font-weight: 600;
+	}
+}
+
+.create-playlist-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+}
+
+.create-submit {
+	padding: 0.6rem 1rem;
+	border-radius: $border-radius-standard;
+	background: $color-button;
+	font-weight: 600;
+	cursor: pointer;
+
+	&:disabled {
+		cursor: wait;
+		opacity: 0.65;
+	}
+}
+
+.create-playlist-error {
+	color: #ff7676;
 }
 
 .index {

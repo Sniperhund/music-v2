@@ -29,3 +29,10 @@ export interface Track extends Base {
 	artists: Artist[]
 	durationInSeconds: number
 }
+
+export interface Playlist extends Base {
+	name: string
+	tracks: Track[]
+	createdAt: string
+	updatedAt: string
+}
