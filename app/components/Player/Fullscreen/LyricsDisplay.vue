@@ -9,6 +9,7 @@ const song = useSong()
 const { fullscreen } = useFullscreen()
 const { secondsPlayed, refreshPosition } = usePlayer()
 const debugView = useCookie("DEBUG_VIEW")
+const activeHighlightLead = 0.05
 const debugViewEnabled = computed(() => String(debugView.value ?? "") === "1")
 
 const parsedLyrics = computed(() => {
@@ -40,7 +41,9 @@ const findLyricIndex = (time: number) => {
 }
 
 const activeIndex = computed(() => {
-	return findLyricIndex(secondsPlayed.value)
+	return findLyricIndex(
+		secondsPlayed.value + animationDuration + activeHighlightLead,
+	)
 })
 const scrollActiveIndex = computed(() => {
 	if (!hasParsedLyrics.value) return -1

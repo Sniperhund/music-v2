@@ -495,7 +495,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				lastPositionUpdate = now
 				updateMediaSession()
 			}
-			trackingTimer = window.setTimeout(update, 500)
+			trackingTimer = window.setTimeout(update, 100)
 		}
 
 		update()
