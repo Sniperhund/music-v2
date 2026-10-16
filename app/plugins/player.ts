@@ -20,6 +20,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 		}
 	}
 	const VOLUME_STORAGE_KEY = "music-v2-player-volume"
+	const HANDOFF_SYNC_INTERVAL_MS = 15_000
 	const DEFAULT_VOLUME = 0.5
 	const DEBUG_BEAT_ANALYSIS = false
 	const BASS_DRUM_PULSE_MULTIPLIER = 0.9
@@ -96,6 +97,43 @@ export default defineNuxtPlugin((nuxtApp) => {
 	let lastPositionUpdate = 0
 	let trackingTimer: number | null = null
 	let mediaSessionSongId: string | null = null
+	let handoffSyncTimer: number | null = null
+	let handoffSaveInFlight = false
+	let handoffSavePending = false
+	let handoffLastSavedAt = 0
+
+	const savePlaybackHandoff = async () => {
+		if (!import.meta.client || !currentSong.value || !useAuth().authenticated.value) return
+		if (handoffSaveInFlight) {
+			handoffSavePending = true
+			return
+		}
+		handoffSaveInFlight = true
+		try {
+			await $fetch("/api/user/playback-handoff", {
+				method: "PUT",
+				body: {
+					currentTrackId: currentSong.value._id,
+					position: secondsPlayed.value,
+					queueTrackIds: currentQueue.value.map((track) => track._id),
+					remainingTrackIds: queue.value.map((track) => track._id),
+					historyTrackIds: prevQueue.value.map((track) => track._id),
+					repeat: repeat.value,
+					repeatOnce: repeatOnce.value,
+					wasPlaying: isPlaying.value,
+				},
+			})
+			handoffLastSavedAt = Date.now()
+		} catch {
+			// Playback continues if the handoff endpoint is temporarily unavailable.
+		} finally {
+			handoffSaveInFlight = false
+			if (handoffSavePending) {
+				handoffSavePending = false
+				void savePlaybackHandoff()
+			}
+		}
+	}
 
 	const stopBeatAnalysis = (reason = "stopped") => {
 		if (isAnalyzing && DEBUG_BEAT_ANALYSIS)
@@ -506,6 +544,16 @@ export default defineNuxtPlugin((nuxtApp) => {
 		trackingTimer = null
 	}
 
+	if (import.meta.client) {
+		watch([currentSong, queue, currentQueue, prevQueue, repeat, repeatOnce, isPlaying], () => {
+			void savePlaybackHandoff()
+		}, { deep: true })
+			handoffSyncTimer = window.setInterval(() => {
+				if (isPlaying.value && Date.now() - handoffLastSavedAt >= HANDOFF_SYNC_INTERVAL_MS)
+					void savePlaybackHandoff()
+			}, HANDOFF_SYNC_INTERVAL_MS)
+	}
+
 	const createHowl = async (song: Track) => {
 		if (!import.meta.client) return
 		if (!song) throw new Error("Song not provided")
@@ -654,6 +702,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 		sound.value?.stop()
 		sound.value = null
 		updateMediaSession()
+		if (import.meta.client && useAuth().authenticated.value)
+			void $fetch("/api/user/playback-handoff", { method: "DELETE" }).catch(() => {})
 	}
 
 	if (import.meta.client) {
