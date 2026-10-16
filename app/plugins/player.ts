@@ -101,9 +101,20 @@ export default defineNuxtPlugin((nuxtApp) => {
 	let handoffSaveInFlight = false
 	let handoffSavePending = false
 	let handoffLastSavedAt = 0
+	let handoffRestorePending = false
+	let handoffRestoreAttempted = false
+
+	const consumePlaybackHandoff = async () => {
+		try {
+			await $fetch("/api/user/playback-handoff", { method: "DELETE" })
+			handoffRestorePending = false
+		} catch {
+			// Keep the restored state marked as pending if the consume request fails.
+		}
+	}
 
 	const savePlaybackHandoff = async () => {
-		if (!import.meta.client || !currentSong.value || !useAuth().authenticated.value) return
+		if (!import.meta.client || handoffRestorePending || !currentSong.value || !useAuth().authenticated.value) return
 		if (handoffSaveInFlight) {
 			handoffSavePending = true
 			return
@@ -546,7 +557,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 	if (import.meta.client) {
 		watch([currentSong, queue, currentQueue, prevQueue, repeat, repeatOnce, isPlaying], () => {
-			void savePlaybackHandoff()
+			if (!handoffRestorePending) void savePlaybackHandoff()
 		}, { deep: true })
 			handoffSyncTimer = window.setInterval(() => {
 				if (isPlaying.value && Date.now() - handoffLastSavedAt >= HANDOFF_SYNC_INTERVAL_MS)
@@ -597,6 +608,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				startTracking()
 				if (navigator.mediaSession)
 					navigator.mediaSession.playbackState = "playing"
+				if (handoffRestorePending) void consumePlaybackHandoff()
 			},
 			onpause: () => {
 				stopBeatAnalysis("paused")
@@ -625,6 +637,75 @@ export default defineNuxtPlugin((nuxtApp) => {
 		}
 
 		updateMediaSession()
+	}
+
+	const restorePlaybackHandoff = async () => {
+		if (handoffRestoreAttempted || !useAuth().authenticated.value || currentSong.value) return
+		handoffRestoreAttempted = true
+		try {
+			const handoff = await $fetch<{
+				currentTrackId: string
+				position: number
+				queueTrackIds: string[]
+				remainingTrackIds: string[]
+				historyTrackIds: string[]
+				repeat: boolean
+				repeatOnce: boolean
+				wasPlaying: boolean
+			} | null>("/api/user/playback-handoff")
+			if (!handoff || currentSong.value) return
+
+			const allIds = [...new Set([
+				handoff.currentTrackId,
+				...handoff.queueTrackIds,
+				...handoff.remainingTrackIds,
+				...handoff.historyTrackIds,
+			])]
+			const tracks = await $fetch<Track[]>("/api/tracks", {
+				params: { ids: allIds.join(",") },
+			})
+			const tracksById = new Map(tracks.map((track) => [track._id, track]))
+			const currentTrack = tracksById.get(handoff.currentTrackId)
+			if (!currentTrack) return
+			const restoreTracks = (ids: string[]) => ids.flatMap((id) => {
+				const track = tracksById.get(id)
+				return track ? [track] : []
+			})
+
+			handoffRestorePending = true
+			currentSong.value = currentTrack
+			currentQueue.value = restoreTracks(handoff.queueTrackIds)
+			queue.value = restoreTracks(handoff.remainingTrackIds)
+			prevQueue.value = restoreTracks(handoff.historyTrackIds)
+			repeat.value = handoff.repeat
+			repeatOnce.value = handoff.repeatOnce
+			const restoredSound = await createHowl(currentTrack)
+			if (!restoredSound) return
+			if (restoredSound.state() !== "loaded") {
+				await new Promise<void>((resolve, reject) => {
+					restoredSound.once("load", () => resolve())
+					restoredSound.once("loaderror", (_id, error) => reject(error))
+				})
+			}
+			restoredSound.seek(Math.min(handoff.position, restoredSound.duration()))
+			refreshPosition()
+			updateMediaSession()
+
+			if (handoff.wasPlaying) {
+				restoredSound.play()
+			} else {
+				await consumePlaybackHandoff()
+			}
+		} catch {
+			// Leave the server handoff available if restoring it fails.
+			handoffRestorePending = false
+		}
+	}
+
+	if (import.meta.client) {
+		watch(useAuth().authenticated, (authenticated) => {
+			if (authenticated) void restorePlaybackHandoff()
+		}, { immediate: true })
 	}
 
 	const pause = () => {
