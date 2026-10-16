@@ -662,7 +662,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				...handoff.historyTrackIds,
 			])]
 			const tracks = await $fetch<Track[]>("/api/tracks", {
-				params: { ids: allIds.join(",") },
+				params: { ids: allIds },
 			})
 			const tracksById = new Map(tracks.map((track) => [track._id, track]))
 			const currentTrack = tracksById.get(handoff.currentTrackId)
@@ -712,6 +712,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 		sound.value?.pause()
 		isPlaying.value = false
 		updateMediaSession()
+		void savePlaybackHandoff()
 	}
 
 	const cycleRepeat = () => {
