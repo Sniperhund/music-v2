@@ -153,6 +153,17 @@ const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
 			},
 		},
 	],
+	[
+		{
+			label: "Copy track ID",
+			icon: "lucide:copy",
+			async onSelect() {
+				if (!props.track) return
+				await navigator.clipboard.writeText(props.track._id)
+				toast.show("Track ID copied")
+			},
+		},
+	],
 ])
 
 const visibleDropdownMenuItems = computed(() =>

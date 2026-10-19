@@ -226,6 +226,8 @@ onBeforeMount(() => {
 		display: flex;
 		align-items: center;
 		gap: 8px;
+		width: 100%;
+		box-sizing: border-box;
 
 		padding: 0.5rem;
 		border-radius: $border-radius-standard;
@@ -233,6 +235,7 @@ onBeforeMount(() => {
 		background: transparent;
 		border: none;
 		cursor: pointer;
+		text-align: left;
 
 		transition: background-color 0.2s ease;
 
