@@ -21,6 +21,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	}
 	const VOLUME_STORAGE_KEY = "music-v2-player-volume"
 	const HANDOFF_SYNC_INTERVAL_MS = 15_000
+	const HANDOFF_ENABLED = !import.meta.dev
 	const DEFAULT_VOLUME = 0.5
 	const DEBUG_BEAT_ANALYSIS = false
 	const BASS_DRUM_PULSE_MULTIPLIER = 0.9
@@ -106,6 +107,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	let handoffRestoreAttempted = false
 
 	const consumePlaybackHandoff = async () => {
+		if (!HANDOFF_ENABLED) return
 		try {
 			await $fetch("/api/user/playback-handoff", { method: "DELETE" })
 			handoffRestorePending = false
@@ -115,7 +117,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	}
 
 	const savePlaybackHandoff = async () => {
-		if (!import.meta.client || handoffRestorePending || !currentSong.value || !useAuth().authenticated.value) return
+		if (!HANDOFF_ENABLED || !import.meta.client || handoffRestorePending || !currentSong.value || !useAuth().authenticated.value) return
 		if (handoffSaveInFlight) {
 			handoffSavePending = true
 			return
@@ -580,7 +582,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 		trackingTimer = null
 	}
 
-	if (import.meta.client) {
+	if (import.meta.client && HANDOFF_ENABLED) {
 		watch([currentSong, queue, currentQueue, prevQueue, repeat, repeatOnce, isPlaying], () => {
 			if (!handoffRestorePending) void savePlaybackHandoff()
 		}, { deep: true })
@@ -665,7 +667,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	}
 
 	const restorePlaybackHandoff = async () => {
-		if (handoffRestoreAttempted || !useAuth().authenticated.value || currentSong.value) return
+		if (!HANDOFF_ENABLED || handoffRestoreAttempted || !useAuth().authenticated.value || currentSong.value) return
 		handoffRestoreAttempted = true
 		try {
 			const handoff = await $fetch<{
@@ -727,7 +729,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 		}
 	}
 
-	if (import.meta.client) {
+	if (import.meta.client && HANDOFF_ENABLED) {
 		watch(useAuth().authenticated, (authenticated) => {
 			if (authenticated) void restorePlaybackHandoff()
 		}, { immediate: true })
@@ -809,7 +811,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 		sound.value?.stop()
 		sound.value = null
 		updateMediaSession()
-		if (import.meta.client && useAuth().authenticated.value)
+		if (HANDOFF_ENABLED && import.meta.client && useAuth().authenticated.value)
 			void $fetch("/api/user/playback-handoff", { method: "DELETE" }).catch(() => {})
 	}
 
