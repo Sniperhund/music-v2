@@ -6,6 +6,7 @@ useHead({ title: "Home" })
 	<section class="home-page">
 		<h1>Home</h1>
 		<AlbumRecentlyPlayed />
+		<AlbumNewForYou />
 	</section>
 </template>
 
