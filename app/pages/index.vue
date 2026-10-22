@@ -3,5 +3,20 @@ useHead({ title: "Home" })
 </script>
 
 <template>
-	<h1>Home</h1>
+	<section class="home-page">
+		<h1>Home</h1>
+		<AlbumRecentlyPlayed />
+	</section>
 </template>
+
+<style lang="scss" scoped>
+@use "@/styles/util" as *;
+
+.home-page {
+	h1 {
+		@include fontSize(32px);
+		font-weight: 700;
+		margin-bottom: 1rem;
+	}
+}
+</style>

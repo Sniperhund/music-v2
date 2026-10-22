@@ -1,6 +1,7 @@
 <script setup lang="ts">
 interface SliderProps {
 	title?: string
+	href?: string
 	scrollWidth?: () => number
 	sliderClass?: string
 }
@@ -56,7 +57,15 @@ onMounted(() => {
 
 <template>
 	<div class="slider-container">
-		<p>{{ props.title }}</p>
+		<NuxtLink v-if="props.href" class="slider-title" :to="props.href">
+			{{ props.title }}
+			<Icon
+				aria-hidden="true"
+				name="material-symbols:chevron-right-rounded"
+				size="1.5em"
+			/>
+		</NuxtLink>
+		<p v-else class="slider-title">{{ props.title }}</p>
 
 		<div>
 			<Icon
@@ -82,10 +91,15 @@ onMounted(() => {
 @use "@/styles/util" as *;
 
 .slider-container {
-	& > p {
-		margin-bottom: 0.5rem;
+	.slider-title {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.15rem;
+		margin: 0 0 0.5rem;
 		@include fontSize(20px);
 		font-weight: 600;
+		color: inherit;
+		text-decoration: none;
 	}
 
 	& > div {
