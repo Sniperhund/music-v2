@@ -42,6 +42,15 @@ const playlists = computed(() => playlistsData.value ?? [])
 				>
 					Home
 				</Button>
+				<Button
+					full
+					variant="ghost"
+					to="/new"
+					type="link"
+					icon-name="lucide:blocks"
+				>
+					New
+				</Button>
 			</div>
 
 			<div class="category">

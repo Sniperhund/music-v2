@@ -4,6 +4,4 @@ useHead({ title: "Home" })
 
 <template>
 	<h1>Home</h1>
-
-	<AlbumSlider />
 </template>
