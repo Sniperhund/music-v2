@@ -23,6 +23,7 @@ const userSchema = new Schema(
 		},
 		verified: { type: Boolean, default: false, required: true, select: false },
 		savedTracks: [{ type: Schema.Types.ObjectId, ref: "Track" }],
+		recentlyPlayedAlbums: [{ type: Schema.Types.ObjectId, ref: "Album" }],
 	},
 	{ timestamps: true },
 )

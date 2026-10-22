@@ -96,6 +96,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const duration = ref(0)
 	let lastPositionUpdate = 0
 	let trackingTimer: number | null = null
+	let recentlyPlayedSound: Howl | null = null
 	let mediaSessionSongId: string | null = null
 	let handoffSyncTimer: number | null = null
 	let handoffSaveInFlight = false
@@ -535,10 +536,34 @@ export default defineNuxtPlugin((nuxtApp) => {
 		}
 	}
 
+	const saveRecentlyPlayedAlbum = () => {
+		const currentSound = sound.value
+		const currentTrack = currentSong.value
+		if (
+			!currentSound ||
+			!currentTrack ||
+			!useAuth().authenticated.value ||
+			recentlyPlayedSound === currentSound
+		) return
+
+		const trackDuration = currentSound.duration()
+		const position = currentSound.seek() as number
+		if (!trackDuration || position / trackDuration <= 0.3) return
+
+		recentlyPlayedSound = currentSound
+		void $fetch("/api/user/recently-played", {
+			method: "POST",
+			body: { albumId: currentTrack.album._id },
+		}).catch(() => {
+			if (recentlyPlayedSound === currentSound) recentlyPlayedSound = null
+		})
+	}
+
 	const startTracking = () => {
 		if (trackingTimer !== null) window.clearTimeout(trackingTimer)
 		const update = () => {
 			tick.value++
+			saveRecentlyPlayedAlbum()
 			const now = Date.now()
 			if (now - lastPositionUpdate >= 1000) {
 				lastPositionUpdate = now
