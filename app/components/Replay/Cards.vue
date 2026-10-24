@@ -34,7 +34,10 @@ const gradients = ["gold", "pink", "orange", "green", "blue"]
 				:class="['replay-card', `gradient-${gradients[index % gradients.length]}`]"
 			>
 				<span class="card-kicker">Replay</span>
-				<strong class="card-title">{{ card.title }}</strong>
+				<strong class="card-title">
+					<template v-if="card.period === 'all-time'">All<br>Time</template>
+					<template v-else>{{ card.title.replace(", ", ",\n") }}</template>
+				</strong>
 				<span class="card-artists">
 					{{ card.topArtists.join(", ") || "Your listening highlights" }}
 				</span>
@@ -73,7 +76,7 @@ const gradients = ["gold", "pink", "orange", "green", "blue"]
 	text-decoration: none;
 	display: flex;
 	flex-direction: column;
-	justify-content: space-between;
+	justify-content: flex-start;
 	box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 18%);
 
 	&:focus-visible {
@@ -83,15 +86,19 @@ const gradients = ["gold", "pink", "orange", "green", "blue"]
 }
 
 .card-kicker {
-	@include fontSize(16px);
-	font-weight: 600;
+	@include fontSize(36px);
+	font-weight: 500;
+	margin-top: 4rem;
 }
 
 .card-title {
-	@include fontSize(42px);
+	@include fontSize(56px);
 	font-weight: 700;
-	line-height: 0.98;
+	line-height: 0.88;
+	letter-spacing: -0.035em;
 	overflow-wrap: anywhere;
+	white-space: pre-line;
+	margin-top: 1.25rem;
 }
 
 .card-artists {
@@ -99,6 +106,7 @@ const gradients = ["gold", "pink", "orange", "green", "blue"]
 	line-height: 1.35;
 	font-weight: 300;
 	opacity: 0.9;
+	margin-top: auto;
 }
 
 .gradient-gold {
@@ -106,7 +114,8 @@ const gradients = ["gold", "pink", "orange", "green", "blue"]
 }
 
 .gradient-pink {
-	background: linear-gradient(145deg, #32e2c5 0%, #e50073 58%, #ff922d 100%);
+	background:
+		linear-gradient(145deg, #32e2c5 0%, #e50073 58%, #ff922d 100%);
 }
 
 .gradient-orange {
