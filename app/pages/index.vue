@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import ReplayCards from "~/components/Replay/Cards.vue"
+
 useHead({ title: "Home" })
 </script>
 
 <template>
 	<section class="home-page">
 		<h1>Home</h1>
+		<ReplayCards />
 		<AlbumRecentlyPlayed />
 		<AlbumNewForYou />
 	</section>
