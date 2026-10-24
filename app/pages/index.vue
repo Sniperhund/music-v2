@@ -7,9 +7,9 @@ useHead({ title: "Home" })
 <template>
 	<section class="home-page">
 		<h1>Home</h1>
-		<ReplayCards />
 		<AlbumRecentlyPlayed />
 		<AlbumNewForYou />
+		<ReplayCards />
 	</section>
 </template>
 

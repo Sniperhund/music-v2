@@ -9,20 +9,28 @@ interface ReplayCard {
 	topArtists: string[]
 }
 
-const { data, status, error, refresh } = await useApiFetch<{ cards: ReplayCard[] }>("/user/replay")
+const { data, status, error, refresh } = await useApiFetch<{
+	cards: ReplayCard[]
+}>("/user/replay")
 const cards = computed(() => data.value?.cards ?? [])
 </script>
 
 <template>
 	<section class="replay-section" aria-labelledby="replay-heading">
-		<h2 id="replay-heading">Replay: Your Top Music</h2>
-		<p v-if="status === 'pending'" class="message" role="status">Loading your Replay…</p>
-		<div v-else-if="error" class="message" role="alert">
-			<p>Your Replay cards could not be loaded.</p>
-			<Button variant="ghost" @click="refresh">Try again</Button>
-		</div>
-		<p v-else-if="cards.length === 0" class="message">Your Replay cards will appear after you listen to some music.</p>
-		<div v-else class="replay-cards">
+		<template v-if="status === 'pending' || error || cards.length === 0">
+			<h2 id="replay-heading">Replay: Your Top Music</h2>
+			<p v-if="status === 'pending'" class="message" role="status">
+				Loading your Replay…
+			</p>
+			<div v-else-if="error" class="message" role="alert">
+				<p>Your Replay cards could not be loaded.</p>
+				<Button variant="ghost" @click="refresh">Try again</Button>
+			</div>
+			<p v-else class="message">
+				Your Replay cards will appear after you listen to some music.
+			</p>
+		</template>
+		<Slider v-else title="Replay: Your Top Music" slider-class="replay-cards">
 			<NuxtLink
 				v-for="card in cards"
 				:key="card.period"
@@ -37,7 +45,7 @@ const cards = computed(() => data.value?.cards ?? [])
 					:animate="true"
 				/>
 			</NuxtLink>
-		</div>
+		</Slider>
 	</section>
 </template>
 
@@ -45,7 +53,7 @@ const cards = computed(() => data.value?.cards ?? [])
 @use "@/styles/util" as *;
 
 .replay-section {
-	margin-bottom: 2rem;
+	margin-top: 2rem;
 
 	h2 {
 		@include fontSize(18px);
@@ -54,10 +62,8 @@ const cards = computed(() => data.value?.cards ?? [])
 	}
 }
 
-.replay-cards {
-	display: flex;
+:deep(.replay-cards) {
 	gap: 1rem;
-	overflow-x: auto;
 	padding-bottom: 0.5rem;
 }
 
