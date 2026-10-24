@@ -37,7 +37,7 @@ export async function getReplayStats(userId: unknown, window: ReplayWindow = {})
 			{ $lookup: { from: "artists", localField: "track.artists", foreignField: "_id", as: "artists" } },
 			{ $lookup: { from: "albums", localField: "track.album", foreignField: "_id", as: "album" } },
 			{ $unwind: { path: "$album", preserveNullAndEmptyArrays: true } },
-			{ $project: { _id: 0, track: { _id: "$track._id", name: "$track.name", artists: { $map: { input: "$artists", as: "artist", in: { _id: "$$artist._id", name: "$$artist.name" } } }, album: { _id: "$album._id", name: "$album.name", file: "$album.file" } }, playCount: 1, listenedSeconds: 1, lastPlayedAt: 1 } },
+			{ $project: { _id: 0, track: { _id: "$track._id", name: "$track.name", fileDir: "$track.fileDir", durationInSeconds: "$track.durationInSeconds", lyrics: "$track.lyrics", artists: { $map: { input: "$artists", as: "artist", in: { _id: "$$artist._id", name: "$$artist.name" } } }, album: { _id: "$album._id", name: "$album.name", file: "$album.file" } }, playCount: 1, listenedSeconds: 1, lastPlayedAt: 1 } },
 		]),
 		PlaybackEvent.aggregate([
 			{ $match: match },
