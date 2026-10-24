@@ -69,7 +69,7 @@ onMounted(() => {
 	mounted.value = true
 })
 
-onBeforeMount(() => {
+onBeforeUnmount(() => {
 	document.removeEventListener("click", handleOutsideClick)
 	document.removeEventListener("keydown", handleKey)
 	window.removeEventListener("resize", handleReposition)
@@ -106,18 +106,24 @@ onBeforeMount(() => {
 						>
 							<button
 								class="item"
-								:class="{ 'has-children': item.children?.length }"
+								:class="{
+									'has-children': item.children?.length,
+								}"
 								@click="
 									() => {
-									if (item.children?.length) return
-									item.onSelect?.()
-									close()
-								}
+										if (item.children?.length) return
+										item.onSelect?.()
+										close()
+									}
 								"
 							>
 								<Icon :name="item.icon" class="icon" />
 								<span>{{ item.label }}</span>
-								<Icon v-if="item.children?.length" name="lucide:chevron-right" class="submenu-icon" />
+								<Icon
+									v-if="item.children?.length"
+									name="lucide:chevron-right"
+									class="submenu-icon"
+								/>
 							</button>
 							<div v-if="item.children?.length" class="submenu">
 								<button
