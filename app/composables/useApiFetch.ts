@@ -1,5 +1,6 @@
 import type { UseFetchOptions } from "#app"
 import defu from "defu"
+import { cachedRequest } from "@/utils/requestCache"
 
 export function useApiFetch<DataT = any, ErrorT = any>(
 	url: string | Request | Ref<string | Request> | (() => string | Request),
@@ -17,6 +18,7 @@ export function useApiFetch<DataT = any, ErrorT = any>(
 		retryStatusCodes: [401],
 
 		headers: {},
+		...(import.meta.client ? { $fetch: cachedRequest as any } : {}),
 		onResponseError: async ({ request, response, options }) => {
 			if (response.status == 401 && authorize) {
 				const refreshed = await refreshSession()

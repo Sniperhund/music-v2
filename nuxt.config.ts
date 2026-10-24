@@ -36,4 +36,12 @@ export default defineNuxtConfig({
 			pathPrefix: true,
 		},
 	],
+	experimental: {
+		defaults: {
+			nuxtLink: {
+				prefetch: true,
+				prefetchOn: { interaction: true, visibility: false },
+			},
+		},
+	},
 })

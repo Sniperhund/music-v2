@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Album } from "@/utils/types"
+import { prefetchRequest } from "@/utils/requestCache"
 
 type AlbumProps = Omit<Omit<Album, "genre">, "artists"> & {
 	artists: Array<Omit<Artist, "file">>
@@ -7,11 +8,20 @@ type AlbumProps = Omit<Omit<Album, "genre">, "artists"> & {
 }
 
 const props = defineProps<AlbumProps>()
+
+const prefetchAlbum = () => {
+	prefetchRequest(`/albums/${props._id}`)
+	prefetchRequest(`/albums/${props._id}/tracks`)
+}
 </script>
 
 <template>
 	<article class="card">
-		<NuxtLink :to="`/album/${props._id}`">
+		<NuxtLink
+			:to="`/album/${props._id}`"
+			@pointerenter="prefetchAlbum"
+			@focus="prefetchAlbum"
+		>
 			<NuxtImg
 				:src="props.file"
 				:alt="props.name"
