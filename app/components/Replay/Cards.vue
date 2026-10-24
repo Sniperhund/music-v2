@@ -7,7 +7,9 @@ interface ReplayCard {
 	topArtists: string[]
 }
 
-const { data, status, error, refresh } = await useApiFetch<{ cards: ReplayCard[] }>("/user/replay")
+const { data, status, error, refresh } = await useApiFetch<{
+	cards: ReplayCard[]
+}>("/user/replay")
 const cards = computed(() => data.value?.cards ?? [])
 const gradients = ["gold", "pink", "orange", "green", "blue"]
 </script>
@@ -31,15 +33,25 @@ const gradients = ["gold", "pink", "orange", "green", "blue"]
 				v-for="(card, index) in cards"
 				:key="card.period"
 				:to="`/replay/${card.period}`"
-				:class="['replay-card', `gradient-${gradients[index % gradients.length]}`]"
+				:class="[
+					'replay-card',
+					`gradient-${gradients[index % gradients.length]}`,
+				]"
 			>
 				<span class="card-kicker">Replay</span>
 				<strong class="card-title">
-					<template v-if="card.period === 'all-time'">All<br>Time</template>
-					<template v-else>{{ card.title.replace(", ", ",\n") }}</template>
+					<template v-if="card.period === 'all-time'"
+						>All<br />Time</template
+					>
+					<template v-else>{{
+						card.title.replace(", ", ",\n")
+					}}</template>
 				</strong>
 				<span class="card-artists">
-					{{ card.topArtists.join(", ") || "Your listening highlights" }}
+					{{
+						card.topArtists.join(", ") ||
+						"Your listening highlights"
+					}}
 				</span>
 			</NuxtLink>
 		</div>
@@ -110,24 +122,33 @@ const gradients = ["gold", "pink", "orange", "green", "blue"]
 }
 
 .gradient-gold {
-	background: linear-gradient(145deg, #ffca36 0%, #ec624e 58%, #a876bd 100%);
+	background: linear-gradient(145deg, #ffc52d 0%, #ed6554 58%, #a978c6 100%);
 }
 
 .gradient-pink {
-	background:
-		linear-gradient(145deg, #32e2c5 0%, #e50073 58%, #ff922d 100%);
+	background: linear-gradient(145deg, #35d8c6 0%, #ed006d 58%, #ff8138 100%);
 }
 
 .gradient-orange {
-	background: linear-gradient(145deg, #f4ba18 0%, #f33d43 52%, #f5a900 100%);
+	background: linear-gradient(145deg, #f8b913 0%, #ee3947 52%, #f29b12 100%);
 }
 
 .gradient-green {
-	background: linear-gradient(145deg, #18cfba 0%, #54d885 52%, #faad1b 100%);
+	background: linear-gradient(145deg, #13cbb9 0%, #51d77e 52%, #f7a91c 100%);
 }
 
 .gradient-blue {
-	background: linear-gradient(145deg, #24d6d0 0%, #29a8ea 52%, #c5d82f 100%);
+	background: linear-gradient(145deg, #1fcfce 0%, #269fe5 52%, #bfd32a 100%);
+}
+
+.replay-card {
+	background-size: 200% 200%;
+	background-position: left center;
+	transition: background-position 0.6s ease-in-out;
+
+	&:hover {
+		background-position: right center;
+	}
 }
 
 .message {

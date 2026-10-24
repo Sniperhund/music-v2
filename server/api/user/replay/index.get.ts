@@ -44,15 +44,14 @@ export default defineAuthenticatedEventHandler(async (event) => {
 
 	return {
 		cards: [
-			...(monthlyCards.length ? [monthlyCards[0]] : []),
-			...(allTime.totals.playCount ? [{
+			{
 				period: "all-time",
 				title: "All Time",
 				playCount: allTime.totals.playCount,
 				listenedSeconds: allTime.totals.listenedSeconds,
 				topArtists: allTime.artists.slice(0, 3).map((entry: { artist: { name: string } }) => entry.artist.name),
-			}] : []),
-			...monthlyCards.slice(1),
+			},
+			...monthlyCards,
 		],
 	}
 })
