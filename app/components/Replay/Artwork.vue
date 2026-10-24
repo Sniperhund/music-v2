@@ -9,11 +9,21 @@ const props = defineProps<{
 	animate?: boolean
 }>()
 
-const displayTitle = computed(() => props.period === "all-time" ? "All\nTime" : props.title.replace(", ", ",\n"))
+const displayTitle = computed(() =>
+	props.period === "all-time"
+		? "All\nTime"
+		: props.title.replace(", ", ",\n"),
+)
 </script>
 
 <template>
-	<div :class="['replay-artwork', `gradient-${gradient}`, { animated: animate }]">
+	<div
+		:class="[
+			'replay-artwork',
+			`gradient-${gradient}`,
+			{ animated: animate },
+		]"
+	>
 		<span class="card-kicker">Replay</span>
 		<strong class="card-title">{{ displayTitle }}</strong>
 		<span v-if="animate" class="card-artists">
@@ -41,7 +51,7 @@ const displayTitle = computed(() => props.period === "all-time" ? "All\nTime" : 
 .animated {
 	background-size: 200% 200%;
 	background-position: left center;
-	transition: background-position 2.4s ease-in-out;
+	transition: background-position 1s ease-in-out;
 
 	&:hover {
 		background-position: right center;
@@ -73,22 +83,47 @@ const displayTitle = computed(() => props.period === "all-time" ? "All\nTime" : 
 }
 
 .gradient-gold {
-	background: linear-gradient(145deg, #ffc52d 0%, #ed6554 58%, #a978c6 100%);
+	background-image: linear-gradient(
+		145deg,
+		#ffc52d 0%,
+		#ed6554 58%,
+		#a978c6 100%
+	);
 }
 
 .gradient-pink {
-	background: linear-gradient(145deg, #35d8c6 0%, #ed006d 58%, #ff8138 100%);
+	background-image: linear-gradient(
+		145deg,
+		#35d8c6 0%,
+		#ed006d 58%,
+		#ff8138 100%
+	);
 }
 
 .gradient-orange {
-	background: linear-gradient(145deg, #f8b913 0%, #ee3947 52%, #f29b12 100%);
+	background-image: linear-gradient(
+		145deg,
+		#f8b913 0%,
+		#ee3947 52%,
+		#f29b12 100%
+	);
 }
 
 .gradient-green {
-	background: linear-gradient(145deg, #13cbb9 0%, #51d77e 52%, #f7a91c 100%);
+	background-image: linear-gradient(
+		145deg,
+		#13cbb9 0%,
+		#51d77e 52%,
+		#f7a91c 100%
+	);
 }
 
 .gradient-blue {
-	background: linear-gradient(145deg, #1fcfce 0%, #269fe5 52%, #bfd32a 100%);
+	background-image: linear-gradient(
+		145deg,
+		#1fcfce 0%,
+		#269fe5 52%,
+		#bfd32a 100%
+	);
 }
 </style>
