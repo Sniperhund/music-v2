@@ -98,6 +98,17 @@ export default defineNuxtPlugin((nuxtApp) => {
 	let lastPositionUpdate = 0
 	let trackingTimer: number | null = null
 	let recentlyPlayedSound: Howl | null = null
+	let listeningSound: Howl | null = null
+	let listeningTrack: Track | null = null
+	let listeningSessionId: string | null = null
+	let listeningStartedAt: Date | null = null
+	let listeningLastPosition = 0
+	let listeningSeconds = 0
+	let listeningEventSaved = false
+	let listeningEventInFlight = false
+	let listeningFlushPending = false
+	let listeningLastSubmittedSeconds = 0
+	let listeningLastAttemptAt = 0
 	let mediaSessionSongId: string | null = null
 	let handoffSyncTimer: number | null = null
 	let handoffSaveInFlight = false
@@ -561,11 +572,85 @@ export default defineNuxtPlugin((nuxtApp) => {
 		})
 	}
 
+	const trackListeningProgress = (completed = false, flush = false, allowStopped = false) => {
+		const currentSound = sound.value
+		const currentTrack = listeningSound === currentSound ? listeningTrack : currentSong.value
+		if (!currentSound || !currentTrack || (!allowStopped && !currentSound.playing())) return
+
+		if (listeningSound !== currentSound) {
+			listeningSound = currentSound
+			listeningTrack = currentTrack
+			listeningSessionId = crypto.randomUUID()
+			listeningStartedAt = new Date()
+			listeningLastPosition = currentSound.seek() as number
+			listeningSeconds = 0
+			listeningEventSaved = false
+			listeningEventInFlight = false
+			listeningFlushPending = false
+			listeningLastSubmittedSeconds = 0
+			listeningLastAttemptAt = 0
+			return
+		}
+
+		const position = currentSound.seek() as number
+		const positionDelta = position - listeningLastPosition
+		listeningLastPosition = position
+		// Ignore seeks and position jumps; only count small forward playback steps.
+		if (positionDelta > 0 && positionDelta <= 2) listeningSeconds += positionDelta
+
+		const duration = currentSound.duration()
+		const minimumListenedSeconds = Math.min(30, duration * 0.3) + 1
+		if (
+			!useAuth().authenticated.value ||
+			!duration ||
+			(!completed && listeningSeconds < minimumListenedSeconds) ||
+			(completed && listeningSeconds <= 0)
+		) return
+		if (listeningEventSaved && !flush && !completed) return
+		if (listeningEventSaved && listeningSeconds - listeningLastSubmittedSeconds < 0.5 && !completed) return
+		if (listeningEventInFlight) {
+			listeningFlushPending ||= flush || completed
+			return
+		}
+		if (!flush && !completed && Date.now() - listeningLastAttemptAt < 5000) return
+
+		listeningEventInFlight = true
+		listeningLastAttemptAt = Date.now()
+		const sessionId = listeningSessionId
+		const submittedSeconds = Math.min(listeningSeconds, duration)
+		void $fetch("/api/user/playback-events", {
+			method: "POST",
+			body: {
+				sessionId,
+				trackId: currentTrack._id,
+				startedAt: listeningStartedAt?.toISOString(),
+				listenedSeconds: submittedSeconds,
+				completed,
+			},
+		}).then(() => {
+			if (listeningSound === currentSound) {
+				listeningEventSaved = true
+				listeningLastSubmittedSeconds = submittedSeconds
+			}
+		}).catch(() => {
+			// Listening continues if the analytics endpoint is temporarily unavailable.
+		}).finally(() => {
+			if (listeningSound === currentSound) {
+				listeningEventInFlight = false
+				if (listeningFlushPending) {
+					listeningFlushPending = false
+					trackListeningProgress(false, true, true)
+				}
+			}
+		})
+	}
+
 	const startTracking = () => {
 		if (trackingTimer !== null) window.clearTimeout(trackingTimer)
 		const update = () => {
 			tick.value++
 			saveRecentlyPlayedAlbum()
+			trackListeningProgress()
 			const now = Date.now()
 			if (now - lastPositionUpdate >= 1000) {
 				lastPositionUpdate = now
@@ -607,6 +692,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				updateMediaSession()
 			},
 			onend: () => {
+				trackListeningProgress(true, true, true)
 				stopBeatAnalysis("track ended")
 				if (
 					queue.value.length === 0 &&
@@ -638,11 +724,16 @@ export default defineNuxtPlugin((nuxtApp) => {
 				if (handoffRestorePending) void consumePlaybackHandoff()
 			},
 			onpause: () => {
+				trackListeningProgress(false, true, true)
 				stopBeatAnalysis("paused")
 				isPlaying.value = false
 				stopTracking()
 				if (navigator.mediaSession)
 					navigator.mediaSession.playbackState = "paused"
+			},
+			onseek: () => {
+				if (listeningSound === newSound)
+					listeningLastPosition = newSound.seek() as number
 			},
 		})
 
@@ -754,6 +845,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	}
 
 	const next = async (autoplay: boolean = true) => {
+		trackListeningProgress(false, true, true)
 		if (currentSong.value) {
 			prevQueue.value.unshift(currentSong.value)
 		}
@@ -781,6 +873,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 		const prevSong = prevQueue.value.shift()
 		if (!prevSong) return
+		trackListeningProgress(false, true, true)
 
 		if (currentSong.value) queue.value.unshift(currentSong.value)
 
@@ -805,6 +898,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 	}
 
 	const clear = () => {
+		trackListeningProgress(false, true, true)
 		queue.value = []
 		currentQueue.value = []
 		currentSong.value = null
