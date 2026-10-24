@@ -24,21 +24,23 @@ export default defineAuthenticatedEventHandler(async (event) => {
 
 	const track = await Track.findById(body.trackId).select("durationInSeconds")
 	if (!track) return validationResponse(event, "Track does not exist")
-	if (body.listenedSeconds > track.durationInSeconds) {
+	const durationMismatchToleranceSeconds = 1
+	if (body.listenedSeconds > track.durationInSeconds + durationMismatchToleranceSeconds) {
 		return validationResponse(event, "Listened time exceeds track duration")
 	}
+	const listenedSeconds = Math.min(body.listenedSeconds, track.durationInSeconds)
 	const minimumListenedSeconds = Math.min(30, track.durationInSeconds * 0.3)
 	const existingEvent = await PlaybackEvent.exists({
 		userId: user._id,
 		sessionId: body.sessionId,
 		trackId: track._id,
 	})
-	if (!existingEvent && !body.completed && body.listenedSeconds < minimumListenedSeconds) {
+	if (!existingEvent && !body.completed && listenedSeconds < minimumListenedSeconds) {
 		return validationResponse(event, "Playback event does not meet the listening threshold")
 	}
 
 	const update: Record<string, unknown> = {
-		$max: { listenedSeconds: body.listenedSeconds },
+		$max: { listenedSeconds },
 		$setOnInsert: {
 			userId: user._id,
 			sessionId: body.sessionId,
