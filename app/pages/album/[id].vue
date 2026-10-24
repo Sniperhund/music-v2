@@ -6,6 +6,14 @@ const id = computed(() => route.params.id)
 
 const { data: albumData } = await useApiFetch<Album>(`/albums/${id.value}`)
 
+const primaryArtist = computed(() => albumData.value?.artists?.[0])
+const { data: moreAlbumsData } = await useApiFetch<Album[]>(
+	computed(() => `/artists/${primaryArtist.value?._id ?? ""}/albums`),
+)
+const moreAlbums = computed(
+	() => moreAlbumsData.value?.filter((album) => album._id !== albumData.value?._id) ?? [],
+)
+
 const { data: tracksData } = await useApiFetch<Track[]>(
 	`/albums/${id.value}/tracks`,
 )
@@ -52,6 +60,20 @@ useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Alb
 			@play-album-at-index="() => playAlbumAtIndex(tracks, i)"
 		/>
 	</section>
+
+	<Slider
+		v-if="primaryArtist && moreAlbums.length"
+		:title="`More by ${primaryArtist.name}`"
+	>
+		<AlbumCard
+			v-for="album in moreAlbums"
+			:key="album._id"
+			:name="album.name"
+			:file="GET_FILE(album.file)"
+			:artists="album.artists"
+			:_id="album._id"
+		/>
+	</Slider>
 </template>
 
 <style lang="scss" scoped>
@@ -96,5 +118,6 @@ useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Alb
 	display: flex;
 	flex-direction: column;
 	gap: 0.4rem;
+	margin-bottom: 2rem;
 }
 </style>
