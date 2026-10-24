@@ -25,12 +25,17 @@ const props = defineProps<{ artist: Artist }>()
 .card {
 	@include fontSize(14px);
 
+	flex: 0 1 240px;
+	max-width: 240px;
 	display: flex;
 	flex-direction: column;
 	justify-content: start;
 
 	& > a {
 		& img {
+			width: 100%;
+			aspect-ratio: 1;
+			object-fit: cover;
 			border-radius: $border-radius-standard;
 		}
 
