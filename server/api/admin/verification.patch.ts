@@ -11,7 +11,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	const parsedId = parseMongoId(getQuery(event).id)
 	if ("error" in parsedId) return validationResponse(event, parsedId.error)
 	const body = await readBody<{ target?: string; status?: string }>(event)
-	if (!["song", "lyrics", "album", "all"].includes(body?.target ?? "")) {
+	if (!["song", "lyrics", "album", "all", "track-and-album"].includes(body?.target ?? "")) {
 		setResponseStatus(event, 400)
 		return { message: "Invalid verification target" }
 	}
@@ -35,14 +35,14 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		setResponseStatus(event, 404)
 		return { message: "Track not found" }
 	}
-	if (body.target === "all") {
+	if (body.target === "all" || body.target === "track-and-album") {
 		const album = await Album.findById(track.album)
 		if (!album) {
 			setResponseStatus(event, 404)
 			return { message: "Album not found" }
 		}
 		track.set("verification.song", status)
-		track.set("verification.lyrics", status)
+		if (body.target === "all") track.set("verification.lyrics", status)
 		album.set("verification", status)
 		await Promise.all([track.save(), album.save()])
 		return { target: "all", status }

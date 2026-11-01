@@ -217,7 +217,7 @@ export const openApiDocument = {
 			EmptyObject: { type: "object", properties: {}, additionalProperties: false },
 			TrackMembership: { type: "object", required: ["contains"], properties: { contains: { type: "boolean" } } },
 			TrackPage: { type: "object", required: ["tracks", "total", "limit", "skip"], properties: { tracks: { type: "array", items: ref("Track") }, total: { type: "integer" }, limit: { type: "integer" }, skip: { type: "integer" } } },
-			Verification: { type: "object", required: ["target", "status"], properties: { target: { type: "string", enum: ["song", "lyrics", "album", "all"] }, status: { type: "string", enum: ["undecided", "approved", "denied"] } } },
+			Verification: { type: "object", required: ["target", "status"], properties: { target: { type: "string", enum: ["song", "lyrics", "album", "all", "track-and-album"] }, status: { type: "string", enum: ["undecided", "approved", "denied"] } } },
 			NotFound: { oneOf: [ref("Error"), ref("EmptyObject")] },
 			DependentError: {
 				type: "object",

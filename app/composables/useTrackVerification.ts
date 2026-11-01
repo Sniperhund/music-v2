@@ -67,6 +67,24 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 		}
 	}
 
+	const approveTrackAndAlbum = async () => {
+		const track = getTrack()
+		if (!track) return
+		try {
+			await $fetch("/api/admin/verification", {
+				method: "PATCH",
+				query: { id: track._id },
+				body: { target: "track-and-album", status: "approved" },
+			})
+			song.value = "approved"
+			album.value = "approved"
+			await refreshNuxtData()
+			toast.show("Track and album approved")
+		} catch {
+			toast.show("Could not approve track and album", "error")
+		}
+	}
+
 	const decisionItems = (target: "song" | "lyrics" | "album") => [
 		{ label: "Approve", icon: "lucide:badge-check", keepOpen: true, onSelect: () => save(target, "approved") },
 		{ label: "Deny", icon: "lucide:ban", keepOpen: true, onSelect: () => save(target, "denied") },
@@ -82,6 +100,7 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 		if (!track) return []
 		return [[
 			{ label: "Accept all", icon: "lucide:badge-check", onSelect: acceptAll },
+			{ label: "Approve track + album", icon: "lucide:disc-3", keepOpen: true, onSelect: approveTrackAndAlbum },
 			{ label: "Approve track", icon: "lucide:badge-check", keepOpen: true, onSelect: () => save("song", "approved") },
 			{ label: "Disapprove track", icon: "lucide:badge-x", keepOpen: true, onSelect: () => save("song", "denied") },
 			{ label: `Track: ${song.value}`, icon: "lucide:music-2", children: decisionItems("song") },
