@@ -57,6 +57,10 @@ const operations: ApiOperation[] = [
 	{ method: "post", path: "/admin/track", tag: "Admin", summary: "Create a track", admin: true, body: "multipart", response: "Track", status: 201 },
 	{ method: "patch", path: "/admin/track", tag: "Admin", summary: "Update a track", admin: true, query: ["id"], body: "multipart", response: "Track" },
 	{ method: "delete", path: "/admin/track", tag: "Admin", summary: "Delete a track", admin: true, query: ["id"], response: "EmptyObject" },
+	{ method: "patch", path: "/admin/verification", tag: "Admin", summary: "Update track or album verification", admin: true, query: ["id"], body: "json", response: "Verification" },
+	{ method: "get", path: "/admin/tracks/verified", tag: "Admin", summary: "Get fully verified tracks", admin: true, response: "TrackList" },
+	{ method: "get", path: "/admin/tracks/unverified", tag: "Admin", summary: "Get tracks that are not fully verified", admin: true, response: "TrackList" },
+	{ method: "get", path: "/admin/tracks/declined", tag: "Admin", summary: "Get tracks with declined verification", admin: true, response: "TrackList" },
 ]
 
 const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` })
@@ -212,6 +216,7 @@ export const openApiDocument = {
 			TrackOrNull: { anyOf: [ref("Track"), { type: "null" }] },
 			EmptyObject: { type: "object", properties: {}, additionalProperties: false },
 			TrackMembership: { type: "object", required: ["contains"], properties: { contains: { type: "boolean" } } },
+			Verification: { type: "object", required: ["target", "status"], properties: { target: { type: "string", enum: ["song", "lyrics", "album", "all"] }, status: { type: "string", enum: ["undecided", "approved", "denied"] } } },
 			NotFound: { oneOf: [ref("Error"), ref("EmptyObject")] },
 			DependentError: {
 				type: "object",
@@ -232,6 +237,7 @@ export const openApiDocument = {
 					artists: { type: "array", items: { anyOf: [{ type: "string", description: "MongoDB ObjectId" }, ref("Artist")] } },
 					file: { type: "string" },
 					genre: { anyOf: [{ type: "string", description: "MongoDB ObjectId" }, ref("Genre")] },
+					verification: { type: "string", enum: ["undecided", "approved", "denied"] },
 				},
 			},
 			Lyrics: { type: "object", properties: { synced: { type: "boolean" }, text: { type: "string" } } },
@@ -245,6 +251,7 @@ export const openApiDocument = {
 					fileDir: { type: "string" },
 					durationInSeconds: { type: "number" },
 					lyrics: ref("Lyrics"),
+					verification: { type: "object", properties: { song: { type: "string", enum: ["undecided", "approved", "denied"] }, lyrics: { type: "string", enum: ["undecided", "approved", "denied"] } } },
 				},
 			},
 			User: { type: "object", properties: { _id: { type: "string" }, name: { type: "string" }, email: { type: "string", format: "email" }, role: { type: "string" }, verified: { type: "boolean" }, savedTracks: { type: "array", items: { type: "string", description: "MongoDB ObjectId" } } } },

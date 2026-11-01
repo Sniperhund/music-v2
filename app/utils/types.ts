@@ -2,11 +2,14 @@ interface Base {
 	_id: string
 }
 
+export type VerificationStatus = "undecided" | "approved" | "denied"
+
 export interface Album extends Base {
 	name: string
 	file: string
 	artists: Artist[]
 	genre: Genre
+	verification?: VerificationStatus
 }
 
 export interface Artist extends Base {
@@ -25,6 +28,10 @@ export interface Track extends Base {
 		synced: boolean
 		text: string
 	} | null
+	verification?: {
+		song: VerificationStatus
+		lyrics: VerificationStatus
+	}
 	album: Album
 	artists: Artist[]
 	durationInSeconds: number

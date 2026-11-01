@@ -76,6 +76,7 @@ const submitNewPlaylist = async () => {
 const { isSaved, toggleSaved } = useTrackLibrary(() =>
 	props.queueMode ? undefined : props.track?._id,
 )
+const { items: verificationMenuItems } = useTrackVerification(() => props.track)
 
 const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
 	[
@@ -164,6 +165,7 @@ const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
 			},
 		},
 	],
+	...verificationMenuItems.value,
 ])
 
 const visibleDropdownMenuItems = computed(() =>

@@ -57,6 +57,38 @@
 			</div>
 
 			<div class="category">
+				<p>Verification</p>
+
+				<Button
+					full
+					variant="ghost"
+					to="/admin/awaiting-verification"
+					type="link"
+					icon-name="lucide:badge-alert"
+				>
+					Awaiting Verification
+				</Button>
+				<Button
+					full
+					variant="ghost"
+					to="/admin/verified"
+					type="link"
+					icon-name="lucide:badge-check"
+				>
+					Verified Tracks
+				</Button>
+				<Button
+					full
+					variant="ghost"
+					to="/admin/declined"
+					type="link"
+					icon-name="lucide:badge-x"
+				>
+					Declined Verification
+				</Button>
+			</div>
+
+			<div class="category">
 				<p>Exit</p>
 
 				<Button

@@ -14,6 +14,7 @@ const hovering = ref(false)
 
 const toast = useToast()
 const { isSaved, toggleSaved } = useTrackLibrary(() => track._id)
+const { items: verificationMenuItems } = useTrackVerification(() => track)
 
 const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
 	[
@@ -85,6 +86,7 @@ const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
 			},
 		},
 	],
+	...verificationMenuItems.value,
 ])
 
 const visibleDropdownMenuItems = computed(() =>

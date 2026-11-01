@@ -11,6 +11,7 @@ const albumSchema = new Schema(
 		},
 		file: { type: String, required: true },
 		genre: { type: Schema.Types.ObjectId, ref: "Genre", required: true },
+		verification: { type: String, enum: ["undecided", "approved", "denied"], default: "undecided", required: true },
 	},
 	{ timestamps: true },
 )

@@ -17,6 +17,10 @@ const trackSchema = new Schema({
 			text: { type: String, required: true },
 		},
 	},
+	verification: {
+		song: { type: String, enum: ["undecided", "approved", "denied"], default: "undecided", required: true },
+		lyrics: { type: String, enum: ["undecided", "approved", "denied"], default: "undecided", required: true },
+	},
 })
 
 trackSchema.index({ album: 1 })
