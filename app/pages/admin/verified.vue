@@ -1,7 +1,15 @@
 <script setup lang="ts">
 definePageMeta({ layout: "admin", middleware: "admin" })
-const { data, status, error } = useApiFetch<Track[]>("/admin/tracks/verified")
-const tracks = computed(() => data.value ?? [])
+const {
+	page,
+	status,
+	error,
+	tracks,
+	total,
+	totalPages,
+	previousPage,
+	nextPage,
+} = useAdminVerificationPage("/admin/tracks/verified")
 const { playAlbumAtIndex } = usePlayer()
 useHead({ title: "Verified Tracks" })
 </script>
@@ -21,6 +29,12 @@ useHead({ title: "Verified Tracks" })
 			show-image
 			@play-album-at-index="() => playAlbumAtIndex(tracks, index)"
 		/>
+		<p v-if="total" class="page-summary">{{ total }} verified tracks</p>
+		<nav v-if="totalPages > 1" class="pagination" aria-label="Verified tracks pages">
+			<Button :disabled="page === 0" @click="previousPage">Previous</Button>
+			<span>Page {{ page + 1 }} of {{ totalPages }}</span>
+			<Button :disabled="page + 1 >= totalPages" @click="nextPage">Next</Button>
+		</nav>
 	</section>
 </template>
 
@@ -41,5 +55,17 @@ useHead({ title: "Verified Tracks" })
 
 .message {
 	padding: 1rem 0;
+}
+
+.page-summary {
+	margin-top: 1rem;
+}
+
+.pagination {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	margin-top: 1rem;
 }
 </style>

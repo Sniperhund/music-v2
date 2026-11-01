@@ -79,6 +79,7 @@ const { isSaved, toggleSaved } = useTrackLibrary(() =>
 const { items: verificationMenuItems } = useTrackVerification(() => props.track)
 
 const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
+	...verificationMenuItems.value,
 	[
 		{
 			label: "Play only this",
@@ -165,7 +166,6 @@ const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
 			},
 		},
 	],
-	...verificationMenuItems.value,
 ])
 
 const visibleDropdownMenuItems = computed(() =>

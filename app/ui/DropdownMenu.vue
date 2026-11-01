@@ -3,6 +3,7 @@ export interface DropdownMenuItem {
 	label: string
 	icon: string
 	onSelect?: () => void
+	keepOpen?: boolean
 	children?: DropdownMenuItem[]
 }
 
@@ -113,7 +114,7 @@ onBeforeUnmount(() => {
 									() => {
 										if (item.children?.length) return
 										item.onSelect?.()
-										close()
+										if (!item.keepOpen) close()
 									}
 								"
 							>
@@ -133,7 +134,7 @@ onBeforeUnmount(() => {
 									@click="
 										() => {
 											child.onSelect?.()
-											close()
+										if (!child.keepOpen) close()
 										}
 									"
 								>

@@ -37,6 +37,13 @@ export interface Track extends Base {
 	durationInSeconds: number
 }
 
+export interface TrackPage {
+	tracks: Track[]
+	total: number
+	limit: number
+	skip: number
+}
+
 export interface Playlist extends Base {
 	name: string
 	tracks: Track[]

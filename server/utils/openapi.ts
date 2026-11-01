@@ -58,9 +58,9 @@ const operations: ApiOperation[] = [
 	{ method: "patch", path: "/admin/track", tag: "Admin", summary: "Update a track", admin: true, query: ["id"], body: "multipart", response: "Track" },
 	{ method: "delete", path: "/admin/track", tag: "Admin", summary: "Delete a track", admin: true, query: ["id"], response: "EmptyObject" },
 	{ method: "patch", path: "/admin/verification", tag: "Admin", summary: "Update track or album verification", admin: true, query: ["id"], body: "json", response: "Verification" },
-	{ method: "get", path: "/admin/tracks/verified", tag: "Admin", summary: "Get fully verified tracks", admin: true, response: "TrackList" },
-	{ method: "get", path: "/admin/tracks/unverified", tag: "Admin", summary: "Get tracks that are not fully verified", admin: true, response: "TrackList" },
-	{ method: "get", path: "/admin/tracks/declined", tag: "Admin", summary: "Get tracks with declined verification", admin: true, response: "TrackList" },
+	{ method: "get", path: "/admin/tracks/verified", tag: "Admin", summary: "Get fully verified tracks", admin: true, query: ["limit", "skip"], response: "TrackPage" },
+	{ method: "get", path: "/admin/tracks/unverified", tag: "Admin", summary: "Get tracks awaiting verification", admin: true, query: ["limit", "skip"], response: "TrackPage" },
+	{ method: "get", path: "/admin/tracks/declined", tag: "Admin", summary: "Get tracks with declined verification", admin: true, query: ["limit", "skip"], response: "TrackPage" },
 ]
 
 const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` })
@@ -216,6 +216,7 @@ export const openApiDocument = {
 			TrackOrNull: { anyOf: [ref("Track"), { type: "null" }] },
 			EmptyObject: { type: "object", properties: {}, additionalProperties: false },
 			TrackMembership: { type: "object", required: ["contains"], properties: { contains: { type: "boolean" } } },
+			TrackPage: { type: "object", required: ["tracks", "total", "limit", "skip"], properties: { tracks: { type: "array", items: ref("Track") }, total: { type: "integer" }, limit: { type: "integer" }, skip: { type: "integer" } } },
 			Verification: { type: "object", required: ["target", "status"], properties: { target: { type: "string", enum: ["song", "lyrics", "album", "all"] }, status: { type: "string", enum: ["undecided", "approved", "denied"] } } },
 			NotFound: { oneOf: [ref("Error"), ref("EmptyObject")] },
 			DependentError: {

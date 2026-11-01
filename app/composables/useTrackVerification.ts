@@ -33,8 +33,16 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 			if (target === "song") song.value = status
 			else if (target === "lyrics") lyrics.value = status
 			else album.value = status
+			const fullyApproved =
+				(target === "song" ? status : song.value) === "approved" &&
+				(target === "lyrics" ? status : lyrics.value) === "approved" &&
+				(target === "album" ? status : album.value) === "approved"
 			await refreshNuxtData()
-			toast.show(`${target === "song" ? "Song" : target === "lyrics" ? "Lyrics" : "Album"} ${status}`)
+			toast.show(
+				fullyApproved
+					? "Track is fully approved and now appears under Verified Tracks"
+					: `${target === "song" ? "Track" : target === "lyrics" ? "Lyrics" : "Album"} ${status}`,
+			)
 		} catch {
 			toast.show("Could not update verification", "error")
 		}
@@ -60,8 +68,12 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 	}
 
 	const decisionItems = (target: "song" | "lyrics" | "album") => [
-		{ label: "Approve", icon: "lucide:badge-check", onSelect: () => save(target, "approved") },
-		{ label: "Deny", icon: "lucide:ban", onSelect: () => save(target, "denied") },
+		{ label: "Approve", icon: "lucide:badge-check", keepOpen: true, onSelect: () => save(target, "approved") },
+		{ label: "Deny", icon: "lucide:ban", keepOpen: true, onSelect: () => save(target, "denied") },
+	]
+	const missingLyricsItems = [
+		{ label: "Confirm no lyrics", icon: "lucide:badge-check", keepOpen: true, onSelect: () => save("lyrics", "approved") },
+		{ label: "Deny", icon: "lucide:ban", keepOpen: true, onSelect: () => save("lyrics", "denied") },
 	]
 
 	const items = computed<DropdownMenuItem[][]>(() => {
@@ -70,10 +82,12 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 		if (!track) return []
 		return [[
 			{ label: "Accept all", icon: "lucide:badge-check", onSelect: acceptAll },
-			{ label: `Song: ${song.value}`, icon: "lucide:music-2", children: decisionItems("song") },
+			{ label: "Approve track", icon: "lucide:badge-check", keepOpen: true, onSelect: () => save("song", "approved") },
+			{ label: "Disapprove track", icon: "lucide:badge-x", keepOpen: true, onSelect: () => save("song", "denied") },
+			{ label: `Track: ${song.value}`, icon: "lucide:music-2", children: decisionItems("song") },
 			track.lyrics
 				? { label: `Lyrics: ${lyrics.value}`, icon: "lucide:align-left", children: decisionItems("lyrics") }
-				: { label: "Lyrics: No lyrics", icon: "lucide:align-left" },
+				: { label: `Lyrics: No lyrics (${lyrics.value})`, icon: "lucide:align-left", children: missingLyricsItems },
 			{ label: `Album: ${album.value}`, icon: "lucide:disc-3", children: decisionItems("album") },
 		]]
 	})

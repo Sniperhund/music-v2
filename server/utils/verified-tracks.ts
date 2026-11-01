@@ -1,8 +1,11 @@
 import { Album } from "../models/album"
 import { Track } from "../models/track"
+import { MAX_QUERY_LIMIT } from "./api-validation"
 
 export async function findVerificationTracks(
 	state: "verified" | "awaiting" | "declined",
+	limit: number,
+	skip: number,
 ) {
 	const [approvedAlbums, deniedAlbums] = await Promise.all([
 		Album.find({ verification: "approved" }).select("_id").exec(),
@@ -47,8 +50,15 @@ export async function findVerificationTracks(
 		}
 	}
 
-	return Track.find(query)
-		.populate({ path: "album", select: "-artists", populate: { path: "genre" } })
-		.populate("artists")
-		.exec()
+	const [tracks, total] = await Promise.all([
+		Track.find(query)
+			.sort({ _id: 1 })
+			.skip(skip)
+			.limit(Math.min(limit, MAX_QUERY_LIMIT))
+			.populate({ path: "album", select: "-artists", populate: { path: "genre" } })
+			.populate("artists")
+			.exec(),
+		Track.countDocuments(query).exec(),
+	])
+	return { tracks, total, limit, skip }
 }
