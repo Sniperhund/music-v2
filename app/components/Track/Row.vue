@@ -76,7 +76,12 @@ const submitNewPlaylist = async () => {
 const { isSaved, toggleSaved } = useTrackLibrary(() =>
 	props.queueMode ? undefined : props.track?._id,
 )
-const { items: verificationMenuItems } = useTrackVerification(() => props.track)
+const {
+	items: verificationMenuItems,
+	minorChangesModalOpen,
+	minorChangesNote,
+	submitMinorChanges,
+} = useTrackVerification(() => props.track)
 
 const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
 	...verificationMenuItems.value,
@@ -282,6 +287,23 @@ const artworkSrc = computed(() => {
 				</div>
 			</form>
 		</Modal>
+		<Modal v-model:open="minorChangesModalOpen">
+			<form class="minor-changes-form" @submit.prevent="submitMinorChanges">
+				<h2>Minor lyric changes required</h2>
+				<p>Optionally describe the changes needed, such as words that should be censored.</p>
+				<Input
+					v-model:value="minorChangesNote"
+					type="textarea"
+					textarea
+					full
+					placeholder="Describe the required changes"
+				/>
+				<div class="minor-changes-actions">
+					<Button variant="ghost" @click="minorChangesModalOpen = false">Cancel</Button>
+					<Button type="submit">Approve</Button>
+				</div>
+			</form>
+		</Modal>
 	</article>
 </template>
 
@@ -336,6 +358,18 @@ const artworkSrc = computed(() => {
 		color: inherit;
 		text-decoration: none;
 	}
+}
+
+.minor-changes-form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.8rem;
+}
+
+.minor-changes-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
 }
 
 .create-playlist-form {

@@ -8,6 +8,8 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 	const song = ref<VerificationStatus>(getTrack()?.verification?.song ?? "undecided")
 	const lyrics = ref<LyricsVerificationStatus>(getTrack()?.verification?.lyrics ?? "undecided")
 	const album = ref<VerificationStatus>(getTrack()?.album.verification ?? "undecided")
+	const minorChangesModalOpen = ref(false)
+	const minorChangesNote = ref("")
 
 	watch(
 		() => getTrack(),
@@ -22,14 +24,15 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 	const save = async (
 		target: "song" | "lyrics" | "album",
 		status: VerificationStatus | "approved-with-changes",
+		lyricsNote?: string,
 	) => {
 		const track = getTrack()
-		if (!track) return
+		if (!track) return false
 		try {
 			await $fetch("/api/admin/verification", {
 				method: "PATCH",
 				query: { id: target === "album" ? track.album._id : track._id },
-				body: { target, status },
+				body: { target, status, ...(lyricsNote !== undefined ? { lyricsNote } : {}) },
 			})
 			if (target === "song") song.value = status as VerificationStatus
 			else if (target === "lyrics") lyrics.value = status
@@ -48,9 +51,19 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 						? "Lyrics approved with minor changes required"
 						: `${target === "song" ? "Track" : target === "lyrics" ? "Lyrics" : "Album"} ${status}`,
 			)
+			return true
 		} catch {
 			toast.show("Could not update verification", "error")
+			return false
 		}
+	}
+	const openMinorChangesModal = () => {
+		minorChangesNote.value = getTrack()?.verification?.lyricsNote ?? ""
+		minorChangesModalOpen.value = true
+	}
+	const submitMinorChanges = async () => {
+		const saved = await save("lyrics", "approved-with-changes", minorChangesNote.value)
+		if (saved) minorChangesModalOpen.value = false
 	}
 
 	const decisionItems = (target: "song" | "lyrics" | "album") => [
@@ -59,7 +72,7 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 	]
 	const lyricsDecisionItems = [
 		{ label: "Approve", icon: "lucide:badge-check", keepOpen: true, onSelect: () => save("lyrics", "approved") },
-		{ label: "Approve, minor changes required", icon: "lucide:badge-alert", keepOpen: true, onSelect: () => save("lyrics", "approved-with-changes") },
+		{ label: "Approve, minor changes required", icon: "lucide:badge-alert", keepOpen: true, onSelect: openMinorChangesModal },
 		{ label: "Deny", icon: "lucide:ban", keepOpen: true, onSelect: () => save("lyrics", "denied") },
 	]
 	const denyLyricsItem = {
@@ -86,5 +99,5 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 		]]
 	})
 
-	return { items }
+	return { items, minorChangesModalOpen, minorChangesNote, submitMinorChanges }
 }

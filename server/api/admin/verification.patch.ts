@@ -10,7 +10,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true, { allowBearer: true, skipOriginCheck: true })
 	const parsedId = parseMongoId(getQuery(event).id)
 	if ("error" in parsedId) return validationResponse(event, parsedId.error)
-	const body = await readBody<{ target?: string; status?: string }>(event)
+	const body = await readBody<{ target?: string; status?: string; lyricsNote?: string }>(event)
 	if (!["song", "lyrics", "album", "all", "track-and-album"].includes(body?.target ?? "")) {
 		setResponseStatus(event, 400)
 		return { message: "Invalid verification target" }
@@ -23,6 +23,10 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	if (status === "approved-with-changes" && body.target !== "lyrics") {
 		setResponseStatus(event, 400)
 		return { message: "Minor changes status is only valid for lyrics" }
+	}
+	if (body.lyricsNote !== undefined && (typeof body.lyricsNote !== "string" || body.lyricsNote.length > 1000)) {
+		setResponseStatus(event, 400)
+		return { message: "Lyrics change note must be 1000 characters or fewer" }
 	}
 	if (body.target === "album") {
 		const album = await Album.findById(parsedId.value)
@@ -51,6 +55,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		track.set("verification.song", status)
 		if (body.target === "all" && (status !== "approved" || track.lyrics?.synced)) {
 			track.set("verification.lyrics", status)
+			track.set("verification.lyricsNote", undefined)
 		}
 		album.set("verification", status)
 		await Promise.all([track.save(), album.save()])
@@ -61,6 +66,9 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		return { message: "Only synced lyrics can be approved" }
 	}
 	track.set(`verification.${body.target}`, status)
+	if (body.target === "lyrics") {
+		track.set("verification.lyricsNote", status === "approved-with-changes" ? body.lyricsNote?.trim() || undefined : undefined)
+	}
 	await track.save()
 	return { target: body.target, status }
 })

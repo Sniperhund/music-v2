@@ -32,6 +32,7 @@ export interface Track extends Base {
 	verification?: {
 		song: VerificationStatus
 		lyrics: LyricsVerificationStatus
+		lyricsNote?: string
 	}
 	album: Album
 	artists: Artist[]

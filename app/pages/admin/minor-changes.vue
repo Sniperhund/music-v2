@@ -21,14 +21,22 @@ useHead({ title: "Lyrics: Minor Changes Required" })
 		<p v-else-if="error" class="message" role="alert">Could not load tracks with lyrics requiring minor changes.</p>
 		<p v-else-if="!tracks.length" class="message">No lyrics are marked as requiring minor changes.</p>
 		<template v-else>
-			<TrackRow
+			<div
 				v-for="(track, index) in tracks"
 				:key="track._id"
-				:track="track"
-				:index="index"
-				show-image
-				@play-album-at-index="() => playAlbumAtIndex(tracks, index)"
-			/>
+				class="review-track"
+			>
+				<TrackRow
+					:track="track"
+					:index="index"
+					show-image
+					@play-album-at-index="() => playAlbumAtIndex(tracks, index)"
+				/>
+				<p class="change-note">
+					<strong>Changes required:</strong>
+					{{ track.verification?.lyricsNote || "No details provided." }}
+				</p>
+			</div>
 		</template>
 		<p v-if="total" class="page-summary">{{ total }} tracks with lyrics requiring minor changes</p>
 		<nav v-if="totalPages > 1" class="pagination" aria-label="Minor changes pages">
@@ -56,6 +64,17 @@ useHead({ title: "Lyrics: Minor Changes Required" })
 
 .message {
 	padding: 1rem 0;
+}
+
+.review-track {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.change-note {
+	padding: 0 1rem 0.5rem;
+	white-space: pre-wrap;
 }
 
 .page-summary {
