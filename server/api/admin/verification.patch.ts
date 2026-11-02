@@ -27,7 +27,10 @@ export default defineAuthenticatedEventHandler(async (event) => {
 			return { message: "Album not found" }
 		}
 		album.set("verification", status)
-		await album.save()
+		await Promise.all([
+			album.save(),
+			Track.updateMany({ album: album._id }, { $set: { "verification.song": status } }).exec(),
+		])
 		return { target: "album", status }
 	}
 	const track = await Track.findById(parsedId.value)
