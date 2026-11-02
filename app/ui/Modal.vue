@@ -1,12 +1,19 @@
 <script setup lang="ts">
-const props = defineProps<{ width?: string }>()
+const props = withDefaults(defineProps<{ width?: string; dismissible?: boolean; priority?: boolean }>(), {
+	dismissible: true,
+	priority: false,
+})
 
 const open = defineModel("open")
+
+const dismiss = () => {
+	if (props.dismissible) open.value = false
+}
 </script>
 
 <template>
 	<Transition>
-		<div class="modal-container" v-show="open" @click="open = false">
+		<div class="modal-container" :class="{ priority: props.priority }" v-show="open" @click="dismiss">
 			<Card @click.stop :width="props.width">
 				<slot />
 			</Card>
@@ -28,6 +35,10 @@ const open = defineModel("open")
 	display: flex;
 	justify-content: center;
 	align-items: center;
+}
+
+.modal-container.priority {
+	z-index: 200;
 }
 
 .v-enter-active,

@@ -1,9 +1,51 @@
 <script setup lang="ts">
 import { GET_FILE } from "@/utils/file"
+import { clearRequestCache } from "@/utils/requestCache"
 
 const { fullscreen, close: closeFullscreen } = useFullscreen()
 const song = useSong()
+const {
+	fullscreenLyricsReviewTrack,
+	continueAfterFullscreenLyricsReview,
+} = usePlayer()
+const { data: user } = useApiFetch<{ role?: string }>("/user")
+const toast = useToast()
+const lyricsReviewNote = ref("")
+const lyricsReviewModalOpen = ref(false)
 const mouseMovedRecently = ref(true)
+
+watch(fullscreenLyricsReviewTrack, (track) => {
+	lyricsReviewNote.value = ""
+	lyricsReviewModalOpen.value = Boolean(track && user.value?.role === "admin")
+}, { immediate: true })
+
+const dismissLyricsReview = () => {
+	lyricsReviewModalOpen.value = false
+	void continueAfterFullscreenLyricsReview()
+}
+
+const submitLyricsReview = async (status: "approved" | "approved-with-changes" | "denied") => {
+	const track = fullscreenLyricsReviewTrack.value
+	if (!track || user.value?.role !== "admin") return
+	try {
+		await $fetch("/api/admin/verification", {
+			method: "PATCH",
+			query: { id: track._id },
+			body: {
+				target: "lyrics",
+				status,
+				...(status === "approved-with-changes" ? { lyricsNote: lyricsReviewNote.value } : {}),
+			},
+		})
+		clearRequestCache()
+		await refreshNuxtData()
+		toast.show(status === "approved-with-changes" ? "Lyrics approved with minor changes required" : `Lyrics ${status}`)
+		lyricsReviewModalOpen.value = false
+		await continueAfterFullscreenLyricsReview()
+	} catch {
+		toast.show("Could not update lyrics verification", "error")
+	}
+}
 
 onMounted(() => {
 	let timeoutId: NodeJS.Timeout
@@ -18,6 +60,10 @@ onMounted(() => {
 	}
 	const handleKeydown = (event: KeyboardEvent) => {
 		if (event.key === "Escape" && fullscreen.value) {
+			if (lyricsReviewModalOpen.value) {
+				event.preventDefault()
+				return
+			}
 			closeFullscreen()
 		}
 	}
@@ -74,9 +120,61 @@ nuxtApp.hook("page:finish", () => {
 			</div>
 		</section>
 	</section>
+	<Modal v-model:open="lyricsReviewModalOpen" :dismissible="false" priority>
+	<div class="lyrics-review-form">
+		<h2>Review lyrics</h2>
+		<p v-if="fullscreenLyricsReviewTrack">
+			Did you notice anything about the lyrics for {{ fullscreenLyricsReviewTrack.name }}?
+		</p>
+		<label class="lyrics-review-label" for="fullscreen-lyrics-review-note">
+			Changes required (optional)
+		</label>
+		<Input
+			v-model:value="lyricsReviewNote"
+			type="textarea"
+			textarea
+			full
+			name="fullscreen-lyrics-review-note"
+			placeholder="Describe any minor changes"
+		/>
+		<div class="lyrics-review-actions">
+			<Button
+				v-if="fullscreenLyricsReviewTrack?.lyrics?.synced"
+				@click="submitLyricsReview('approved')"
+			>Approve</Button>
+			<Button
+				v-if="fullscreenLyricsReviewTrack?.lyrics?.synced"
+				@click="submitLyricsReview('approved-with-changes')"
+			>Minor changes required</Button>
+			<Button @click="submitLyricsReview('denied')">Deny</Button>
+			<Button variant="ghost" @click="dismissLyricsReview">I don't know</Button>
+		</div>
+	</div>
+</Modal>
 </template>
 
 <style lang="scss" scoped>
+.lyrics-review-form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.lyrics-review-form h2 {
+	font-weight: 700;
+}
+
+.lyrics-review-label {
+	font-weight: 600;
+}
+
+.lyrics-review-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.5rem;
+}
+
 .fullscreen {
 	position: fixed;
 	top: 0;

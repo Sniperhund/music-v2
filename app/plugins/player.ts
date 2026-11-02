@@ -4,6 +4,12 @@ import { shapeBeatPulse } from "~/utils/beat"
 export default defineNuxtPlugin((nuxtApp) => {
 	const mediaBaseUrl = useRuntimeConfig().public.mediaBaseUrl
 	const { fullscreen, close: closeFullscreen } = useFullscreen()
+	const { data: user } = useApiFetch<{ role?: string }>("/user")
+	const fullscreenLyricsReviewTrack = useState<Track | null>("player:fullscreen-lyrics-review-track", () => null)
+	const clearFullscreenLyricsReview = () => {
+		fullscreenLyricsReviewTrack.value = null
+	}
+	let repeatEndedTrackAfterLyricsReview = false
 	if (import.meta.client) {
 		const howlerInternal = Howler as unknown as {
 			_obtainHtml5Audio: () => HTMLAudioElement
@@ -692,14 +698,29 @@ export default defineNuxtPlugin((nuxtApp) => {
 				updateMediaSession()
 			},
 			onend: () => {
+				const endedTrack = currentSong.value
+				const shouldReviewLyrics = Boolean(
+					fullscreen.value &&
+					user.value?.role === "admin" &&
+					endedTrack?.lyrics?.text?.trim(),
+				)
+				if (shouldReviewLyrics) fullscreenLyricsReviewTrack.value = endedTrack
 				trackListeningProgress(true, true, true)
 				stopBeatAnalysis("track ended")
 				if (
 					queue.value.length === 0 &&
 					!repeat.value &&
-					!repeatOnce.value
+					!repeatOnce.value &&
+					!shouldReviewLyrics
 				)
 					void closeFullscreen()
+				if (shouldReviewLyrics) {
+					repeatEndedTrackAfterLyricsReview = repeatOnce.value
+					isPlaying.value = false
+					stopTracking()
+					updateMediaSession()
+					return
+				}
 				if (repeatOnce.value && sound.value === newSound) {
 					repeatOnce.value = false
 					newSound.seek(0)
@@ -865,6 +886,20 @@ export default defineNuxtPlugin((nuxtApp) => {
 		updateMediaSession()
 	}
 
+	const continueAfterFullscreenLyricsReview = async () => {
+		clearFullscreenLyricsReview()
+		if (repeatEndedTrackAfterLyricsReview && sound.value) {
+			repeatEndedTrackAfterLyricsReview = false
+			repeatOnce.value = false
+			sound.value.seek(0)
+			sound.value.play()
+			return
+		}
+		repeatEndedTrackAfterLyricsReview = false
+		await next()
+		if (!currentSong.value) void closeFullscreen()
+	}
+
 	const prev = async () => {
 		if (sound.value && sound.value.seek() > 5) {
 			sound.value.seek(0)
@@ -1023,6 +1058,9 @@ export default defineNuxtPlugin((nuxtApp) => {
 				duration,
 				volume,
 				queue,
+				fullscreenLyricsReviewTrack,
+				clearFullscreenLyricsReview,
+				continueAfterFullscreenLyricsReview,
 			},
 		},
 	}
