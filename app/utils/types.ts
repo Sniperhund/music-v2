@@ -3,6 +3,7 @@ interface Base {
 }
 
 export type VerificationStatus = "undecided" | "approved" | "denied"
+export type LyricsVerificationStatus = VerificationStatus | "approved-with-changes"
 
 export interface Album extends Base {
 	name: string
@@ -30,7 +31,7 @@ export interface Track extends Base {
 	} | null
 	verification?: {
 		song: VerificationStatus
-		lyrics: VerificationStatus
+		lyrics: LyricsVerificationStatus
 	}
 	album: Album
 	artists: Artist[]

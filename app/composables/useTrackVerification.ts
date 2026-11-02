@@ -1,4 +1,4 @@
-import type { Track, VerificationStatus } from "@/utils/types"
+import type { LyricsVerificationStatus, Track, VerificationStatus } from "@/utils/types"
 import { clearRequestCache } from "@/utils/requestCache"
 import type { DropdownMenuItem } from "~/ui/DropdownMenu.vue"
 
@@ -6,7 +6,7 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 	const { data: user } = useApiFetch<{ role?: string }>("/user")
 	const toast = useToast()
 	const song = ref<VerificationStatus>(getTrack()?.verification?.song ?? "undecided")
-	const lyrics = ref<VerificationStatus>(getTrack()?.verification?.lyrics ?? "undecided")
+	const lyrics = ref<LyricsVerificationStatus>(getTrack()?.verification?.lyrics ?? "undecided")
 	const album = ref<VerificationStatus>(getTrack()?.album.verification ?? "undecided")
 
 	watch(
@@ -21,7 +21,7 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 
 	const save = async (
 		target: "song" | "lyrics" | "album",
-		status: VerificationStatus,
+		status: VerificationStatus | "approved-with-changes",
 	) => {
 		const track = getTrack()
 		if (!track) return
@@ -31,19 +31,22 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 				query: { id: target === "album" ? track.album._id : track._id },
 				body: { target, status },
 			})
-			if (target === "song") song.value = status
+			if (target === "song") song.value = status as VerificationStatus
 			else if (target === "lyrics") lyrics.value = status
-			else album.value = status
+			else album.value = status as VerificationStatus
+			const isApproved = (value: string) => value === "approved" || value === "approved-with-changes"
 			const fullyApproved =
-				(target === "song" ? status : song.value) === "approved" &&
-				(target === "lyrics" ? status : lyrics.value) === "approved" &&
-				(target === "album" ? status : album.value) === "approved"
+				isApproved(target === "song" ? status : song.value) &&
+				isApproved(target === "lyrics" ? status : lyrics.value) &&
+				isApproved(target === "album" ? status : album.value)
 			clearRequestCache()
 			await refreshNuxtData()
 			toast.show(
 				fullyApproved
 					? "Track is fully approved and now appears under Verified Tracks"
-					: `${target === "song" ? "Track" : target === "lyrics" ? "Lyrics" : "Album"} ${status}`,
+					: target === "lyrics" && status === "approved-with-changes"
+						? "Lyrics approved with minor changes required"
+						: `${target === "song" ? "Track" : target === "lyrics" ? "Lyrics" : "Album"} ${status}`,
 			)
 		} catch {
 			toast.show("Could not update verification", "error")
@@ -54,10 +57,17 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 		{ label: "Approve", icon: "lucide:badge-check", keepOpen: true, onSelect: () => save(target, "approved") },
 		{ label: "Deny", icon: "lucide:ban", keepOpen: true, onSelect: () => save(target, "denied") },
 	]
-	const missingLyricsItems = [
-		{ label: "Confirm no lyrics", icon: "lucide:badge-check", keepOpen: true, onSelect: () => save("lyrics", "approved") },
+	const lyricsDecisionItems = [
+		{ label: "Approve", icon: "lucide:badge-check", keepOpen: true, onSelect: () => save("lyrics", "approved") },
+		{ label: "Approve, minor changes required", icon: "lucide:badge-alert", keepOpen: true, onSelect: () => save("lyrics", "approved-with-changes") },
 		{ label: "Deny", icon: "lucide:ban", keepOpen: true, onSelect: () => save("lyrics", "denied") },
 	]
+	const denyLyricsItem = {
+		label: "Deny",
+		icon: "lucide:ban",
+		keepOpen: true,
+		onSelect: () => save("lyrics", "denied"),
+	}
 
 	const items = computed<DropdownMenuItem[][]>(() => {
 		if (user.value?.role !== "admin") return []
@@ -65,9 +75,13 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 		if (!track) return []
 		return [[
 			{ label: `Track: ${song.value}`, icon: "lucide:music-2", children: decisionItems("song") },
-			track.lyrics
-				? { label: `Lyrics: ${lyrics.value}`, icon: "lucide:align-left", children: decisionItems("lyrics") }
-				: { label: `Lyrics: No lyrics (${lyrics.value})`, icon: "lucide:align-left", children: missingLyricsItems },
+			{
+				label: `Lyrics: ${track.lyrics ? lyrics.value : `No lyrics (${lyrics.value})`}`,
+				icon: "lucide:align-left",
+				children: track.lyrics?.synced
+					? lyricsDecisionItems
+					: [denyLyricsItem],
+			},
 			{ label: `Album: ${album.value}`, icon: "lucide:disc-3", children: decisionItems("album") },
 		]]
 	})

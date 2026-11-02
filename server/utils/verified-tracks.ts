@@ -19,7 +19,7 @@ export async function findVerificationTracks(
 		query = {
 			album: { $in: approvedAlbumIds },
 			"verification.song": "approved",
-			"verification.lyrics": "approved",
+			"verification.lyrics": { $in: ["approved", "approved-with-changes"] },
 		}
 	} else if (state === "declined") {
 		query = {
@@ -43,7 +43,7 @@ export async function findVerificationTracks(
 					$or: [
 						{ album: { $nin: approvedAlbumIds } },
 						{ "verification.song": { $ne: "approved" } },
-						{ "verification.lyrics": { $ne: "approved" } },
+				{ "verification.lyrics": { $nin: ["approved", "approved-with-changes"] } },
 					],
 				},
 			],
