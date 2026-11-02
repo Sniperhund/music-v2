@@ -29,6 +29,7 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 	) => {
 		const track = getTrack()
 		if (!track) return false
+		const hasLyrics = Boolean(track.lyrics?.text?.trim())
 		try {
 			await $fetch("/api/admin/verification", {
 				method: "PATCH",
@@ -40,7 +41,9 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 			else album.value = status as VerificationStatus
 			const fullyApproved =
 				(target === "song" ? status : song.value) === "approved" &&
-				(target === "lyrics" ? status : lyrics.value) === "approved" &&
+				(!hasLyrics
+					? target !== "lyrics" || status === "approved"
+					: (target === "lyrics" ? status : lyrics.value) === "approved") &&
 				(target === "album" ? status : album.value) === "approved"
 			clearRequestCache()
 			await refreshNuxtData()
@@ -89,9 +92,9 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 		return [[
 			{ label: `Track: ${song.value}`, icon: "lucide:music-2", children: decisionItems("song") },
 			{
-				label: `Lyrics: ${track.lyrics ? lyrics.value : `No lyrics (${lyrics.value})`}`,
+				label: `Lyrics: ${track.lyrics?.text?.trim() ? lyrics.value : `No lyrics (${lyrics.value})`}`,
 				icon: "lucide:align-left",
-				children: track.lyrics?.synced
+				children: track.lyrics?.synced && track.lyrics.text.trim()
 					? lyricsDecisionItems
 					: [denyLyricsItem],
 			},

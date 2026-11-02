@@ -21,14 +21,19 @@ export async function findVerificationTracks(
 		query = {
 			album: { $in: approvedAlbumIds },
 			"verification.song": "approved",
-			"verification.lyrics": "approved",
+			$or: [
+				{ "verification.lyrics": "approved" },
+				{ lyrics: null },
+				{ "lyrics.text": null },
+				{ "lyrics.text": "" },
+			],
 		}
 	} else if (state === "declined") {
 		query = {
 			$or: [
 				{ album: { $in: deniedAlbumIds } },
 				{ "verification.song": "denied" },
-				{ "verification.lyrics": "denied" },
+				{ $and: [{ "lyrics.text": { $exists: true, $nin: [null, ""] } }, { "verification.lyrics": "denied" }] },
 			],
 		}
 	} else {
@@ -38,14 +43,19 @@ export async function findVerificationTracks(
 					$nor: [
 						{ album: { $in: deniedAlbumIds } },
 						{ "verification.song": "denied" },
-						{ "verification.lyrics": "denied" },
+						{ $and: [{ "lyrics.text": { $exists: true, $nin: [null, ""] } }, { "verification.lyrics": "denied" }] },
 					],
 				},
 				{
 					$or: [
 						{ album: { $nin: approvedAlbumIds } },
 						{ "verification.song": { $ne: "approved" } },
-						{ "verification.lyrics": { $ne: "approved" } },
+						{
+							$and: [
+								{ "lyrics.text": { $exists: true, $nin: [null, ""] } },
+								{ "verification.lyrics": { $ne: "approved" } },
+							],
+						},
 					],
 				},
 			],

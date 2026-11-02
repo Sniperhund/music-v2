@@ -53,7 +53,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 			return { message: "Album not found" }
 		}
 		track.set("verification.song", status)
-		if (body.target === "all" && (status !== "approved" || track.lyrics?.synced)) {
+		if (body.target === "all" && (status !== "approved" || (track.lyrics?.synced && track.lyrics.text?.trim()))) {
 			track.set("verification.lyrics", status)
 			track.set("verification.lyricsNote", undefined)
 		}
@@ -61,7 +61,11 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		await Promise.all([track.save(), album.save()])
 		return { target: "all", status }
 	}
-	if (body.target === "lyrics" && (status === "approved" || status === "approved-with-changes") && !track.lyrics?.synced) {
+	if (
+		body.target === "lyrics" &&
+		(status === "approved" || status === "approved-with-changes") &&
+		(!track.lyrics?.synced || !track.lyrics.text?.trim())
+	) {
 		setResponseStatus(event, 400)
 		return { message: "Only synced lyrics can be approved" }
 	}
