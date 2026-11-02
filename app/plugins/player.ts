@@ -5,6 +5,13 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const mediaBaseUrl = useRuntimeConfig().public.mediaBaseUrl
 	const { fullscreen, close: closeFullscreen } = useFullscreen()
 	const { data: user } = useApiFetch<{ role?: string }>("/user")
+	const lyricsConfirmationEnabled = useState<boolean>("player:lyrics-confirmation-enabled", () => true)
+	if (import.meta.client) {
+		lyricsConfirmationEnabled.value = window.localStorage.getItem("music-v2-lyrics-confirmation") !== "false"
+		watch(lyricsConfirmationEnabled, (enabled) => {
+			window.localStorage.setItem("music-v2-lyrics-confirmation", String(enabled))
+		})
+	}
 	const fullscreenLyricsReviewTrack = useState<Track | null>("player:fullscreen-lyrics-review-track", () => null)
 	const clearFullscreenLyricsReview = () => {
 		fullscreenLyricsReviewTrack.value = null
@@ -701,6 +708,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				const endedTrack = currentSong.value
 				const shouldReviewLyrics = Boolean(
 					fullscreen.value &&
+					lyricsConfirmationEnabled.value &&
 					user.value?.role === "admin" &&
 					endedTrack?.lyrics?.text?.trim(),
 				)
@@ -1058,6 +1066,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				duration,
 				volume,
 				queue,
+				lyricsConfirmationEnabled,
 				fullscreenLyricsReviewTrack,
 				clearFullscreenLyricsReview,
 				continueAfterFullscreenLyricsReview,
