@@ -9,6 +9,10 @@ const CACHE_TTL_MS = 30_000
 const entries = new Map<string, CacheEntry>()
 const fetchRequest = $fetch as (request: any, options?: any) => Promise<any>
 
+export function clearRequestCache() {
+	entries.clear()
+}
+
 function requestKey(request: string | Request, options: Record<string, any> = {}) {
 	const url = request instanceof Request ? request.url : request
 	const method = String(options.method ?? (request instanceof Request ? request.method : "GET")).toUpperCase()

@@ -1,4 +1,5 @@
 import type { Track, VerificationStatus } from "@/utils/types"
+import { clearRequestCache } from "@/utils/requestCache"
 import type { DropdownMenuItem } from "~/ui/DropdownMenu.vue"
 
 export const useTrackVerification = (getTrack: () => Track | undefined) => {
@@ -37,6 +38,7 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 				(target === "song" ? status : song.value) === "approved" &&
 				(target === "lyrics" ? status : lyrics.value) === "approved" &&
 				(target === "album" ? status : album.value) === "approved"
+			clearRequestCache()
 			await refreshNuxtData()
 			toast.show(
 				fullyApproved
@@ -45,43 +47,6 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 			)
 		} catch {
 			toast.show("Could not update verification", "error")
-		}
-	}
-
-	const acceptAll = async () => {
-		const track = getTrack()
-		if (!track) return
-		try {
-			await $fetch("/api/admin/verification", {
-				method: "PATCH",
-				query: { id: track._id },
-				body: { target: "all", status: "approved" },
-			})
-			song.value = "approved"
-			lyrics.value = "approved"
-			album.value = "approved"
-			await refreshNuxtData()
-			toast.show("Song, lyrics, and album approved")
-		} catch {
-			toast.show("Could not approve all verification", "error")
-		}
-	}
-
-	const approveTrackAndAlbum = async () => {
-		const track = getTrack()
-		if (!track) return
-		try {
-			await $fetch("/api/admin/verification", {
-				method: "PATCH",
-				query: { id: track._id },
-				body: { target: "track-and-album", status: "approved" },
-			})
-			song.value = "approved"
-			album.value = "approved"
-			await refreshNuxtData()
-			toast.show("Track and album approved")
-		} catch {
-			toast.show("Could not approve track and album", "error")
 		}
 	}
 
@@ -99,10 +64,6 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 		const track = getTrack()
 		if (!track) return []
 		return [[
-			{ label: "Accept all", icon: "lucide:badge-check", onSelect: acceptAll },
-			{ label: "Approve track + album", icon: "lucide:disc-3", keepOpen: true, onSelect: approveTrackAndAlbum },
-			{ label: "Approve track", icon: "lucide:badge-check", keepOpen: true, onSelect: () => save("song", "approved") },
-			{ label: "Disapprove track", icon: "lucide:badge-x", keepOpen: true, onSelect: () => save("song", "denied") },
 			{ label: `Track: ${song.value}`, icon: "lucide:music-2", children: decisionItems("song") },
 			track.lyrics
 				? { label: `Lyrics: ${lyrics.value}`, icon: "lucide:align-left", children: decisionItems("lyrics") }
