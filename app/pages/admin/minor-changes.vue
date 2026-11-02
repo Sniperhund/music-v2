@@ -11,6 +11,7 @@ const {
 	nextPage,
 } = useAdminVerificationPage("/admin/tracks/minor-changes")
 const { playAlbumAtIndex } = usePlayer()
+
 useHead({ title: "Lyrics: Minor Changes Required" })
 </script>
 

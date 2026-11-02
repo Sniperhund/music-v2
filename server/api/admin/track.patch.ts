@@ -56,7 +56,19 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	if (name) track.name = name
 	if (album) track.album = new mongoose.Types.ObjectId(album)
 	if (artists) track.artists = artists.map((id) => new mongoose.Types.ObjectId(id))
-	if (parsedLyrics?.ok && parsedLyrics.value !== undefined) track.lyrics = parsedLyrics.value as any
+	if (parsedLyrics?.ok && parsedLyrics.value !== undefined) {
+		const nextLyrics = parsedLyrics.value as { synced: boolean; text: string } | null
+		const currentLyrics = track.lyrics as { synced: boolean; text: string } | null | undefined
+		const lyricsChanged =
+			currentLyrics == null || nextLyrics == null
+				? currentLyrics !== nextLyrics
+				: currentLyrics.synced !== nextLyrics.synced || currentLyrics.text !== nextLyrics.text
+		track.lyrics = nextLyrics as any
+		if (lyricsChanged) {
+			track.set("verification.lyrics", "undecided")
+			track.set("verification.lyricsNote", undefined)
+		}
+	}
 	try {
 		await track.save()
 	} catch (error) {

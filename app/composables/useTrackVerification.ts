@@ -10,6 +10,7 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 	const album = ref<VerificationStatus>(getTrack()?.album.verification ?? "undecided")
 	const minorChangesModalOpen = ref(false)
 	const minorChangesNote = ref("")
+	const editTrackModalOpen = ref(false)
 
 	watch(
 		() => getTrack(),
@@ -37,11 +38,10 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 			if (target === "song") song.value = status as VerificationStatus
 			else if (target === "lyrics") lyrics.value = status
 			else album.value = status as VerificationStatus
-			const isApproved = (value: string) => value === "approved" || value === "approved-with-changes"
 			const fullyApproved =
-				isApproved(target === "song" ? status : song.value) &&
-				isApproved(target === "lyrics" ? status : lyrics.value) &&
-				isApproved(target === "album" ? status : album.value)
+				(target === "song" ? status : song.value) === "approved" &&
+				(target === "lyrics" ? status : lyrics.value) === "approved" &&
+				(target === "album" ? status : album.value) === "approved"
 			clearRequestCache()
 			await refreshNuxtData()
 			toast.show(
@@ -96,8 +96,11 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 					: [denyLyricsItem],
 			},
 			{ label: `Album: ${album.value}`, icon: "lucide:disc-3", children: decisionItems("album") },
+			...(user.value?.role === "admin"
+				? [{ label: "Edit track", icon: "lucide:pencil", onSelect: () => (editTrackModalOpen.value = true) }]
+				: []),
 		]]
 	})
 
-	return { items, minorChangesModalOpen, minorChangesNote, submitMinorChanges }
+	return { items, minorChangesModalOpen, minorChangesNote, submitMinorChanges, editTrackModalOpen }
 }

@@ -81,6 +81,7 @@ const {
 	minorChangesModalOpen,
 	minorChangesNote,
 	submitMinorChanges,
+	editTrackModalOpen,
 } = useTrackVerification(() => props.track)
 
 const dropdownMenuItems = computed<DropdownMenuItem[][]>(() => [
@@ -304,6 +305,7 @@ const artworkSrc = computed(() => {
 				</div>
 			</form>
 		</Modal>
+		<TrackEditModal v-if="editTrackModalOpen" v-model:open="editTrackModalOpen" :track="props.track" />
 	</article>
 </template>
 
