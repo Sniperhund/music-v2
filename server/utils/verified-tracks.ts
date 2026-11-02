@@ -3,7 +3,7 @@ import { Track } from "../models/track"
 import { MAX_QUERY_LIMIT } from "./api-validation"
 
 export async function findVerificationTracks(
-	state: "verified" | "awaiting" | "declined",
+	state: "verified" | "awaiting" | "declined" | "minor-changes",
 	limit: number,
 	skip: number,
 ) {
@@ -15,7 +15,9 @@ export async function findVerificationTracks(
 	const deniedAlbumIds = deniedAlbums.map((album) => album._id)
 
 	let query
-	if (state === "verified") {
+	if (state === "minor-changes") {
+		query = { "verification.lyrics": "approved-with-changes" }
+	} else if (state === "verified") {
 		query = {
 			album: { $in: approvedAlbumIds },
 			"verification.song": "approved",

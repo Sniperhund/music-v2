@@ -24,6 +24,13 @@ useHead({ title: "Admin" })
 				Verified Tracks
 			</Button>
 			<Button
+				to="/admin/minor-changes"
+				type="link"
+				icon-name="lucide:badge-alert"
+			>
+				Lyrics: Minor Changes Required
+			</Button>
+			<Button
 				to="/admin/declined"
 				type="link"
 				icon-name="lucide:badge-x"

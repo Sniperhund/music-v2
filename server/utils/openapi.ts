@@ -59,6 +59,7 @@ const operations: ApiOperation[] = [
 	{ method: "delete", path: "/admin/track", tag: "Admin", summary: "Delete a track", admin: true, query: ["id"], response: "EmptyObject" },
 	{ method: "patch", path: "/admin/verification", tag: "Admin", summary: "Update track or album verification", admin: true, query: ["id"], body: "json", response: "Verification" },
 	{ method: "get", path: "/admin/tracks/verified", tag: "Admin", summary: "Get fully verified tracks", admin: true, query: ["limit", "skip"], response: "TrackPage" },
+	{ method: "get", path: "/admin/tracks/minor-changes", tag: "Admin", summary: "Get tracks with lyrics approved pending minor changes", admin: true, query: ["limit", "skip"], response: "TrackPage" },
 	{ method: "get", path: "/admin/tracks/unverified", tag: "Admin", summary: "Get tracks awaiting verification", admin: true, query: ["limit", "skip"], response: "TrackPage" },
 	{ method: "get", path: "/admin/tracks/declined", tag: "Admin", summary: "Get tracks with declined verification", admin: true, query: ["limit", "skip"], response: "TrackPage" },
 ]
