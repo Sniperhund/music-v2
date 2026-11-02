@@ -43,7 +43,7 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
 			<div class="sidebar-content">
 				<slot name="sidebar" />
 			</div>
-			<DropdownMenu v-if="user" class="user-menu" :items="userMenuItems">
+			<DropdownMenu v-if="user" class="user-menu" align="start" full-width :items="userMenuItems">
 				<button class="user-avatar" type="button" :aria-label="`Open menu for ${user.name}`">
 					<span class="avatar-initials">{{ initials }}</span>
 					<span class="avatar-name">{{ user.name }}</span>
@@ -96,6 +96,7 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
 	}
 
 	.user-avatar {
+		width: 100%;
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;

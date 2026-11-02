@@ -9,6 +9,8 @@ export interface DropdownMenuItem {
 
 interface DropdownMenuProps {
 	items: DropdownMenuItem[][]
+	align?: "start" | "end"
+	fullWidth?: boolean
 }
 
 const props = defineProps<DropdownMenuProps>()
@@ -18,6 +20,7 @@ const mounted = ref(false)
 const placement = ref<"bottom" | "top">("bottom")
 const root = useTemplateRef("root")
 const menuPosition = ref({ top: 0, left: 0 })
+const menuWidth = ref<string | undefined>()
 
 const toggle = async () => {
 	open.value = !open.value
@@ -45,8 +48,9 @@ const updatePlacement = () => {
 	placement.value = showAbove ? "top" : "bottom"
 	menuPosition.value = {
 		top: showAbove ? rect.top : rect.bottom,
-		left: rect.right,
+		left: props.align === "start" ? rect.left : rect.right,
 	}
+	menuWidth.value = props.fullWidth ? `${rect.width}px` : undefined
 }
 
 const handleOutsideClick = (e: MouseEvent) => {
@@ -89,10 +93,11 @@ onBeforeUnmount(() => {
 				<div
 					v-show="open"
 					class="dropdown-menu"
-					:class="placement"
+					:class="[placement, `align-${props.align ?? 'end'}`]"
 					:style="{
 						top: `${menuPosition.top}px`,
 						left: `${menuPosition.left}px`,
+						width: menuWidth,
 					}"
 				>
 					<div
@@ -182,6 +187,16 @@ onBeforeUnmount(() => {
 	&.top {
 		transform: translate(-100%, calc(-100% - 0.5rem));
 		transform-origin: bottom right;
+	}
+
+	&.align-start {
+		transform: translate(0, 0.5rem);
+		transform-origin: top left;
+	}
+
+	&.top.align-start {
+		transform: translate(0, calc(-100% - 0.5rem));
+		transform-origin: bottom left;
 	}
 
 	.group {
