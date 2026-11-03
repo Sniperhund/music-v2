@@ -22,6 +22,7 @@ const props = withDefaults(defineProps<ButtonProps>(), {
 		:is="
 			props.type == 'link' && props.to != undefined ? NuxtLink : 'button'
 		"
+		:type="props.type === 'link' ? undefined : props.type"
 		:to="props.to"
 		:disabled="props.disabled"
 		:class="[

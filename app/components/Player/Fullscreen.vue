@@ -120,61 +120,20 @@ nuxtApp.hook("page:finish", () => {
 			</div>
 		</section>
 	</section>
-	<Modal v-model:open="lyricsReviewModalOpen" :dismissible="false" priority>
-	<div class="lyrics-review-form">
-		<h2>Review lyrics</h2>
-		<p v-if="fullscreenLyricsReviewTrack">
-			Did you notice anything about the lyrics for {{ fullscreenLyricsReviewTrack.name }}?
-		</p>
-		<label class="lyrics-review-label" for="fullscreen-lyrics-review-note">
-			Changes required (optional)
-		</label>
-		<Input
-			v-model:value="lyricsReviewNote"
-			type="textarea"
-			textarea
-			full
-			name="fullscreen-lyrics-review-note"
-			placeholder="Describe any minor changes"
-		/>
-		<div class="lyrics-review-actions">
-			<Button
-				v-if="fullscreenLyricsReviewTrack?.lyrics?.synced"
-				@click="submitLyricsReview('approved')"
-			>Approve</Button>
-			<Button
-				v-if="fullscreenLyricsReviewTrack?.lyrics?.synced"
-				@click="submitLyricsReview('approved-with-changes')"
-			>Minor changes required</Button>
-			<Button @click="submitLyricsReview('denied')">Deny</Button>
-			<Button variant="ghost" @click="dismissLyricsReview">I don't know</Button>
-		</div>
-	</div>
-</Modal>
+	<TrackLyricsVerificationModal
+		v-model:open="lyricsReviewModalOpen"
+		v-model:note="lyricsReviewNote"
+		mode="review"
+		:track-name="fullscreenLyricsReviewTrack?.name"
+		:lyrics-synced="fullscreenLyricsReviewTrack?.lyrics?.synced"
+		@approve="submitLyricsReview('approved')"
+		@approve-with-changes="submitLyricsReview('approved-with-changes')"
+		@deny="submitLyricsReview('denied')"
+		@dismiss="dismissLyricsReview"
+	/>
 </template>
 
 <style lang="scss" scoped>
-.lyrics-review-form {
-	display: flex;
-	flex-direction: column;
-	gap: 0.75rem;
-}
-
-.lyrics-review-form h2 {
-	font-weight: 700;
-}
-
-.lyrics-review-label {
-	font-weight: 600;
-}
-
-.lyrics-review-actions {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: flex-end;
-	gap: 0.5rem;
-}
-
 .fullscreen {
 	position: fixed;
 	top: 0;
