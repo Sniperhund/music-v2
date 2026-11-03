@@ -27,6 +27,7 @@ useHead({ title: "Awaiting Verification" })
 				:track="track"
 				:index="index"
 				show-image
+				show-verification-issues
 				@play-album-at-index="() => playAlbumAtIndex(tracks, index)"
 			/>
 		</template>

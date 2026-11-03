@@ -15,6 +15,7 @@ interface TrackRowProps {
 	extendedInfo?: boolean
 	showImage?: boolean
 	queueMode?: boolean
+	showVerificationIssues?: boolean
 }
 
 const props = defineProps<TrackRowProps>()
@@ -207,9 +208,9 @@ const verificationBadge = computed<"verified" | "partial" | null>(() => {
 	return hasApprovedFeature ? "partial" : null
 })
 
-const verificationTooltip = computed(() => {
+const remainingVerificationIssues = computed(() => {
 	const track = props.track
-	if (!track) return undefined
+	if (!track) return []
 	const issues: string[] = []
 	const songStatus = track.verification?.song ?? "undecided"
 	const lyricsStatus = track.verification?.lyrics ?? "undecided"
@@ -225,8 +226,14 @@ const verificationTooltip = computed(() => {
 					: "Lyrics not reviewed",
 		)
 	}
-	return issues.length ? issues.join(" · ") : undefined
+	const albumStatus = track.album.verification ?? "undecided"
+	if (albumStatus !== "approved") {
+		issues.push(albumStatus === "denied" ? "Album denied" : "Album not approved")
+	}
+	return issues
 })
+
+const verificationTooltip = computed(() => remainingVerificationIssues.value.join(" · ") || undefined)
 </script>
 
 <template>
@@ -271,7 +278,12 @@ const verificationTooltip = computed(() => {
 		</div>
 
 		<div v-if="props.track" class="track-title">
-			<p>{{ props.track.name }}</p>
+			<div class="track-title-content">
+				<p>{{ props.track.name }}</p>
+				<span v-if="props.showVerificationIssues && remainingVerificationIssues.length" class="verification-issues">
+					Remaining issues: {{ remainingVerificationIssues.join(" · ") }}
+				</span>
+			</div>
 			<Icon
 				v-if="verificationBadge"
 				name="lucide:badge-check"
@@ -482,9 +494,19 @@ const verificationTooltip = computed(() => {
 	gap: 0.4rem;
 	min-width: 0;
 
+	.track-title-content {
+		min-width: 0;
+	}
+
 	p {
 		min-width: 0;
 	}
+}
+
+.verification-issues {
+	font-size: 0.8em;
+	line-height: 1.2;
+	opacity: 0.72;
 }
 
 .verified-icon {
