@@ -710,7 +710,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				const shouldReviewLyrics = Boolean(
 					trackVerificationEnabled.value &&
 					user.value?.role === "admin" &&
-					endedTrack?.verification?.lyrics !== "approved" &&
+					endedTrack?.verification?.lyrics === "undecided" &&
 					endedTrack?.lyrics?.text?.trim(),
 				)
 				if (shouldReviewLyrics) fullscreenLyricsReviewTrack.value = endedTrack
