@@ -3,7 +3,6 @@ import type { DropdownMenuItem } from "~/ui/DropdownMenu.vue"
 
 const { data: user } = useApiFetch<{ name?: string; role?: string }>("/user")
 const { signout } = useAuth()
-const { lyricsConfirmationEnabled } = usePlayer()
 
 const initials = computed(() => {
 	const parts = (user.value?.name ?? "").trim().split(/\s+/).filter(Boolean)
@@ -25,14 +24,6 @@ const userMenuItems = computed<DropdownMenuItem[][]>(() => {
 		icon: "lucide:log-out",
 		onSelect: logout,
 	}]]
-	if (user.value?.role === "admin") {
-		groups.push([{
-			label: `Lyrics confirmation: ${lyricsConfirmationEnabled.value ? "On" : "Off"}`,
-			icon: lyricsConfirmationEnabled.value ? "lucide:toggle-right" : "lucide:toggle-left",
-			keepOpen: true,
-			onSelect: () => (lyricsConfirmationEnabled.value = !lyricsConfirmationEnabled.value),
-		}])
-	}
 	return groups
 })
 </script>
