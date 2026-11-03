@@ -194,6 +194,39 @@ const artworkSrc = computed(() => {
 	const file = props.entity?.file ?? props.entity?.cover
 	return file ? GET_FILE(file) : undefined
 })
+
+const verificationBadge = computed<"verified" | "partial" | null>(() => {
+	const track = props.track
+	if (!track) return null
+	const songApproved = track.verification?.song === "approved"
+	const hasLyrics = Boolean(track.lyrics?.text?.trim())
+	const lyricsStatus = track.verification?.lyrics
+	const lyricsApproved = lyricsStatus === "approved"
+	const hasApprovedFeature = songApproved || lyricsApproved || lyricsStatus === "approved-with-changes"
+	if (songApproved && (!hasLyrics || lyricsApproved)) return "verified"
+	return hasApprovedFeature ? "partial" : null
+})
+
+const verificationTooltip = computed(() => {
+	const track = props.track
+	if (!track) return undefined
+	const issues: string[] = []
+	const songStatus = track.verification?.song ?? "undecided"
+	const lyricsStatus = track.verification?.lyrics ?? "undecided"
+	if (songStatus !== "approved") {
+		issues.push(songStatus === "denied" ? "Track denied" : "Track not approved")
+	}
+	if (track.lyrics?.text?.trim() && lyricsStatus !== "approved") {
+		issues.push(
+			lyricsStatus === "denied"
+				? "Lyrics denied"
+				: lyricsStatus === "approved-with-changes"
+					? "Lyrics need minor changes"
+					: "Lyrics not reviewed",
+		)
+	}
+	return issues.length ? issues.join(" · ") : undefined
+})
 </script>
 
 <template>
@@ -205,6 +238,7 @@ const artworkSrc = computed(() => {
 			image: props.showImage,
 			queue: props.queueMode,
 		}"
+		:title="verificationTooltip"
 		@mouseenter="hovering = true"
 		@mouseleave="hovering = false"
 	>
@@ -236,7 +270,16 @@ const artworkSrc = computed(() => {
 			</template>
 		</div>
 
-		<p v-if="props.track">{{ props.track.name }}</p>
+		<div v-if="props.track" class="track-title">
+			<p>{{ props.track.name }}</p>
+			<Icon
+				v-if="verificationBadge"
+				name="lucide:badge-check"
+				:class="['verified-icon', verificationBadge]"
+				:aria-label="verificationBadge === 'verified' ? 'Track and lyrics verified' : verificationTooltip"
+				:title="verificationBadge === 'verified' ? 'Track and lyrics verified' : verificationTooltip"
+			/>
+		</div>
 		<NuxtLink
 			v-else-if="props.entity"
 			:to="`/${props.entity.type}/${props.entity._id}`"
@@ -431,6 +474,26 @@ const artworkSrc = computed(() => {
 
 .artists {
 	opacity: 1;
+}
+
+.track-title {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-width: 0;
+
+	p {
+		min-width: 0;
+	}
+}
+
+.verified-icon {
+	flex: 0 0 auto;
+	color: #68d391;
+
+	&.partial {
+		color: #f6c453;
+	}
 }
 
 .dropdown-icon {
