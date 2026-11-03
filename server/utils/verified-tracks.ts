@@ -50,12 +50,6 @@ export async function findVerificationTracks(
 					$or: [
 						{ album: { $nin: approvedAlbumIds } },
 						{ "verification.song": { $ne: "approved" } },
-						{
-							$and: [
-								{ "lyrics.text": { $exists: true, $nin: [null, ""] } },
-								{ "verification.lyrics": { $ne: "approved" } },
-							],
-						},
 					],
 				},
 			],
