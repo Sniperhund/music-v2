@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Album } from "@/utils/types"
 import { prefetchRequest } from "@/utils/requestCache"
+import { formatAlbumVerificationTooltip, getAlbumVerificationState } from "@/utils/albumVerification"
 
 type AlbumProps = Omit<Omit<Album, "genre">, "artists"> & {
 	artists: Array<Omit<Artist, "file">>
@@ -8,6 +9,10 @@ type AlbumProps = Omit<Omit<Album, "genre">, "artists"> & {
 }
 
 const props = defineProps<AlbumProps>()
+
+const verificationState = computed(() => getAlbumVerificationState(props))
+
+const verificationTooltip = computed(() => formatAlbumVerificationTooltip(props))
 
 const prefetchAlbum = () => {
 	prefetchRequest(`/albums/${props._id}`)
@@ -29,7 +34,16 @@ const prefetchAlbum = () => {
 				width="240"
 				height="240"
 			/>
-			<p>{{ props.name }}</p>
+			<div class="album-title">
+				<p>{{ props.name }}</p>
+				<Icon
+					v-if="verificationState !== 'approved'"
+					name="lucide:badge-check"
+					:class="['verification-icon', verificationState]"
+					:aria-label="verificationTooltip"
+					:title="verificationTooltip"
+				/>
+			</div>
 		</NuxtLink>
 		<ArtistName :artists="props.artists" class="artist" />
 	</article>
@@ -56,6 +70,41 @@ const prefetchAlbum = () => {
 		& p {
 			margin-top: 0.3rem;
 		}
+	}
+}
+
+.album-title {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-width: 0;
+
+	p {
+		min-width: 0;
+	}
+}
+
+.verification-icon {
+	flex: 0 0 auto;
+
+	&.denied {
+		color: #ff7676;
+	}
+
+	&.undecided {
+		color: #f6c453;
+	}
+
+	&.partial {
+		color: #f6c453;
+	}
+
+	&.mixed {
+		color: #fb923c;
+	}
+
+	&.unapproved {
+		color: #ff7676;
 	}
 }
 </style>

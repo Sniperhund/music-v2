@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { GET_FILE } from "@/utils/file"
+import { formatAlbumVerificationTooltip, getAlbumVerificationState } from "@/utils/albumVerification"
 
 const route = useRoute()
 const id = computed(() => route.params.id)
@@ -18,6 +19,8 @@ const { data: tracksData } = await useApiFetch<Track[]>(
 	`/albums/${id.value}/tracks`,
 )
 const tracks = computed(() => tracksData.value ?? [])
+const albumVerificationState = computed(() => albumData.value ? getAlbumVerificationState(albumData.value) : "undecided")
+const albumVerificationTooltip = computed(() => albumData.value ? formatAlbumVerificationTooltip(albumData.value) : "")
 
 const { playAlbum, playShuffledAlbum, playAlbumAtIndex } = usePlayer()
 useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Album` : "Album") })
@@ -33,7 +36,16 @@ useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Alb
 		/>
 
 		<div class="details">
-			<h1>{{ albumData.name }}</h1>
+			<div class="album-title">
+				<h1>{{ albumData.name }}</h1>
+				<Icon
+					v-if="albumVerificationState !== 'approved'"
+					name="lucide:badge-check"
+					:class="['verification-icon', albumVerificationState]"
+					:aria-label="albumVerificationTooltip"
+					:title="albumVerificationTooltip"
+				/>
+			</div>
 			<ArtistName :artists="albumData.artists" class="artist" />
 
 			<div class="buttons">
@@ -72,6 +84,8 @@ useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Alb
 			:file="GET_FILE(album.file)"
 			:artists="album.artists"
 			:_id="album._id"
+			:verification="album.verification"
+			:unverified-track-count="album.unverifiedTrackCount"
 		/>
 	</Slider>
 </template>
@@ -100,6 +114,36 @@ useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Alb
 			@include util.fontSize(32px);
 			font-weight: 700;
 			line-height: 2.4rem;
+		}
+
+		.album-title {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		.verification-icon {
+			flex: 0 0 auto;
+
+			&.denied {
+				color: #ff7676;
+			}
+
+			&.undecided {
+				color: #f6c453;
+			}
+
+			&.partial {
+				color: #f6c453;
+			}
+
+			&.mixed {
+				color: #fb923c;
+			}
+
+			&.unapproved {
+				color: #ff7676;
+			}
 		}
 
 		.artist {

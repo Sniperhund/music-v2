@@ -4,6 +4,7 @@ import { Track } from "#server/models/track"
 import { User } from "#server/models/user"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "#server/utils/auth"
 import { MAX_QUERY_LIMIT, parseNumber, validationResponse } from "#server/utils/api-validation"
+import { addAlbumTrackVerificationSummary } from "#server/utils/album-track-verification"
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	const authenticatedUser = await requireAuthenticatedUser(event)
@@ -26,7 +27,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	if (!artistIds.length) return []
 
 	const savedAlbumIds = [...new Set(savedTracks.map((track: any) => track.album?.toString()).filter(Boolean))]
-	return Album.aggregate([
+	const albums = await Album.aggregate([
 		{
 			$match: {
 				artists: { $in: artistIds },
@@ -64,4 +65,5 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		{ $unwind: { path: "$genre", preserveNullAndEmptyArrays: true } },
 		{ $unset: ["tracks", "addedAt"] },
 	])
+	return addAlbumTrackVerificationSummary(albums)
 })

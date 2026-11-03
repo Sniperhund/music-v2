@@ -11,6 +11,10 @@ export interface Album extends Base {
 	artists: Artist[]
 	genre: Genre
 	verification?: VerificationStatus
+	unverifiedTrackCount?: number
+	approvedTrackCount?: number
+	partiallyApprovedTrackCount?: number
+	unapprovedTrackCount?: number
 }
 
 export interface Artist extends Base {

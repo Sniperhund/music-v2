@@ -3,6 +3,7 @@ import { User } from "#server/models/user"
 import { Album } from "#server/models/album"
 import { Track } from "#server/models/track"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "#server/utils/auth"
+import { addAlbumTrackVerificationSummary } from "#server/utils/album-track-verification"
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	const authenticatedUser = await requireAuthenticatedUser(event)
@@ -29,5 +30,6 @@ export default defineAuthenticatedEventHandler(async (event) => {
 
 	const albums = await Album.find({ _id: { $in: albumIds } }).populate("artists").populate("genre").exec()
 	const albumsById = new Map(albums.map((album: any) => [album._id.toString(), album]))
-	return albumIds.map((id) => albumsById.get(id)).filter((album) => album != null)
+	const albumsInOrder = albumIds.map((id) => albumsById.get(id)).filter((album) => album != null)
+	return addAlbumTrackVerificationSummary(albumsInOrder)
 })

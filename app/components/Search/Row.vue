@@ -1,10 +1,17 @@
 <script setup lang="ts">
+import { formatAlbumVerificationTooltip, getAlbumVerificationState } from "@/utils/albumVerification"
+
 interface SearchResult {
 	type: "track" | "album" | "artist"
 	_id: string
 	name: string
 	file?: string
 	cover?: string
+	verification?: "undecided" | "approved" | "denied"
+	unverifiedTrackCount?: number
+	approvedTrackCount?: number
+	partiallyApprovedTrackCount?: number
+	unapprovedTrackCount?: number
 	album?: { _id?: string; name?: string; file?: string; cover?: string }
 	artists?: Artist[]
 }
@@ -26,6 +33,10 @@ const entryType = computed(() =>
 			? "Album"
 			: "Artist",
 )
+
+const albumVerificationState = computed(() => getAlbumVerificationState(props.result))
+
+const albumVerificationTooltip = computed(() => formatAlbumVerificationTooltip(props.result))
 </script>
 
 <template>
@@ -45,13 +56,22 @@ const entryType = computed(() =>
 			/>
 		</div>
 		<div class="details">
-			<p v-if="props.result.type === 'track'">{{ props.result.name }}</p>
-			<NuxtLink
-				v-else
-				:to="`/${props.result.type}/${props.result._id}`"
-			>
-				{{ props.result.name }}
-			</NuxtLink>
+			<div class="title-line">
+				<p v-if="props.result.type === 'track'">{{ props.result.name }}</p>
+				<NuxtLink
+					v-else
+					:to="`/${props.result.type}/${props.result._id}`"
+				>
+					{{ props.result.name }}
+				</NuxtLink>
+				<Icon
+					v-if="props.result.type === 'album' && albumVerificationState !== 'approved'"
+					name="lucide:badge-check"
+					:class="['verification-icon', albumVerificationState]"
+					:aria-label="albumVerificationTooltip"
+					:title="albumVerificationTooltip"
+				/>
+			</div>
 			<span class="entry-type">{{ entryType }}</span>
 		</div>
 		<ArtistName
@@ -129,6 +149,42 @@ const entryType = computed(() =>
 	a {
 		color: inherit;
 		text-decoration: none;
+	}
+}
+
+.title-line {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-width: 0;
+
+	p,
+	a {
+		min-width: 0;
+	}
+}
+
+.verification-icon {
+	flex: 0 0 auto;
+
+	&.denied {
+		color: #ff7676;
+	}
+
+	&.undecided {
+		color: #f6c453;
+	}
+
+	&.partial {
+		color: #f6c453;
+	}
+
+	&.mixed {
+		color: #fb923c;
+	}
+
+	&.unapproved {
+		color: #ff7676;
 	}
 }
 

@@ -3,6 +3,7 @@ import mongoose, { type PipelineStage } from "mongoose"
 import { Album } from "../../../models/album"
 import { MAX_QUERY_LIMIT, parseMongoId, parseNumber, validationResponse } from "../../../utils/api-validation"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../../utils/auth"
+import { addAlbumTrackVerificationSummary } from "../../../utils/album-track-verification"
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event)
@@ -28,5 +29,6 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		{ $unset: "genre" },
 	]
 
-	return Album.aggregate(pipeline)
+	const albums = await Album.aggregate(pipeline)
+	return addAlbumTrackVerificationSummary(albums)
 })

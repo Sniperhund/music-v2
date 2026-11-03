@@ -2,6 +2,7 @@ import Fuse from "fuse.js"
 import { Album } from "../models/album"
 import { Artist } from "../models/artist"
 import { Track } from "../models/track"
+import { addAlbumTrackVerificationSummary } from "./album-track-verification"
 
 const cacheDurationMs = 60_000
 
@@ -27,6 +28,7 @@ export async function getSearchIndexes() {
 			Album.find({}).populate(["artists", "genre"]).lean(),
 			Artist.find({}).lean(),
 		])
+		const albumsWithTrackStatus = await addAlbumTrackVerificationSummary(rawAlbums)
 		const options = {
 			threshold: 0.3,
 			distance: 100,
@@ -35,7 +37,7 @@ export async function getSearchIndexes() {
 
 		const indexes: SearchIndexes = {
 			tracks: new Fuse(rawTracks, { ...options, keys: ["name", "lyrics.text"] }),
-			albums: new Fuse(rawAlbums, { ...options, keys: ["name"] }),
+			albums: new Fuse(albumsWithTrackStatus, { ...options, keys: ["name"] }),
 			artists: new Fuse(rawArtists, { ...options, keys: ["name"] }),
 		}
 		cachedIndexes = indexes

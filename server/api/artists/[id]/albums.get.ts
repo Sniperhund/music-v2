@@ -2,6 +2,7 @@ import { getQuery, getRouterParam } from "h3"
 import { Album } from "../../../models/album"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../../utils/auth"
 import { MAX_QUERY_LIMIT, parseMongoId, parseNumber, validationResponse } from "../../../utils/api-validation"
+import { addAlbumTrackVerificationSummary } from "../../../utils/album-track-verification"
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event)
@@ -15,10 +16,11 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	const skip = parseNumber(query.skip, 0, 0)
 	if ("error" in skip) return validationResponse(event, skip.error)
 
-	return Album.find({ artists: parsedId.value })
+	const albums = await Album.find({ artists: parsedId.value })
 		.limit(limit.value || 9)
 		.skip(skip.value || 0)
 		.populate("genre")
 		.populate("artists")
 		.exec()
+	return addAlbumTrackVerificationSummary(albums)
 })
