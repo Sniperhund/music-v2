@@ -706,7 +706,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 				updateMediaSession()
 			},
 			onend: () => {
-				const endedTrack = currentSong.value
+				if (sound.value !== newSound || currentSong.value?._id !== song._id) return
+				const endedTrack = song
 				const shouldReviewLyrics = Boolean(
 					trackVerificationEnabled.value &&
 					user.value?.role === "admin" &&
