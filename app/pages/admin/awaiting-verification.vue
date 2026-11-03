@@ -17,10 +17,10 @@ useHead({ title: "Awaiting Verification" })
 <template>
 	<section class="tracks-page">
 		<h1 class="title">Awaiting Verification</h1>
-		<p v-if="status === 'pending'" class="message">Loading tracks…</p>
-		<p v-else-if="error" class="message" role="alert">Could not load tracks awaiting verification.</p>
-		<p v-else-if="!tracks.length" class="message">No tracks are awaiting verification.</p>
-		<template v-else>
+		<p v-if="status === 'pending' && !tracks.length" class="message">Loading tracks…</p>
+		<p v-else-if="error && !tracks.length" class="message" role="alert">Could not load tracks awaiting verification.</p>
+		<p v-else-if="status !== 'pending' && !tracks.length" class="message">No tracks are awaiting verification.</p>
+		<template v-if="tracks.length">
 			<TrackRow
 				v-for="(track, index) in tracks"
 				:key="track._id"
@@ -31,6 +31,9 @@ useHead({ title: "Awaiting Verification" })
 				@play-album-at-index="() => playAlbumAtIndex(tracks, index)"
 			/>
 		</template>
+		<p v-if="error && tracks.length" class="message" role="alert">
+			Could not refresh tracks. Showing the previous results.
+		</p>
 		<p v-if="total" class="page-summary">{{ total }} tracks awaiting verification</p>
 		<nav v-if="totalPages > 1" class="pagination" aria-label="Awaiting verification pages">
 			<Button :disabled="page === 0" @click="previousPage">Previous</Button>

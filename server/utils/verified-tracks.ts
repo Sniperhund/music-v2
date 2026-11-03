@@ -2,8 +2,18 @@ import { Album } from "../models/album"
 import { Track } from "../models/track"
 import { MAX_QUERY_LIMIT } from "./api-validation"
 
+const missingLyricsQuery = {
+	$or: [
+		{ lyrics: null },
+		{ "lyrics.text": { $exists: false } },
+		{ "lyrics.text": null },
+		{ "lyrics.text": "" },
+		{ "lyrics.text": /^\s*$/ },
+	],
+}
+
 export async function findVerificationTracks(
-	state: "verified" | "awaiting" | "declined" | "minor-changes",
+	state: "verified" | "awaiting" | "declined" | "minor-changes" | "missing-lyrics",
 	limit: number,
 	skip: number,
 ) {
@@ -17,16 +27,14 @@ export async function findVerificationTracks(
 	let query
 	if (state === "minor-changes") {
 		query = { "verification.lyrics": "approved-with-changes" }
+	} else if (state === "missing-lyrics") {
+		query = missingLyricsQuery
 	} else if (state === "verified") {
 		query = {
 			album: { $in: approvedAlbumIds },
 			"verification.song": "approved",
-			$or: [
-				{ "verification.lyrics": "approved" },
-				{ lyrics: null },
-				{ "lyrics.text": null },
-				{ "lyrics.text": "" },
-			],
+			"verification.lyrics": "approved",
+			"lyrics.text": { $regex: /\S/ },
 		}
 	} else if (state === "declined") {
 		query = {
@@ -44,6 +52,7 @@ export async function findVerificationTracks(
 						{ album: { $in: deniedAlbumIds } },
 						{ "verification.song": "denied" },
 						{ $and: [{ "lyrics.text": { $exists: true, $nin: [null, ""] } }, { "verification.lyrics": "denied" }] },
+						missingLyricsQuery,
 					],
 				},
 				{

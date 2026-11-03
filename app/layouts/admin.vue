@@ -71,6 +71,15 @@
 				<Button
 					full
 					variant="ghost"
+					to="/admin/missing-lyrics"
+					type="link"
+					icon-name="lucide:file-question"
+				>
+					Missing Lyrics
+				</Button>
+				<Button
+					full
+					variant="ghost"
 					to="/admin/verified"
 					type="link"
 					icon-name="lucide:badge-check"

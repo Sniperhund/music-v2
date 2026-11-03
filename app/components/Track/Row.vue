@@ -196,15 +196,15 @@ const artworkSrc = computed(() => {
 	return file ? GET_FILE(file) : undefined
 })
 
-const verificationBadge = computed<"verified" | "partial" | null>(() => {
+const verificationBadge = computed<"verified" | "partial" | "no-lyrics" | null>(() => {
 	const track = props.track
 	if (!track) return null
+	if (!track.lyrics?.text?.trim()) return "no-lyrics"
 	const songApproved = track.verification?.song === "approved"
-	const hasLyrics = Boolean(track.lyrics?.text?.trim())
 	const lyricsStatus = track.verification?.lyrics
 	const lyricsApproved = lyricsStatus === "approved"
 	const hasApprovedFeature = songApproved || lyricsApproved || lyricsStatus === "approved-with-changes"
-	if (songApproved && (!hasLyrics || lyricsApproved)) return "verified"
+	if (songApproved && lyricsApproved) return "verified"
 	return hasApprovedFeature ? "partial" : null
 })
 
@@ -214,10 +214,13 @@ const remainingVerificationIssues = computed(() => {
 	const issues: string[] = []
 	const songStatus = track.verification?.song ?? "undecided"
 	const lyricsStatus = track.verification?.lyrics ?? "undecided"
+	const hasLyrics = Boolean(track.lyrics?.text?.trim())
 	if (songStatus !== "approved") {
 		issues.push(songStatus === "denied" ? "Track denied" : "Track not approved")
 	}
-	if (track.lyrics?.text?.trim() && lyricsStatus !== "approved") {
+	if (!hasLyrics) {
+		issues.push("Lyrics missing")
+	} else if (lyricsStatus !== "approved") {
 		issues.push(
 			lyricsStatus === "denied"
 				? "Lyrics denied"
@@ -286,10 +289,10 @@ const verificationTooltip = computed(() => remainingVerificationIssues.value.joi
 			</div>
 			<Icon
 				v-if="verificationBadge"
-				name="lucide:badge-check"
+				:name="verificationBadge === 'no-lyrics' ? 'lucide:file-question' : 'lucide:badge-check'"
 				:class="['verified-icon', verificationBadge]"
-				:aria-label="verificationBadge === 'verified' ? 'Track and lyrics verified' : verificationTooltip"
-				:title="verificationBadge === 'verified' ? 'Track and lyrics verified' : verificationTooltip"
+				:aria-label="verificationBadge === 'verified' ? 'Track and lyrics verified' : verificationBadge === 'no-lyrics' ? 'No lyrics' : verificationTooltip"
+				:title="verificationBadge === 'verified' ? 'Track and lyrics verified' : verificationBadge === 'no-lyrics' ? 'No lyrics' : verificationTooltip"
 			/>
 		</div>
 		<NuxtLink
@@ -515,6 +518,10 @@ const verificationTooltip = computed(() => remainingVerificationIssues.value.joi
 
 	&.partial {
 		color: #f6c453;
+	}
+
+	&.no-lyrics {
+		color: #a1a1aa;
 	}
 }
 
