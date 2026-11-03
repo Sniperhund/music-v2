@@ -5,6 +5,14 @@ export default defineNuxtPlugin((nuxtApp) => {
 	const mediaBaseUrl = useRuntimeConfig().public.mediaBaseUrl
 	const { fullscreen, close: closeFullscreen } = useFullscreen()
 	const { data: user } = useApiFetch<{ role?: string }>("/user")
+	const trackVerificationEnabled = useState<boolean>("player:track-verification-enabled", () => true)
+	const TRACK_VERIFICATION_STORAGE_KEY = "music-v2-track-verification-enabled"
+	if (import.meta.client) {
+		trackVerificationEnabled.value = window.localStorage.getItem(TRACK_VERIFICATION_STORAGE_KEY) !== "false"
+		watch(trackVerificationEnabled, (enabled) => {
+			window.localStorage.setItem(TRACK_VERIFICATION_STORAGE_KEY, String(enabled))
+		})
+	}
 	const fullscreenLyricsReviewTrack = useState<Track | null>("player:fullscreen-lyrics-review-track", () => null)
 	const clearFullscreenLyricsReview = () => {
 		fullscreenLyricsReviewTrack.value = null
@@ -700,6 +708,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 			onend: () => {
 				const endedTrack = currentSong.value
 				const shouldReviewLyrics = Boolean(
+					trackVerificationEnabled.value &&
 					user.value?.role === "admin" &&
 					endedTrack?.verification?.lyrics !== "approved" &&
 					endedTrack?.lyrics?.text?.trim(),
@@ -1058,6 +1067,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 				duration,
 				volume,
 				queue,
+				trackVerificationEnabled,
 				fullscreenLyricsReviewTrack,
 				clearFullscreenLyricsReview,
 				continueAfterFullscreenLyricsReview,
