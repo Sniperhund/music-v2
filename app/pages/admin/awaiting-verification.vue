@@ -10,7 +10,7 @@ const {
 	previousPage,
 	nextPage,
 } = useAdminVerificationPage("/admin/tracks/unverified")
-const { playAlbumAtIndex } = usePlayer()
+const { playAdminVerificationTracks } = usePlayer()
 useHead({ title: "Awaiting Verification" })
 </script>
 
@@ -28,7 +28,7 @@ useHead({ title: "Awaiting Verification" })
 				:index="index"
 				show-image
 				show-verification-issues
-				@play-album-at-index="() => playAlbumAtIndex(tracks, index)"
+				@play-album-at-index="() => playAdminVerificationTracks(tracks, track._id)"
 			/>
 		</template>
 		<p v-if="error && tracks.length" class="message" role="alert">

@@ -14,6 +14,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 		})
 	}
 	const fullscreenLyricsReviewTrack = useState<Track | null>("player:fullscreen-lyrics-review-track", () => null)
+	const verificationQueueTrackIds = useState<string[]>("player:verification-queue-track-ids", () => [])
 	const clearFullscreenLyricsReview = () => {
 		fullscreenLyricsReviewTrack.value = null
 	}
@@ -706,15 +707,15 @@ export default defineNuxtPlugin((nuxtApp) => {
 				updateMediaSession()
 			},
 			onend: () => {
-				if (sound.value !== newSound || currentSong.value?._id !== song._id) return
+				if (currentSong.value?._id !== song._id) return
 				const endedTrack = song
-				const shouldReviewLyrics = Boolean(
-					trackVerificationEnabled.value &&
-					user.value?.role === "admin" &&
-					endedTrack?.verification?.lyrics === "undecided" &&
-					endedTrack?.lyrics?.text?.trim(),
+				const isAdminVerificationQueueTrack = verificationQueueTrackIds.value.includes(song._id)
+				const shouldReviewLyrics = isAdminVerificationQueueTrack || Boolean(
+					trackVerificationEnabled.value && user.value?.role === "admin",
 				)
-				if (shouldReviewLyrics) fullscreenLyricsReviewTrack.value = endedTrack
+				if (shouldReviewLyrics) {
+					fullscreenLyricsReviewTrack.value = endedTrack
+				}
 				trackListeningProgress(true, true, true)
 				stopBeatAnalysis("track ended")
 				if (
@@ -897,7 +898,11 @@ export default defineNuxtPlugin((nuxtApp) => {
 	}
 
 	const continueAfterFullscreenLyricsReview = async () => {
+		const reviewedTrackId = fullscreenLyricsReviewTrack.value?._id
 		clearFullscreenLyricsReview()
+		if (reviewedTrackId) {
+			verificationQueueTrackIds.value = verificationQueueTrackIds.value.filter((id) => id !== reviewedTrackId)
+		}
 		if (repeatEndedTrackAfterLyricsReview && sound.value) {
 			repeatEndedTrackAfterLyricsReview = false
 			repeatOnce.value = false
@@ -944,6 +949,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 	const clear = () => {
 		trackListeningProgress(false, true, true)
+		verificationQueueTrackIds.value = []
 		queue.value = []
 		currentQueue.value = []
 		currentSong.value = null
@@ -952,6 +958,13 @@ export default defineNuxtPlugin((nuxtApp) => {
 		updateMediaSession()
 		if (HANDOFF_ENABLED && import.meta.client && useAuth().authenticated.value)
 			void $fetch("/api/user/playback-handoff", { method: "DELETE" }).catch(() => {})
+	}
+
+	const updateQueuedAlbumVerification = (albumId: string, status: "undecided" | "approved" | "denied") => {
+		for (const track of [...queue.value, ...currentQueue.value]) {
+			if (track.album._id === albumId) track.album.verification = status
+		}
+		if (currentSong.value?.album._id === albumId) currentSong.value.album.verification = status
 	}
 
 	if (import.meta.client) {
@@ -1031,6 +1044,17 @@ export default defineNuxtPlugin((nuxtApp) => {
 		await play()
 	}
 
+	const playAdminVerificationTracks = async (songs: Track[], trackId: string) => {
+		const startIndex = songs.findIndex((track) => track._id === trackId)
+		if (startIndex < 0) return
+		const reviewTracks = songs.slice(startIndex)
+		clear()
+		verificationQueueTrackIds.value = reviewTracks.map((track) => track._id)
+		reviewTracks.forEach((track) => addToQueue(track))
+		await next(false)
+		await play()
+	}
+
 	// Info
 	const getDuration = () =>
 		new Promise<number>((resolve) => {
@@ -1062,6 +1086,8 @@ export default defineNuxtPlugin((nuxtApp) => {
 				playAlbum,
 				playShuffledAlbum,
 				playAlbumAtIndex,
+				playAdminVerificationTracks,
+				updateQueuedAlbumVerification,
 				getDuration,
 				secondsPlayed,
 				refreshPosition,

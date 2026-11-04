@@ -10,7 +10,7 @@ const {
 	previousPage,
 	nextPage,
 } = useAdminVerificationPage("/admin/tracks/missing-lyrics")
-const { playAlbumAtIndex } = usePlayer()
+const { playAdminVerificationTracks } = usePlayer()
 useHead({ title: "Missing Lyrics" })
 </script>
 
@@ -28,7 +28,7 @@ useHead({ title: "Missing Lyrics" })
 			:index="index"
 			show-image
 			show-verification-issues
-			@play-album-at-index="() => playAlbumAtIndex(tracks, index)"
+			@play-album-at-index="() => playAdminVerificationTracks(tracks, track._id)"
 		/>
 		<p v-if="total" class="page-summary">{{ total }} tracks without lyrics</p>
 		<nav v-if="totalPages > 1" class="pagination" aria-label="Missing lyrics pages">

@@ -1,50 +1,84 @@
 <script setup lang="ts">
 import { GET_FILE } from "@/utils/file"
 import { clearRequestCache } from "@/utils/requestCache"
+import type { LyricsVerificationStatus, VerificationStatus } from "@/utils/types"
 
 const { fullscreen, close: closeFullscreen } = useFullscreen()
 const song = useSong()
 const {
 	fullscreenLyricsReviewTrack,
 	continueAfterFullscreenLyricsReview,
+	updateQueuedAlbumVerification,
 } = usePlayer()
 const { data: user } = useApiFetch<{ role?: string }>("/user")
 const toast = useToast()
 const lyricsReviewNote = ref("")
+const trackReviewDecision = ref<VerificationStatus>("undecided")
+const albumReviewDecision = ref<VerificationStatus>("undecided")
+const lyricsReviewDecision = ref<LyricsVerificationStatus>("undecided")
 const lyricsReviewModalOpen = ref(false)
 const mouseMovedRecently = ref(true)
 
 watch(fullscreenLyricsReviewTrack, (track) => {
-	lyricsReviewNote.value = ""
-	lyricsReviewModalOpen.value = Boolean(track && user.value?.role === "admin")
-}, { immediate: true })
+	lyricsReviewNote.value = track?.verification?.lyricsNote ?? ""
+	trackReviewDecision.value = "undecided"
+	albumReviewDecision.value = "undecided"
+	lyricsReviewDecision.value = "undecided"
+	lyricsReviewModalOpen.value = Boolean(track)
+}, { flush: "sync", immediate: true })
 
-const dismissLyricsReview = () => {
-	lyricsReviewModalOpen.value = false
-	void continueAfterFullscreenLyricsReview()
-}
-
-const submitLyricsReview = async (status: "approved" | "approved-with-changes" | "denied") => {
+const finishReview = async () => {
 	const track = fullscreenLyricsReviewTrack.value
-	if (!track || user.value?.role !== "admin") return
-	try {
-		await $fetch("/api/admin/verification", {
-			method: "PATCH",
-			query: { id: track._id },
-			body: {
-				target: "lyrics",
-				status,
-				...(status === "approved-with-changes" ? { lyricsNote: lyricsReviewNote.value } : {}),
-			},
-		})
-		clearRequestCache()
-		await refreshNuxtData()
-		toast.show(status === "approved-with-changes" ? "Lyrics approved with minor changes required" : `Lyrics ${status}`)
-		lyricsReviewModalOpen.value = false
-		await continueAfterFullscreenLyricsReview()
-	} catch {
-		toast.show("Could not update lyrics verification", "error")
+	if (!track) return
+	const review = {
+		trackStatus: trackReviewDecision.value,
+		albumStatus: albumReviewDecision.value,
+		lyricsStatus: lyricsReviewDecision.value,
+		lyricsNote: lyricsReviewNote.value.trim(),
 	}
+	const hasDecision = trackReviewDecision.value !== "undecided" || albumReviewDecision.value !== "undecided" || lyricsReviewDecision.value !== "undecided"
+	if (hasDecision) {
+		if (user.value?.role !== "admin") return
+		try {
+			await $fetch("/api/admin/verification", {
+				method: "POST",
+				body: {
+					trackId: track._id,
+					...(trackReviewDecision.value !== "undecided" ? { trackStatus: review.trackStatus } : {}),
+					...(albumReviewDecision.value !== "undecided" ? { albumStatus: review.albumStatus } : {}),
+					...(lyricsReviewDecision.value !== "undecided" ? {
+						lyricsStatus: review.lyricsStatus,
+						...(lyricsReviewDecision.value === "approved-with-changes" ? { lyricsNote: review.lyricsNote } : {}),
+					} : {}),
+				},
+			})
+			if (trackReviewDecision.value !== "undecided") {
+				track.verification = {
+					song: trackReviewDecision.value,
+					lyrics: track.verification?.lyrics ?? "undecided",
+					lyricsNote: track.verification?.lyricsNote,
+				}
+			}
+			if (albumReviewDecision.value !== "undecided") {
+				track.album.verification = albumReviewDecision.value
+				updateQueuedAlbumVerification(track.album._id, albumReviewDecision.value)
+			}
+			if (lyricsReviewDecision.value !== "undecided") {
+				track.verification = {
+					song: track.verification?.song ?? "undecided",
+					lyrics: lyricsReviewDecision.value,
+					lyricsNote: lyricsReviewDecision.value === "approved-with-changes" ? review.lyricsNote : undefined,
+				}
+			}
+			clearRequestCache()
+			await refreshNuxtData()
+		} catch {
+			toast.show("Could not save verification", "error")
+			return
+		}
+	}
+	lyricsReviewModalOpen.value = false
+	await continueAfterFullscreenLyricsReview()
 }
 
 onMounted(() => {
@@ -120,16 +154,19 @@ nuxtApp.hook("page:finish", () => {
 			</div>
 		</section>
 	</section>
-	<TrackLyricsVerificationModal
+	<TrackVerificationReviewModal
 		v-model:open="lyricsReviewModalOpen"
 		v-model:note="lyricsReviewNote"
-		mode="review"
+		v-model:track-decision="trackReviewDecision"
+		v-model:album-decision="albumReviewDecision"
+		v-model:lyrics-decision="lyricsReviewDecision"
 		:track-name="fullscreenLyricsReviewTrack?.name"
+		:track-status="fullscreenLyricsReviewTrack?.verification?.song"
+		:album-status="fullscreenLyricsReviewTrack?.album.verification"
+		:lyrics-status="fullscreenLyricsReviewTrack?.verification?.lyrics"
+		:has-lyrics="Boolean(fullscreenLyricsReviewTrack?.lyrics?.text?.trim())"
 		:lyrics-synced="fullscreenLyricsReviewTrack?.lyrics?.synced"
-		@approve="submitLyricsReview('approved')"
-		@approve-with-changes="submitLyricsReview('approved-with-changes')"
-		@deny="submitLyricsReview('denied')"
-		@dismiss="dismissLyricsReview"
+		@finish="finishReview"
 	/>
 </template>
 

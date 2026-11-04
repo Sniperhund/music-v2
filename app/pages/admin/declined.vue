@@ -10,7 +10,7 @@ const {
 	previousPage,
 	nextPage,
 } = useAdminVerificationPage("/admin/tracks/declined")
-const { playAlbumAtIndex } = usePlayer()
+const { playAdminVerificationTracks } = usePlayer()
 useHead({ title: "Declined Verification" })
 </script>
 
@@ -27,7 +27,7 @@ useHead({ title: "Declined Verification" })
 				:track="track"
 				:index="index"
 				show-image
-				@play-album-at-index="() => playAlbumAtIndex(tracks, index)"
+				@play-album-at-index="() => playAdminVerificationTracks(tracks, track._id)"
 			/>
 		</template>
 		<p v-if="total" class="page-summary">{{ total }} declined tracks</p>

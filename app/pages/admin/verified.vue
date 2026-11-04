@@ -10,7 +10,7 @@ const {
 	previousPage,
 	nextPage,
 } = useAdminVerificationPage("/admin/tracks/verified")
-const { playAlbumAtIndex } = usePlayer()
+const { playAdminVerificationTracks } = usePlayer()
 useHead({ title: "Verified Tracks" })
 </script>
 
@@ -27,7 +27,7 @@ useHead({ title: "Verified Tracks" })
 			:track="track"
 			:index="index"
 			show-image
-			@play-album-at-index="() => playAlbumAtIndex(tracks, index)"
+			@play-album-at-index="() => playAdminVerificationTracks(tracks, track._id)"
 		/>
 		<p v-if="total" class="page-summary">{{ total }} verified tracks</p>
 		<nav v-if="totalPages > 1" class="pagination" aria-label="Verified tracks pages">

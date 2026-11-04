@@ -10,7 +10,7 @@ const {
 	previousPage,
 	nextPage,
 } = useAdminVerificationPage("/admin/tracks/minor-changes")
-const { playAlbumAtIndex } = usePlayer()
+const { playAdminVerificationTracks } = usePlayer()
 
 useHead({ title: "Lyrics: Minor Changes Required" })
 </script>
@@ -31,7 +31,7 @@ useHead({ title: "Lyrics: Minor Changes Required" })
 					:track="track"
 					:index="index"
 					show-image
-					@play-album-at-index="() => playAlbumAtIndex(tracks, index)"
+					@play-album-at-index="() => playAdminVerificationTracks(tracks, track._id)"
 				/>
 				<p class="change-note">
 					<strong>Changes required:</strong>
