@@ -25,6 +25,7 @@ const {
 	minorChangesModalOpen,
 	minorChangesNote,
 	submitMinorChanges,
+	editTrackModalOpen,
 } = useTrackVerification(() => song.value ?? undefined)
 const {
 	isPlaying,
@@ -139,6 +140,7 @@ const queueOpen = ref(false)
 		:track-name="song?.name"
 		@approve-with-changes="submitMinorChanges"
 	/>
+	<TrackEditModal v-if="editTrackModalOpen" v-model:open="editTrackModalOpen" :track="song ?? undefined" />
 	<PlayerFullscreen />
 </template>
 
