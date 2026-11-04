@@ -31,6 +31,12 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		setResponseStatus(event, 404)
 		return {}
 	}
+	const albumChanged = Boolean(
+		(name && name !== album.name) ||
+		(artists && JSON.stringify(artists) !== JSON.stringify(album.artists.map((id: mongoose.Types.ObjectId) => id.toString()))) ||
+		(genre && genre !== album.genre.toString()) ||
+		file,
+	)
 	if (file) {
 		const filePath = `album/${crypto.randomUUID()}.${safeFileExtension(file.name)}`
 		await putObjects(event, [{ key: filePath, body: file.data, contentType: file.type }])
@@ -39,6 +45,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		if (name) album.name = name
 		if (artists) album.artists = artists.map((id) => new mongoose.Types.ObjectId(id))
 		if (genre) album.genre = new mongoose.Types.ObjectId(genre)
+		if (albumChanged && album.verification === "denied") album.verification = "undecided"
 		try {
 			await album.save()
 		} catch (error) {
@@ -51,6 +58,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	if (name) album.name = name
 	if (artists) album.artists = artists.map((id) => new mongoose.Types.ObjectId(id))
 	if (genre) album.genre = new mongoose.Types.ObjectId(genre)
+	if (albumChanged && album.verification === "denied") album.verification = "undecided"
 	await album.save()
 	return album
 })

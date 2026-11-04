@@ -35,6 +35,12 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		setResponseStatus(event, 404)
 		return {}
 	}
+	const trackChanged = Boolean(
+		(name && name !== track.name) ||
+		(album && album !== track.album.toString()) ||
+		(artists && JSON.stringify(artists) !== JSON.stringify(track.artists.map((id: mongoose.Types.ObjectId) => id.toString()))) ||
+		file,
+	)
 	let replacementDirectory: string | undefined
 	let previousDirectory: string | undefined
 	if (file) {
@@ -56,6 +62,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	if (name) track.name = name
 	if (album) track.album = new mongoose.Types.ObjectId(album)
 	if (artists) track.artists = artists.map((id) => new mongoose.Types.ObjectId(id))
+	if (trackChanged && track.verification?.song === "denied") track.set("verification.song", "undecided")
 	if (parsedLyrics?.ok && parsedLyrics.value !== undefined) {
 		const nextLyrics = parsedLyrics.value as { synced: boolean; text: string } | null
 		const currentLyrics = track.lyrics as { synced: boolean; text: string } | null | undefined
