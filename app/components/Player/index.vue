@@ -100,9 +100,16 @@ const queueOpen = ref(false)
 				</div>
 			</div>
 			<div class="misc-btns">
-				<div v-if="user?.role === 'admin'" class="verification-menu-slot">
+				<div
+					v-if="user?.role === 'admin'"
+					class="verification-menu-slot"
+				>
 					<DropdownMenu :items="verificationMenuItems">
-						<Icon name="lucide:ellipsis" class="verification-menu-trigger" aria-label="Track verification actions" />
+						<Icon
+							name="lucide:ellipsis"
+							class="verification-menu-trigger"
+							aria-label="Track verification actions"
+						/>
 					</DropdownMenu>
 				</div>
 				<div class="volume">
@@ -120,10 +127,7 @@ const queueOpen = ref(false)
 						:step="0.01"
 					/>
 				</div>
-				<Icon
-					name="lucide:list"
-					@click="queueOpen = true"
-				/>
+				<Icon name="lucide:list" @click="queueOpen = true" />
 				<Icon name="lucide:expand" @click="openFullscreen()" />
 			</div>
 		</template>
@@ -252,6 +256,8 @@ const queueOpen = ref(false)
 
 	.verification-menu-trigger {
 		font-size: 18px;
+		display: flex;
+		justify-content: center;
 	}
 
 	.volume {
