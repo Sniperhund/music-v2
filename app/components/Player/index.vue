@@ -19,6 +19,13 @@ onMounted(() => {
 })
 
 const song = useSong()
+const { data: user } = useApiFetch<{ role?: string }>("/user")
+const {
+	items: verificationMenuItems,
+	minorChangesModalOpen,
+	minorChangesNote,
+	submitMinorChanges,
+} = useTrackVerification(() => song.value ?? undefined)
 const {
 	isPlaying,
 	play,
@@ -93,6 +100,11 @@ const queueOpen = ref(false)
 				</div>
 			</div>
 			<div class="misc-btns">
+				<div v-if="user?.role === 'admin'" class="verification-menu-slot">
+					<DropdownMenu :items="verificationMenuItems">
+						<Icon name="lucide:ellipsis" class="verification-menu-trigger" aria-label="Track verification actions" />
+					</DropdownMenu>
+				</div>
 				<div class="volume">
 					<Icon name="lucide:volume-2" />
 					<RangeSlider
@@ -117,6 +129,12 @@ const queueOpen = ref(false)
 		</template>
 	</article>
 	<PlayerQueue v-model:open="queueOpen" />
+	<TrackLyricsVerificationModal
+		v-model:open="minorChangesModalOpen"
+		v-model:note="minorChangesNote"
+		:track-name="song?.name"
+		@approve-with-changes="submitMinorChanges"
+	/>
 	<PlayerFullscreen />
 </template>
 
@@ -224,6 +242,17 @@ const queueOpen = ref(false)
 
 .misc-btns {
 	justify-content: end;
+
+	.verification-menu-slot {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding-inline: 1.5rem;
+	}
+
+	.verification-menu-trigger {
+		font-size: 18px;
+	}
 
 	.volume {
 		min-width: 100px;
