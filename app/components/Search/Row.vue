@@ -12,6 +12,7 @@ interface SearchResult {
 	approvedTrackCount?: number
 	partiallyApprovedTrackCount?: number
 	unapprovedTrackCount?: number
+	deniedTrackCount?: number
 	album?: { _id?: string; name?: string; file?: string; cover?: string }
 	artists?: Artist[]
 }
@@ -176,7 +177,7 @@ const albumVerificationTooltip = computed(() => formatAlbumVerificationTooltip(p
 	}
 
 	&.partial {
-		color: #f6c453;
+		color: #60a5fa;
 	}
 
 	&.mixed {

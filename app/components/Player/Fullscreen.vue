@@ -21,9 +21,9 @@ const mouseMovedRecently = ref(true)
 
 watch(fullscreenLyricsReviewTrack, (track) => {
 	lyricsReviewNote.value = track?.verification?.lyricsNote ?? ""
-	trackReviewDecision.value = "undecided"
-	albumReviewDecision.value = "undecided"
-	lyricsReviewDecision.value = "undecided"
+	trackReviewDecision.value = track?.verification?.song ?? "undecided"
+	albumReviewDecision.value = track?.album.verification ?? "undecided"
+	lyricsReviewDecision.value = track?.verification?.lyrics ?? "undecided"
 	lyricsReviewModalOpen.value = Boolean(track)
 }, { flush: "sync", immediate: true })
 

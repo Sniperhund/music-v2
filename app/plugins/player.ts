@@ -3,7 +3,7 @@ import { shapeBeatPulse } from "~/utils/beat"
 
 export default defineNuxtPlugin((nuxtApp) => {
 	const mediaBaseUrl = useRuntimeConfig().public.mediaBaseUrl
-	const { fullscreen, close: closeFullscreen } = useFullscreen()
+	const { fullscreen, open: openFullscreen, close: closeFullscreen } = useFullscreen()
 	const { data: user } = useApiFetch<{ role?: string }>("/user")
 	const trackVerificationEnabled = useState<boolean>("player:track-verification-enabled", () => true)
 	const TRACK_VERIFICATION_STORAGE_KEY = "music-v2-track-verification-enabled"
@@ -990,6 +990,10 @@ export default defineNuxtPlugin((nuxtApp) => {
 				return
 
 			switch (event.code) {
+				case "KeyF":
+					event.preventDefault()
+					void openFullscreen()
+					break
 				case "Space":
 					event.preventDefault()
 					if (isPlaying.value) pause()

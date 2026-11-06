@@ -85,7 +85,10 @@ useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Alb
 			:artists="album.artists"
 			:_id="album._id"
 			:verification="album.verification"
-			:unverified-track-count="album.unverifiedTrackCount"
+			:approved-track-count="album.approvedTrackCount"
+			:partially-approved-track-count="album.partiallyApprovedTrackCount"
+			:unapproved-track-count="album.unapprovedTrackCount"
+			:denied-track-count="album.deniedTrackCount"
 		/>
 	</Slider>
 </template>
@@ -134,7 +137,7 @@ useHead({ title: computed(() => albumData.value ? `${albumData.value.name} - Alb
 			}
 
 			&.partial {
-				color: #f6c453;
+				color: #60a5fa;
 			}
 
 			&.mixed {

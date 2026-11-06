@@ -96,7 +96,7 @@ const prefetchAlbum = () => {
 	}
 
 	&.partial {
-		color: #f6c453;
+		color: #60a5fa;
 	}
 
 	&.mixed {

@@ -15,6 +15,7 @@ export interface Album extends Base {
 	approvedTrackCount?: number
 	partiallyApprovedTrackCount?: number
 	unapprovedTrackCount?: number
+	deniedTrackCount?: number
 }
 
 export interface Artist extends Base {

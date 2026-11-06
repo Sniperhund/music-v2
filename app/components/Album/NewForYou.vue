@@ -15,6 +15,11 @@ const albums = computed(() => albumsData.value ?? [])
 			:file="GET_FILE(album.file)"
 			:artists="album.artists"
 			:_id="album._id"
+			:verification="album.verification"
+			:approved-track-count="album.approvedTrackCount"
+			:partially-approved-track-count="album.partiallyApprovedTrackCount"
+			:unapproved-track-count="album.unapprovedTrackCount"
+			:denied-track-count="album.deniedTrackCount"
 		/>
 	</Slider>
 </template>

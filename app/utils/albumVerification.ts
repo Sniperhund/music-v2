@@ -5,6 +5,7 @@ interface AlbumVerificationSummary {
 	approvedTrackCount?: number
 	partiallyApprovedTrackCount?: number
 	unapprovedTrackCount?: number
+	deniedTrackCount?: number
 }
 
 export type AlbumVerificationState = "approved" | "undecided" | "partial" | "mixed" | "unapproved" | "denied"
@@ -16,11 +17,9 @@ export const getAlbumVerificationState = (summary: AlbumVerificationSummary): Al
 	const unapproved = summary.unapprovedTrackCount ?? 0
 	const total = approved + partial + unapproved
 
-	if (total > 0 && unapproved === total) return "unapproved"
-	if (unapproved > 0 && approved + partial > 0) return "mixed"
-	if (partial > 0) return "partial"
-	if (summary.verification !== "approved") return "undecided"
-	return "approved"
+	if ((summary.deniedTrackCount ?? 0) > 0) return "unapproved"
+	if (summary.verification === "approved" && approved === total) return "approved"
+	return "undecided"
 }
 
 const countLabel = (count: number, singular: string, plural: string) =>

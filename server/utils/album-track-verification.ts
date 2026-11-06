@@ -8,7 +8,7 @@ export async function addAlbumTrackVerificationSummary<T extends { _id: unknown 
 	const tracks = await Track.find({ album: { $in: ids } })
 		.select("album lyrics.text verification.song verification.lyrics")
 		.lean()
-	const trackCounts = new Map<string, { approved: number; partial: number; unapproved: number }>()
+	const trackCounts = new Map<string, { approved: number; partial: number; unapproved: number; denied: number }>()
 	for (const track of tracks) {
 		const albumId = String(track.album)
 		const hasLyrics = Boolean(track.lyrics?.text?.trim())
@@ -17,7 +17,8 @@ export async function addAlbumTrackVerificationSummary<T extends { _id: unknown 
 		const hasApprovedFeature = track.verification?.song === "approved" ||
 			track.verification?.lyrics === "approved" ||
 			track.verification?.lyrics === "approved-with-changes"
-		const counts = trackCounts.get(albumId) ?? { approved: 0, partial: 0, unapproved: 0 }
+		const counts = trackCounts.get(albumId) ?? { approved: 0, partial: 0, unapproved: 0, denied: 0 }
+		if (track.verification?.song === "denied" || track.verification?.lyrics === "denied") counts.denied++
 		if (fullyVerified) counts.approved++
 		else if (hasApprovedFeature) counts.partial++
 		else counts.unapproved++
@@ -25,12 +26,13 @@ export async function addAlbumTrackVerificationSummary<T extends { _id: unknown 
 	}
 
 	return albums.map((album) => {
-		const counts = trackCounts.get(String(album._id)) ?? { approved: 0, partial: 0, unapproved: 0 }
+		const counts = trackCounts.get(String(album._id)) ?? { approved: 0, partial: 0, unapproved: 0, denied: 0 }
 		return {
 			...toPlain(album),
 			approvedTrackCount: counts.approved,
 			partiallyApprovedTrackCount: counts.partial,
 			unapprovedTrackCount: counts.unapproved,
+			deniedTrackCount: counts.denied,
 			unverifiedTrackCount: counts.partial + counts.unapproved,
 		}
 	})
