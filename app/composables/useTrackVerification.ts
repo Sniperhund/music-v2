@@ -24,12 +24,12 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 
 	const save = async (
 		target: "song" | "lyrics" | "album",
-		status: VerificationStatus | "approved-with-changes",
+		status: VerificationStatus | "approved-with-changes" | "instrumental",
 		lyricsNote?: string,
 	) => {
 		const track = getTrack()
 		if (!track) return false
-		const hasLyrics = Boolean(track.lyrics?.text?.trim())
+		const hasLyrics = track.verification?.lyrics !== "instrumental" && Boolean(track.lyrics?.text?.trim())
 		try {
 			await $fetch("/api/admin/verification", {
 				method: "PATCH",
@@ -38,12 +38,17 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 			})
 			if (target === "song") song.value = status as VerificationStatus
 			else if (target === "lyrics") lyrics.value = status
-			else album.value = status as VerificationStatus
+			else {
+				album.value = status as VerificationStatus
+				track.album.verification = status as VerificationStatus
+			}
+			const lyricsDecision = target === "lyrics" ? status : lyrics.value
+			const lyricsApproved = lyricsDecision === "instrumental" || (!hasLyrics
+				? target !== "lyrics" || status === "approved"
+				: lyricsDecision === "approved")
 			const fullyApproved =
 				(target === "song" ? status : song.value) === "approved" &&
-				(!hasLyrics
-					? target !== "lyrics" || status === "approved"
-					: (target === "lyrics" ? status : lyrics.value) === "approved") &&
+				lyricsApproved &&
 				(target === "album" ? status : album.value) === "approved"
 			clearRequestCache()
 			await refreshNuxtData()
@@ -84,6 +89,12 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 		keepOpen: true,
 		onSelect: () => save("lyrics", "denied"),
 	}
+	const instrumentalLyricsItem = {
+		label: "Instrumental",
+		icon: "lucide:music-2",
+		keepOpen: false,
+		onSelect: () => save("lyrics", "instrumental"),
+	}
 
 	const items = computed<DropdownMenuItem[][]>(() => {
 		if (user.value?.role !== "admin") return []
@@ -92,11 +103,12 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 		return [[
 			{ label: `Track: ${song.value}`, icon: "lucide:music-2", children: decisionItems("song") },
 			{
-				label: `Lyrics: ${track.lyrics?.text?.trim() ? lyrics.value : `No lyrics (${lyrics.value})`}`,
+				label: `Lyrics: ${lyrics.value === "instrumental" ? "Instrumental" : track.lyrics?.text?.trim() ? lyrics.value : `No lyrics (${lyrics.value})`}`,
 				icon: "lucide:align-left",
-				children: track.lyrics?.synced && track.lyrics.text.trim()
-					? lyricsDecisionItems
-					: [denyLyricsItem],
+				children: [
+					instrumentalLyricsItem,
+					...(track.lyrics?.synced && track.lyrics.text.trim() ? lyricsDecisionItems : [denyLyricsItem]),
+				],
 			},
 			{ label: `Album: ${album.value}`, icon: "lucide:disc-3", children: decisionItems("album") },
 			...(user.value?.role === "admin"

@@ -164,7 +164,7 @@ nuxtApp.hook("page:finish", () => {
 		:track-status="fullscreenLyricsReviewTrack?.verification?.song"
 		:album-status="fullscreenLyricsReviewTrack?.album.verification"
 		:lyrics-status="fullscreenLyricsReviewTrack?.verification?.lyrics"
-		:has-lyrics="Boolean(fullscreenLyricsReviewTrack?.lyrics?.text?.trim())"
+		:has-lyrics="fullscreenLyricsReviewTrack?.verification?.lyrics !== 'instrumental' && Boolean(fullscreenLyricsReviewTrack?.lyrics?.text?.trim())"
 		:lyrics-synced="fullscreenLyricsReviewTrack?.lyrics?.synced"
 		@finish="finishReview"
 	/>

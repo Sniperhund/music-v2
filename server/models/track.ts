@@ -19,7 +19,7 @@ const trackSchema = new Schema({
 	},
 	verification: {
 		song: { type: String, enum: ["undecided", "approved", "denied"], default: "undecided", required: true },
-		lyrics: { type: String, enum: ["undecided", "approved", "approved-with-changes", "denied"], default: "undecided", required: true },
+		lyrics: { type: String, enum: ["undecided", "approved", "approved-with-changes", "denied", "instrumental"], default: "undecided", required: true },
 		lyricsNote: { type: String, trim: true, maxlength: 1000 },
 	},
 })

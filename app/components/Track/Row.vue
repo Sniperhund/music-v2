@@ -199,12 +199,13 @@ const artworkSrc = computed(() => {
 const verificationBadge = computed<"verified" | "partial" | "no-lyrics" | null>(() => {
 	const track = props.track
 	if (!track) return null
-	if (!track.lyrics?.text?.trim()) return "no-lyrics"
+	const instrumental = track.verification?.lyrics === "instrumental"
+	if (!instrumental && !track.lyrics?.text?.trim()) return "no-lyrics"
 	const songApproved = track.verification?.song === "approved"
 	const lyricsStatus = track.verification?.lyrics
 	const lyricsApproved = lyricsStatus === "approved"
-	const hasApprovedFeature = songApproved || lyricsApproved || lyricsStatus === "approved-with-changes"
-	if (songApproved && lyricsApproved) return "verified"
+	const hasApprovedFeature = songApproved || (!instrumental && (lyricsApproved || lyricsStatus === "approved-with-changes"))
+	if (songApproved && (instrumental || lyricsApproved)) return "verified"
 	return hasApprovedFeature ? "partial" : null
 })
 
@@ -214,13 +215,14 @@ const remainingVerificationIssues = computed(() => {
 	const issues: string[] = []
 	const songStatus = track.verification?.song ?? "undecided"
 	const lyricsStatus = track.verification?.lyrics ?? "undecided"
-	const hasLyrics = Boolean(track.lyrics?.text?.trim())
+	const instrumental = track.verification?.lyrics === "instrumental"
+	const hasLyrics = !instrumental && Boolean(track.lyrics?.text?.trim())
 	if (songStatus !== "approved") {
 		issues.push(songStatus === "denied" ? "Track denied" : "Track not approved")
 	}
-	if (!hasLyrics) {
+	if (!hasLyrics && !instrumental) {
 		issues.push("Lyrics missing")
-	} else if (lyricsStatus !== "approved") {
+	} else if (hasLyrics && lyricsStatus !== "approved") {
 		issues.push(
 			lyricsStatus === "denied"
 				? "Lyrics denied"
@@ -521,7 +523,7 @@ const verificationTooltip = computed(() => remainingVerificationIssues.value.joi
 	}
 
 	&.no-lyrics {
-		color: #a1a1aa;
+		color: #f6c453;
 	}
 }
 

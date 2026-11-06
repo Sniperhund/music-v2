@@ -5,7 +5,7 @@ import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../..
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
 
 const verificationStatuses = ["approved", "denied"] as const
-const lyricsStatuses = [...verificationStatuses, "approved-with-changes"] as const
+const lyricsStatuses = [...verificationStatuses, "approved-with-changes", "instrumental"] as const
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true, { allowBearer: true, skipOriginCheck: true })
@@ -47,6 +47,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	if (
 		lyricsStatus !== undefined &&
 		lyricsStatus !== "denied" &&
+		lyricsStatus !== "instrumental" &&
 		(!track.lyrics?.synced || !track.lyrics.text?.trim())
 	) {
 		setResponseStatus(event, 400)

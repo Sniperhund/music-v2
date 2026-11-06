@@ -3,7 +3,7 @@ interface Base {
 }
 
 export type VerificationStatus = "undecided" | "approved" | "denied"
-export type LyricsVerificationStatus = VerificationStatus | "approved-with-changes"
+export type LyricsVerificationStatus = VerificationStatus | "approved-with-changes" | "instrumental"
 
 export interface Album extends Base {
 	name: string

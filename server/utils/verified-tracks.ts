@@ -3,12 +3,17 @@ import { Track } from "../models/track"
 import { MAX_QUERY_LIMIT } from "./api-validation"
 
 const missingLyricsQuery = {
-	$or: [
-		{ lyrics: null },
-		{ "lyrics.text": { $exists: false } },
-		{ "lyrics.text": null },
-		{ "lyrics.text": "" },
-		{ "lyrics.text": /^\s*$/ },
+	$and: [
+		{
+			$or: [
+				{ lyrics: null },
+				{ "lyrics.text": { $exists: false } },
+				{ "lyrics.text": null },
+				{ "lyrics.text": "" },
+				{ "lyrics.text": /^\s*$/ },
+			],
+		},
+		{ "verification.lyrics": { $ne: "instrumental" } },
 	],
 }
 
@@ -33,8 +38,10 @@ export async function findVerificationTracks(
 		query = {
 			album: { $in: approvedAlbumIds },
 			"verification.song": "approved",
-			"verification.lyrics": "approved",
-			"lyrics.text": { $regex: /\S/ },
+			$or: [
+				{ "verification.lyrics": "instrumental" },
+				{ "verification.lyrics": "approved", "lyrics.text": { $regex: /\S/ } },
+			],
 		}
 	} else if (state === "declined") {
 		query = {

@@ -61,7 +61,7 @@ const presets = ["Censored lyrics", "Misaligned lyrics", "Completely wrong lyric
 			<section class="review-section">
 				<div class="review-heading">
 					<h3>Lyrics</h3>
-					<span v-if="hasLyrics">Current: {{ lyricsStatus }}</span>
+					<span>Current: {{ lyricsStatus }}</span>
 				</div>
 				<template v-if="hasLyrics">
 					<label class="review-label" for="final-lyrics-review-note">Minor changes (optional)</label>
@@ -74,9 +74,13 @@ const presets = ["Censored lyrics", "Misaligned lyrics", "Completely wrong lyric
 						<Button type="button" :disabled="!lyricsSynced" :aria-pressed="lyricsDecision === 'approved-with-changes'" :class="{ selected: lyricsDecision === 'approved-with-changes' }" @click="lyricsDecision = 'approved-with-changes'">Minor changes</Button>
 						<Button type="button" variant="ghost" :aria-pressed="lyricsDecision === 'denied'" :class="{ selected: lyricsDecision === 'denied' }" @click="lyricsDecision = 'denied'">Deny lyrics</Button>
 						<Button type="button" variant="ghost" :aria-pressed="lyricsDecision === 'undecided'" :class="{ selected: lyricsDecision === 'undecided' }" @click="lyricsDecision = 'undecided'">I don't know</Button>
+						<Button type="button" variant="ghost" :aria-pressed="lyricsDecision === 'instrumental'" :class="{ selected: lyricsDecision === 'instrumental' }" @click="lyricsDecision = 'instrumental'">Instrumental</Button>
 					</div>
 				</template>
-				<p v-else>No lyrics on this track.</p>
+				<div v-else class="review-actions">
+					<p>{{ lyricsDecision === "instrumental" ? "Marked as instrumental." : "No lyrics on this track." }}</p>
+					<Button type="button" variant="ghost" :aria-pressed="lyricsDecision === 'instrumental'" :class="{ selected: lyricsDecision === 'instrumental' }" @click="lyricsDecision = 'instrumental'">Mark instrumental</Button>
+				</div>
 			</section>
 
 			<div class="review-actions finish-actions">

@@ -11,12 +11,12 @@ export async function addAlbumTrackVerificationSummary<T extends { _id: unknown 
 	const trackCounts = new Map<string, { approved: number; partial: number; unapproved: number; denied: number }>()
 	for (const track of tracks) {
 		const albumId = String(track.album)
-		const hasLyrics = Boolean(track.lyrics?.text?.trim())
+		const hasLyrics = track.verification?.lyrics !== "instrumental" && Boolean(track.lyrics?.text?.trim())
 		const fullyVerified = track.verification?.song === "approved" &&
 			(!hasLyrics || track.verification?.lyrics === "approved")
 		const hasApprovedFeature = track.verification?.song === "approved" ||
-			track.verification?.lyrics === "approved" ||
-			track.verification?.lyrics === "approved-with-changes"
+			(hasLyrics && (track.verification?.lyrics === "approved" ||
+				track.verification?.lyrics === "approved-with-changes"))
 		const counts = trackCounts.get(albumId) ?? { approved: 0, partial: 0, unapproved: 0, denied: 0 }
 		if (track.verification?.song === "denied" || track.verification?.lyrics === "denied") counts.denied++
 		if (fullyVerified) counts.approved++

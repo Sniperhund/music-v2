@@ -4,7 +4,7 @@ import { Track } from "../../models/track"
 import { defineAuthenticatedEventHandler, requireAuthenticatedUser } from "../../utils/auth"
 import { parseMongoId, validationResponse } from "../../utils/api-validation"
 
-const statuses = ["undecided", "approved", "approved-with-changes", "denied"] as const
+const statuses = ["undecided", "approved", "approved-with-changes", "denied", "instrumental"] as const
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	await requireAuthenticatedUser(event, true, { allowBearer: true, skipOriginCheck: true })
@@ -23,6 +23,10 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	if (status === "approved-with-changes" && body.target !== "lyrics") {
 		setResponseStatus(event, 400)
 		return { message: "Minor changes status is only valid for lyrics" }
+	}
+	if (status === "instrumental" && body.target !== "lyrics") {
+		setResponseStatus(event, 400)
+		return { message: "Instrumental is only valid for lyrics verification" }
 	}
 	if (body.lyricsNote !== undefined && (typeof body.lyricsNote !== "string" || body.lyricsNote.length > 1000)) {
 		setResponseStatus(event, 400)
@@ -50,7 +54,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 			return { message: "Album not found" }
 		}
 		track.set("verification.song", status)
-		if (body.target === "all" && (status !== "approved" || (track.lyrics?.synced && track.lyrics.text?.trim()))) {
+		if (body.target === "all" && (status !== "approved" || (track.verification?.lyrics !== "instrumental" && track.lyrics?.synced && track.lyrics.text?.trim()))) {
 			track.set("verification.lyrics", status)
 			track.set("verification.lyricsNote", undefined)
 		}
