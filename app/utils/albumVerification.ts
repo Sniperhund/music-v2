@@ -18,7 +18,7 @@ export const getAlbumVerificationState = (summary: AlbumVerificationSummary): Al
 	const total = approved + partial + unapproved
 
 	if ((summary.deniedTrackCount ?? 0) > 0) return "unapproved"
-	if (summary.verification === "approved" && approved === total) return "approved"
+	if (total > 0 && approved === total) return "approved"
 	return "undecided"
 }
 
