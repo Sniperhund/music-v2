@@ -710,9 +710,12 @@ export default defineNuxtPlugin((nuxtApp) => {
 				if (currentSong.value?._id !== song._id) return
 				const endedTrack = song
 				const isAdminVerificationQueueTrack = verificationQueueTrackIds.value.includes(song._id)
-				const shouldReviewLyrics = isAdminVerificationQueueTrack || Boolean(
+				const hasLyrics = song.verification?.lyrics !== "instrumental" && Boolean(song.lyrics?.text?.trim())
+				const isFullyReviewed = song.verification?.song === "approved" &&
+					(!hasLyrics || song.verification?.lyrics === "approved")
+				const shouldReviewLyrics = !isFullyReviewed && (isAdminVerificationQueueTrack || Boolean(
 					trackVerificationEnabled.value && user.value?.role === "admin",
-				)
+				))
 				if (shouldReviewLyrics) {
 					fullscreenLyricsReviewTrack.value = endedTrack
 				}
