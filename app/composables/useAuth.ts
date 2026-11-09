@@ -7,11 +7,11 @@ export const useAuth = () => {
 	const nuxtApp = useNuxtApp()
 	const authenticated = useState("auth:authenticated", () => false)
 
-	const signin = async (email: string, password: string, remember = false) => {
+	const signin = async (email: string, password: string) => {
 		try {
 			await $fetch("/api/auth/signin", {
 				method: "POST",
-				body: { email, password, remember: Boolean(remember) },
+				body: { email, password },
 			})
 
 			if (!(await refreshSession()).ok) throw new Error("Unable to create session")

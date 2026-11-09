@@ -10,7 +10,7 @@ const submit = async (e: any) => {
 	} catch {}
 
 	try {
-		await auth.signin(data.email, data.password, data.remember === "on")
+		await auth.signin(data.email, data.password)
 	} catch (e: string | any) {
 		toast.show(e, "error")
 	}
@@ -34,8 +34,6 @@ useHead({ title: "Sign In" })
 		>
 			<template #label>Password</template>
 		</Input>
-
-		<Checkbox name="remember" label="Remember me?" />
 
 		<Button full center-text type="submit">Sign in</Button>
 

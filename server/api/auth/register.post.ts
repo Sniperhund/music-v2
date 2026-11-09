@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto"
 import { readBody, setCookie, setResponseStatus } from "h3"
 import argon2 from "argon2"
 import { User } from "../../models/user"
@@ -7,6 +8,7 @@ import {
 	REFRESH_COOKIE,
 } from "../../utils/auth"
 import { getAuthValidationMessage } from "../../utils/auth-validation"
+import { createRefreshTokenRecord } from "../../utils/refresh-tokens"
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	assertCookieRequestOrigin(event)
@@ -28,20 +30,20 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 
 	try {
-		const user = await User.create({
+		const refreshToken = randomUUID()
+		await User.create({
 			name: body.name,
 			email,
 			passwordHash: await argon2.hash(body.password),
+			refreshTokens: [createRefreshTokenRecord(refreshToken)],
 		})
-		const refreshToken = await User.findById(user._id).select("+refreshToken").then((doc) => doc?.refreshToken)
-
-		if (!refreshToken) throw new Error("Unable to create refresh token")
 
 		setCookie(event, REFRESH_COOKIE, refreshToken, {
 			path: "/",
 			httpOnly: true,
 			sameSite: "lax",
 			secure: !import.meta.dev,
+			maxAge: 60 * 60 * 24 * 30,
 		})
 		setResponseStatus(event, 201)
 		// Refresh credentials are now delivered only through the HttpOnly cookie.

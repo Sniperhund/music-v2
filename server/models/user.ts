@@ -1,6 +1,4 @@
-import { randomUUID } from "node:crypto"
 import mongoose, { Schema, type Model } from "mongoose"
-import { REFRESH_TOKEN_TTL_MS } from "../utils/auth-constants"
 import "./track"
 
 const userSchema = new Schema(
@@ -9,18 +7,18 @@ const userSchema = new Schema(
 		email: { type: String, required: true, unique: true },
 		passwordHash: { type: String, required: true, select: false },
 		role: { type: String, enum: ["user", "admin"], default: "user", required: true },
-		refreshToken: {
-			type: String,
-			default: () => randomUUID(),
-			required: true,
+		refreshTokens: {
+			type: [{
+				token: { type: String, required: true },
+				expiresAt: { type: Date, required: true },
+				createdAt: { type: Date, default: Date.now, required: true },
+			}],
+			default: [],
 			select: false,
 		},
-		refreshTokenExpiresAt: {
-			type: Date,
-			default: () => new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
-			required: true,
-			select: false,
-		},
+		// Retained temporarily so existing single-token records can be migrated lazily.
+		refreshToken: { type: String, select: false },
+		refreshTokenExpiresAt: { type: Date, select: false },
 		verified: { type: Boolean, default: false, required: true, select: false },
 		savedTracks: [{ type: Schema.Types.ObjectId, ref: "Track" }],
 		recentlyPlayedAlbums: [{ type: Schema.Types.ObjectId, ref: "Album" }],

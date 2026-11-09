@@ -1,7 +1,8 @@
 import { appendResponseHeader } from "h3"
 
 export default defineNuxtRouteMiddleware(async (to) => {
-	if (to.path.startsWith("/auth")) return
+	const isSignInPage = to.path === "/auth/signin"
+	if (to.path.startsWith("/auth") && !isSignInPage) return
 
 	const auth = useAuth()
 	if (import.meta.client && auth.authenticated.value) return
@@ -30,11 +31,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
 		if (session?.authenticated) {
 			auth.authenticated.value = true
+			if (isSignInPage) return navigateTo("/")
 			return
 		}
 	} catch {
 		// Treat unavailable auth state as unauthenticated.
 	}
 
+	if (isSignInPage) return
 	return navigateTo("/auth/signin")
 })

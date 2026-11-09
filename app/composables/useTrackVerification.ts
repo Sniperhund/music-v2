@@ -106,8 +106,8 @@ export const useTrackVerification = (getTrack: () => Track | undefined) => {
 				label: `Lyrics: ${lyrics.value === "instrumental" ? "Instrumental" : track.lyrics?.text?.trim() ? lyrics.value : `No lyrics (${lyrics.value})`}`,
 				icon: "lucide:align-left",
 				children: [
-					instrumentalLyricsItem,
 					...(track.lyrics?.synced && track.lyrics.text.trim() ? lyricsDecisionItems : [denyLyricsItem]),
+					instrumentalLyricsItem,
 				],
 			},
 			{ label: `Album: ${album.value}`, icon: "lucide:disc-3", children: decisionItems("album") },

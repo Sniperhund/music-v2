@@ -39,6 +39,7 @@ const operations: ApiOperation[] = [
 	{ method: "get", path: "/all/tracks", tag: "All", summary: "Get all tracks", auth: true, response: "TrackList" },
 	{ method: "get", path: "/search", tag: "Search", summary: "Search tracks, albums and artists", auth: true, query: ["q", "type", "limit"], response: "SearchResults" },
 	{ method: "get", path: "/user", tag: "User", summary: "Get the current user", auth: true, response: "User" },
+	{ method: "patch", path: "/user/password", tag: "User", summary: "Change the current user's password and revoke all sessions", auth: true, body: "json", response: "EmptyObject" },
 	{ method: "get", path: "/user/artists", tag: "User", summary: "Get artists represented by saved tracks", auth: true, response: "ArtistList" },
 	{ method: "get", path: "/user/tracks", tag: "User", summary: "Get saved tracks", auth: true, response: "TrackList" },
 	{ method: "patch", path: "/user/tracks", tag: "User", summary: "Save a track", auth: true, query: ["id"], response: "EmptyObject" },
@@ -110,7 +111,9 @@ function operationSpec(operation: ApiOperation) {
 		? operation.path === "/auth/register"
 			? { type: "object", required: ["name", "email", "password"], properties: { name: { type: "string" }, email: { type: "string", format: "email" }, password: { type: "string", minLength: 8 } } }
 			: operation.path === "/auth/signin"
-				? { type: "object", required: ["email", "password"], properties: { email: { type: "string", format: "email" }, password: { type: "string" }, remember: { type: "boolean", description: "When true, makes the refresh cookie persistent for 30 days." } } }
+				? { type: "object", required: ["email", "password"], properties: { email: { type: "string", format: "email" }, password: { type: "string" }, remember: { type: "boolean", description: "Accepted for compatibility. Refresh cookies persist for 30 days." } } }
+				: operation.path === "/user/password"
+					? { type: "object", required: ["currentPassword", "newPassword"], properties: { currentPassword: { type: "string", minLength: 8 }, newPassword: { type: "string", minLength: 8 } } }
 				: operation.path === "/auth/session"
 					? { type: "object", required: ["refreshToken"], properties: { refreshToken: { type: "string" } } }
 					: { type: "object", ...(operation.method === "post" ? { required: ["name"] } : {}), properties: { name: { type: "string" } } }

@@ -6,8 +6,8 @@ import {
 	assertCookieRequestOrigin,
 	defineAuthenticatedEventHandler,
 	REFRESH_COOKIE,
-	REFRESH_TOKEN_TTL_MS,
 } from "../../utils/auth"
+import { createRefreshTokenRecord, MAX_REFRESH_TOKENS_PER_USER } from "../../utils/refresh-tokens"
 import { getAuthValidationMessage } from "../../utils/auth-validation"
 import {
 	clearSignInFailures,
@@ -33,7 +33,7 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 
 	const user = await User.findOne({ email: body.email.toLowerCase() }).select(
-		"+refreshToken +refreshTokenExpiresAt +passwordHash",
+		"+passwordHash +refreshTokens +refreshToken +refreshTokenExpiresAt",
 	)
 	let passwordMatches = false
 	if (user) {
@@ -53,15 +53,43 @@ export default defineAuthenticatedEventHandler(async (event) => {
 	}
 
 	clearSignInFailures(event)
-	user.refreshToken = randomUUID()
-	user.refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS)
-	await user.save()
-	setCookie(event, REFRESH_COOKIE, user.refreshToken, {
+	const refreshToken = randomUUID()
+	const record = createRefreshTokenRecord(refreshToken)
+	const records = [record]
+	if (
+		user.refreshToken &&
+		user.refreshTokenExpiresAt &&
+		user.refreshTokenExpiresAt.getTime() > Date.now()
+	) {
+		records.push({
+			token: user.refreshToken,
+			expiresAt: user.refreshTokenExpiresAt,
+			createdAt: user.updatedAt ?? new Date(),
+		})
+	}
+	await User.updateOne(
+		{ _id: user._id },
+		{ $pull: { refreshTokens: { expiresAt: { $lte: new Date() } } } },
+	)
+	await User.updateOne(
+		{ _id: user._id },
+		{
+			$push: {
+				refreshTokens: {
+					$each: records,
+					$sort: { createdAt: -1 },
+					$slice: MAX_REFRESH_TOKENS_PER_USER,
+				},
+			},
+			$unset: { refreshToken: "", refreshTokenExpiresAt: "" },
+		},
+	)
+	setCookie(event, REFRESH_COOKIE, refreshToken, {
 		path: "/",
 		httpOnly: true,
 		sameSite: "lax",
 		secure: !import.meta.dev,
-		...(body.remember ? { maxAge: 60 * 60 * 24 * 30 } : {}),
+		maxAge: 60 * 60 * 24 * 30,
 	})
 	setResponseStatus(event, 200)
 	// The long-lived refresh token is deliberately omitted from the JSON body.

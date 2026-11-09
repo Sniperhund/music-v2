@@ -1,5 +1,4 @@
 import { defineEventHandler, getCookie, setCookie } from "h3"
-import { User } from "../../models/user"
 import { getSessionModel } from "../../models/session"
 import {
 	findAuthenticatedSession,
@@ -7,6 +6,7 @@ import {
 	REFRESH_COOKIE,
 	SESSION_COOKIE,
 } from "../../utils/auth"
+import { findUserByRefreshToken } from "../../utils/refresh-tokens"
 
 export default defineEventHandler(async (event) => {
 	const activeSession = await findAuthenticatedSession(event)
@@ -15,20 +15,14 @@ export default defineEventHandler(async (event) => {
 	const refreshToken = getCookie(event, REFRESH_COOKIE)
 	if (!refreshToken) return { authenticated: false }
 
-	const user = await User.findOne({ refreshToken }).select(
-		"+refreshToken +refreshTokenExpiresAt +verified",
-	)
-	if (
-		!user?.verified ||
-		!user.refreshTokenExpiresAt ||
-		user.refreshTokenExpiresAt.getTime() <= Date.now()
-	) {
+	const found = await findUserByRefreshToken(refreshToken, "+verified")
+	if (!found?.user.verified) {
 		return { authenticated: false }
 	}
 
 	const ttl = getSessionTtl(event)
 	const Session = getSessionModel(ttl)
-	const session = await Session.create({ userId: user._id })
+	const session = await Session.create({ userId: found.user._id })
 	setCookie(event, SESSION_COOKIE, session.token, {
 		path: "/",
 		httpOnly: true,

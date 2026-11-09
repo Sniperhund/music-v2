@@ -1,5 +1,4 @@
 import { getCookie, readBody, setCookie, setResponseStatus } from "h3"
-import { User } from "../../models/user"
 import { getSessionModel } from "../../models/session"
 import {
 	assertCookieRequestOrigin,
@@ -9,6 +8,7 @@ import {
 	SESSION_COOKIE,
 } from "../../utils/auth"
 import { getAuthValidationMessage } from "../../utils/auth-validation"
+import { findUserByRefreshToken } from "../../utils/refresh-tokens"
 
 export default defineAuthenticatedEventHandler(async (event) => {
 	const body = await readBody(event).catch(() => undefined)
@@ -29,21 +29,15 @@ export default defineAuthenticatedEventHandler(async (event) => {
 		return { message: "Invalid refresh token" }
 	}
 
-	const user = await User.findOne({ refreshToken }).select(
-		"+refreshToken +refreshTokenExpiresAt",
-	)
-	if (
-		!user ||
-		!user.refreshTokenExpiresAt ||
-		user.refreshTokenExpiresAt.getTime() <= Date.now()
-	) {
+	const found = await findUserByRefreshToken(refreshToken)
+	if (!found) {
 		setResponseStatus(event, 401)
 		return { message: "Invalid refresh token" }
 	}
 
 	const ttl = getSessionTtl(event)
 	const Session = getSessionModel(ttl)
-	const session = await Session.create({ userId: user._id })
+	const session = await Session.create({ userId: found.user._id })
 	const expireAt = new Date(session.createdAt.getTime() + ttl)
 
 	setCookie(event, SESSION_COOKIE, session.token, {
